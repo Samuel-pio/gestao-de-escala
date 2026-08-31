@@ -386,7 +386,7 @@ function renderCalendar(requests){
 }
 
 function setActiveNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));const n=document.getElementById(id);if(n)n.classList.add('on')}
-function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
+function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','usersView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
 function showDashboard(){hideViews();document.getElementById('dashboardView').style.display='block';setActiveNav('dashboardNav')}
 function showAgenda(){hideViews();document.getElementById('agendaView').style.display='block';setActiveNav('agendaNav')}
 async function showRequests(){hideViews();document.getElementById('requestsView').style.display='block';setActiveNav('requestsNav');await loadAllRequests()}
@@ -524,7 +524,7 @@ function exportReportsCSV(){
 async function userAdminApi(payload){const r=await fetch(`${SUPABASE_URL}/functions/v1/manage-users`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${authSession.access_token}`,'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Erro ao gerenciar usuários');return data}
 function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Nunca'}
 async function loadUsers(){const tbody=document.getElementById('usersTableBody');tbody.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';try{const {users}=await userAdminApi({action:'list'});tbody.innerHTML=users.map(u=>`<tr><td>${safe(u.name||'-')}</td><td>${safe(u.email||'-')}</td><td>${u.role==='admin'?'Administrador':'Usuário'}</td><td>${u.active?'🟢 Ativo':'⚪ Inativo'}</td><td>${fmtLastAccess(u.last_sign_in_at)}</td><td><button type="button" class="action-btn ${u.active?'deny':'approve'}" data-user-toggle="${u.id}" data-active="${u.active}">${u.active?'Inativar':'Ativar'}</button></td></tr>`).join('')||'<tr><td colspan="6">Nenhum usuário.</td></tr>'}catch(err){console.error(err);tbody.innerHTML=`<tr><td colspan="6">${safe(err.message)}</td></tr>`}}
-async function showUsers(){showOnly('usersView');setActive('usersNav');await loadUsers()}
+async function showUsers(){hideViews();document.getElementById('usersView').style.display='block';setActiveNav('usersNav');await loadUsers()}
 function openUserModal(){document.getElementById('userForm').reset();document.getElementById('userModal').style.display='flex';document.getElementById('userModal').setAttribute('aria-hidden','false')}
 function closeUserModal(){document.getElementById('userModal').style.display='none';document.getElementById('userModal').setAttribute('aria-hidden','true')}
 async function showTeam(){hideViews();document.getElementById('teamView').style.display='block';setActiveNav('teamNav');await loadTeamView()}
