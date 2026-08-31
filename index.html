@@ -172,7 +172,44 @@
     </form>
   </div>
 </div>
-<div class="modal" id="userModal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><div><h2>Novo usuário</h2><p>Crie um acesso ao Gestão de Escala</p></div><button class="modal-close" type="button" id="closeUserModal">×</button></div><form id="userForm"><div class="form-grid"><label>Nome<input id="userName" required></label><label>E-mail<input id="userEmail" type="email" required></label><label>Senha inicial<input id="userPassword" type="password" minlength="6" required></label><label>Perfil<select id="userRole"><option value="usuario">Usuário</option><option value="admin">Administrador</option></select></label></div><div class="modal-actions"><button type="button" class="secondary" id="cancelUserModal">Cancelar</button><button class="primary" type="submit">Cadastrar usuário</button></div></form></div></div><div class="modal" id="employeeModal" aria-hidden="true">
+<div class="modal" id="userModal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div><h2 id="userModalTitle">Novo usuário</h2><p id="userModalSubtitle">Crie um acesso ao Gestão de Escala</p></div>
+      <button class="modal-close" type="button" id="closeUserModal">×</button>
+    </div>
+    <form id="userForm">
+      <input id="userId" type="hidden">
+      <div class="form-grid">
+        <label>Nome<input id="userName" required></label>
+        <label>E-mail<input id="userEmail" type="email" required></label>
+        <label>Senha <input id="userPassword" type="password" minlength="6" placeholder="No cadastro, mínimo 6 caracteres"></label>
+        <label>Perfil
+          <select id="userRole">
+            <option value="usuario">Usuário</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </label>
+      </div>
+      <div id="permissionsBox" style="margin-top:18px;border-top:1px solid #e5e7eb;padding-top:16px">
+        <div style="margin-bottom:10px"><b>Permissões de acesso</b><div id="permissionsHint" style="font-size:12px;color:#64748b;margin-top:3px">Marque apenas as áreas que esse usuário poderá acessar.</div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+          <label><input type="checkbox" class="userPerm" value="dashboard"> Dashboard</label>
+          <label><input type="checkbox" class="userPerm" value="agenda"> Agenda</label>
+          <label><input type="checkbox" class="userPerm" value="nova_solicitacao"> Nova Solicitação</label>
+          <label><input type="checkbox" class="userPerm" value="solicitacoes"> Solicitações</label>
+          <label><input type="checkbox" class="userPerm" value="historico"> Histórico</label>
+          <label><input type="checkbox" class="userPerm" value="equipe"> Equipe</label>
+          <label><input type="checkbox" class="userPerm" value="relatorios"> Relatórios</label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" id="cancelUserModal">Cancelar</button>
+        <button class="primary" id="saveUserBtn" type="submit">Cadastrar usuário</button>
+      </div>
+    </form>
+  </div>
+</div><div class="modal" id="employeeModal" aria-hidden="true">
   <div class="modal-card">
     <div class="modal-head">
       <div>
@@ -252,6 +289,35 @@ function showLogin(){
   document.getElementById('loginPassword').value='';
   setTimeout(()=>document.getElementById('loginEmail').focus(),50);
 }
+
+const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','relatorios'];
+const NAV_PERMISSION={
+  dashboardNav:'dashboard',agendaNav:'agenda',openRequestNav:'nova_solicitacao',
+  requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',reportsNav:'relatorios'
+};
+function currentRole(){return authSession?.user?.app_metadata?.role||'usuario'}
+function currentPermissions(){
+  if(currentRole()==='admin')return ALL_PERMISSIONS;
+  const p=authSession?.user?.app_metadata?.permissions;
+  return Array.isArray(p)?p:[];
+}
+function canAccess(permission){return currentRole()==='admin'||currentPermissions().includes(permission)}
+function applyAccessControls(){
+  Object.entries(NAV_PERMISSION).forEach(([id,perm])=>{
+    const el=document.getElementById(id); if(el)el.style.display=canAccess(perm)?'flex':'none';
+  });
+  const usersNav=document.getElementById('usersNav');
+  if(usersNav)usersNav.style.display=currentRole()==='admin'?'flex':'none';
+}
+function showFirstAllowedView(){
+  if(canAccess('dashboard'))return showDashboard();
+  if(canAccess('agenda'))return showAgenda();
+  if(canAccess('solicitacoes'))return showRequests();
+  if(canAccess('historico'))return showHistory();
+  if(canAccess('equipe'))return showTeam();
+  if(canAccess('relatorios'))return showReports();
+  hideViews();
+}
 function showApp(){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appShell').style.display='flex';
@@ -259,6 +325,7 @@ function showApp(){
   document.getElementById('profileEmail').textContent=email;
   const name=(authSession?.user?.user_metadata?.name||email.split('@')[0]||'Administrador').replace(/[._-]+/g,' ');
   document.getElementById('profileName').textContent=name.replace(/\b\w/g,c=>c.toUpperCase());
+  applyAccessControls();
 }
 async function initAuth(){
   const saved=loadSavedSession();
@@ -273,6 +340,7 @@ async function initAuth(){
       if(authSession){
         showApp();
         await load();
+        showFirstAllowedView();
         return;
       }
     }catch(e){
@@ -521,12 +589,69 @@ function exportReportsCSV(){
   URL.revokeObjectURL(url);
   showToast('Relatório exportado com sucesso!');
 }
-async function userAdminApi(payload){const r=await fetch(`${SUPABASE_URL}/functions/v1/manage-users`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${authSession.access_token}`,'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Erro ao gerenciar usuários');return data}
+async function userAdminApi(payload){
+  const r=await fetch(`${SUPABASE_URL}/functions/v1/manage-users`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${authSession.access_token}`,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data.error||'Erro ao gerenciar usuários');
+  return data
+}
 function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Nunca'}
-async function loadUsers(){const tbody=document.getElementById('usersTableBody');tbody.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';try{const {users}=await userAdminApi({action:'list'});tbody.innerHTML=users.map(u=>`<tr><td>${safe(u.name||'-')}</td><td>${safe(u.email||'-')}</td><td>${u.role==='admin'?'Administrador':'Usuário'}</td><td>${u.active?'🟢 Ativo':'⚪ Inativo'}</td><td>${fmtLastAccess(u.last_sign_in_at)}</td><td><button type="button" class="action-btn ${u.active?'deny':'approve'}" data-user-toggle="${u.id}" data-active="${u.active}">${u.active?'Inativar':'Ativar'}</button></td></tr>`).join('')||'<tr><td colspan="6">Nenhum usuário.</td></tr>'}catch(err){console.error(err);tbody.innerHTML=`<tr><td colspan="6">${safe(err.message)}</td></tr>`}}
-async function showUsers(){hideViews();document.getElementById('usersView').style.display='block';setActiveNav('usersNav');await loadUsers()}
-function openUserModal(){document.getElementById('userForm').reset();document.getElementById('userModal').style.display='flex';document.getElementById('userModal').setAttribute('aria-hidden','false')}
-function closeUserModal(){document.getElementById('userModal').style.display='none';document.getElementById('userModal').setAttribute('aria-hidden','true')}
+function permissionLabel(p){
+  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',relatorios:'Relatórios'}[p]||p;
+}
+async function loadUsers(){
+  const tbody=document.getElementById('usersTableBody');
+  tbody.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';
+  try{
+    const {users}=await userAdminApi({action:'list'});
+    window.userRows=users;
+    tbody.innerHTML=users.map(u=>{
+      const perms=u.role==='admin'?'Acesso total':((u.permissions||[]).map(permissionLabel).join(', ')||'Sem áreas liberadas');
+      return `<tr>
+        <td>${safe(u.name||'-')}<div style="font-size:11px;color:#64748b;margin-top:3px">${safe(perms)}</div></td>
+        <td>${safe(u.email||'-')}</td>
+        <td>${u.role==='admin'?'Administrador':'Usuário'}</td>
+        <td>${u.active?'🟢 Ativo':'⚪ Inativo'}</td>
+        <td>${fmtLastAccess(u.last_sign_in_at)}</td>
+        <td>
+          <button type="button" class="action-btn" data-user-edit="${u.id}">Editar</button>
+          <button type="button" class="action-btn ${u.active?'deny':'approve'}" data-user-toggle="${u.id}" data-active="${u.active}">${u.active?'Inativar':'Ativar'}</button>
+        </td>
+      </tr>`;
+    }).join('')||'<tr><td colspan="6">Nenhum usuário.</td></tr>';
+  }catch(err){console.error(err);tbody.innerHTML=`<tr><td colspan="6">${safe(err.message)}</td></tr>`}
+}
+async function showUsers(){
+  if(currentRole()!=='admin'){showToast('Acesso restrito a administradores.');return}
+  hideViews();document.getElementById('usersView').style.display='block';setActiveNav('usersNav');await loadUsers()
+}
+function selectedUserPermissions(){return [...document.querySelectorAll('.userPerm:checked')].map(x=>x.value)}
+function updatePermissionUI(){
+  const isAdmin=document.getElementById('userRole').value==='admin';
+  document.querySelectorAll('.userPerm').forEach(cb=>{cb.disabled=isAdmin;if(isAdmin)cb.checked=true});
+  document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema.':'Marque apenas as áreas que esse usuário poderá acessar.';
+}
+function openUserModal(user=null){
+  document.getElementById('userForm').reset();
+  document.getElementById('userId').value=user?.id||'';
+  document.getElementById('userName').value=user?.name||'';
+  document.getElementById('userEmail').value=user?.email||'';
+  document.getElementById('userEmail').disabled=!!user;
+  document.getElementById('userRole').value=user?.role||'usuario';
+  document.getElementById('userPassword').required=!user;
+  document.getElementById('userPassword').placeholder=user?'Deixe em branco para manter a senha':'Mínimo 6 caracteres';
+  document.getElementById('userModalTitle').textContent=user?'Editar usuário':'Novo usuário';
+  document.getElementById('userModalSubtitle').textContent=user?'Altere o perfil e as permissões de acesso.':'Crie um acesso ao Gestão de Escala';
+  document.getElementById('saveUserBtn').textContent=user?'Salvar alterações':'Cadastrar usuário';
+  document.querySelectorAll('.userPerm').forEach(cb=>cb.checked=user?.role==='admin'||(user?.permissions||[]).includes(cb.value));
+  updatePermissionUI();
+  document.getElementById('userModal').style.display='flex';
+  document.getElementById('userModal').setAttribute('aria-hidden','false')
+}
+function closeUserModal(){
+  document.getElementById('userModal').style.display='none';
+  document.getElementById('userModal').setAttribute('aria-hidden','true')
+}
 async function showTeam(){hideViews();document.getElementById('teamView').style.display='block';setActiveNav('teamNav');await loadTeamView()}
 async function loadTeamView(){
   const body=document.getElementById('teamTableBody');
@@ -598,13 +723,13 @@ async function updateRequestStatus(id,status){try{await sb(`solicitacoes?id=eq.$
 
 document.getElementById('prevMonth').onclick=()=>{viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()-1,1);load()};
 document.getElementById('nextMonth').onclick=()=>{viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()+1,1);load()};
-document.getElementById('openRequestNav').onclick=openRequest;
-document.getElementById('dashboardNav').onclick=showDashboard;
-document.getElementById('agendaNav').onclick=showAgenda;
-document.getElementById('requestsNav').onclick=showRequests;
-document.getElementById('historyNav').onclick=showHistory;
-document.getElementById('teamNav').onclick=showTeam;
-document.getElementById('reportsNav').onclick=showReports;
+document.getElementById('openRequestNav').onclick=()=>{if(canAccess('nova_solicitacao'))openRequest()};
+document.getElementById('dashboardNav').onclick=()=>{if(canAccess('dashboard'))showDashboard()};
+document.getElementById('agendaNav').onclick=()=>{if(canAccess('agenda'))showAgenda()};
+document.getElementById('requestsNav').onclick=()=>{if(canAccess('solicitacoes'))showRequests()};
+document.getElementById('historyNav').onclick=()=>{if(canAccess('historico'))showHistory()};
+document.getElementById('teamNav').onclick=()=>{if(canAccess('equipe'))showTeam()};
+document.getElementById('reportsNav').onclick=()=>{if(canAccess('relatorios'))showReports()};
 document.getElementById('refreshReports').onclick=loadReports;
 document.getElementById('exportReports').onclick=exportReportsCSV;
 document.getElementById('reportMonth').onchange=loadReports;
@@ -632,6 +757,7 @@ document.getElementById('loginForm').onsubmit=async e=>{
     await signIn(email,password);
     showApp();
     await load();
+    showFirstAllowedView();
   }catch(err){
     console.error(err);
     error.textContent='E-mail ou senha inválidos.';
@@ -642,11 +768,47 @@ document.getElementById('loginForm').onsubmit=async e=>{
 };
 document.getElementById('logoutBtn').onclick=signOut;
 document.getElementById('usersNav').onclick=showUsers;
-document.getElementById('newUserBtn').onclick=openUserModal;
+document.getElementById('newUserBtn').onclick=()=>openUserModal();
 document.getElementById('closeUserModal').onclick=closeUserModal;
 document.getElementById('cancelUserModal').onclick=closeUserModal;
-document.getElementById('userForm').onsubmit=async e=>{e.preventDefault();const btn=e.submitter;btn.disabled=true;try{await userAdminApi({action:'create',name:document.getElementById('userName').value.trim(),email:document.getElementById('userEmail').value.trim(),password:document.getElementById('userPassword').value,role:document.getElementById('userRole').value});closeUserModal();showToast('Usuário cadastrado com sucesso!');await loadUsers()}catch(err){console.error(err);showToast(err.message||'Não foi possível cadastrar o usuário.')}finally{btn.disabled=false}};
-document.getElementById('usersTableBody').addEventListener('click',async e=>{const btn=e.target.closest('[data-user-toggle]');if(!btn)return;btn.disabled=true;try{await userAdminApi({action:'toggle',id:btn.dataset.userToggle,active:btn.dataset.active!=='true'});showToast('Acesso atualizado!');await loadUsers()}catch(err){console.error(err);showToast(err.message||'Não foi possível alterar o acesso.');btn.disabled=false}});
+document.getElementById('userRole').onchange=updatePermissionUI;
+document.getElementById('userModal').onclick=e=>{if(e.target.id==='userModal')closeUserModal()};
+document.getElementById('userForm').onsubmit=async e=>{
+  e.preventDefault();
+  const btn=e.submitter;btn.disabled=true;
+  try{
+    const id=document.getElementById('userId').value;
+    const role=document.getElementById('userRole').value;
+    const permissions=role==='admin'?ALL_PERMISSIONS:selectedUserPermissions();
+    if(role!=='admin'&&!permissions.length)throw new Error('Selecione pelo menos uma permissão para o usuário.');
+    if(id){
+      const payload={action:'update',id,name:document.getElementById('userName').value.trim(),role,permissions};
+      const pwd=document.getElementById('userPassword').value;
+      if(pwd)payload.password=pwd;
+      await userAdminApi(payload);
+      showToast('Usuário atualizado com sucesso!');
+    }else{
+      await userAdminApi({action:'create',name:document.getElementById('userName').value.trim(),email:document.getElementById('userEmail').value.trim(),password:document.getElementById('userPassword').value,role,permissions});
+      showToast('Usuário cadastrado com sucesso!');
+    }
+    closeUserModal();await loadUsers()
+  }catch(err){console.error(err);showToast(err.message||'Não foi possível salvar o usuário.')}
+  finally{btn.disabled=false}
+};
+document.getElementById('usersTableBody').addEventListener('click',async e=>{
+  const edit=e.target.closest('[data-user-edit]');
+  if(edit){
+    const user=(window.userRows||[]).find(u=>u.id===edit.dataset.userEdit);
+    if(user)openUserModal(user);
+    return;
+  }
+  const btn=e.target.closest('[data-user-toggle]');
+  if(!btn)return;btn.disabled=true;
+  try{
+    await userAdminApi({action:'toggle',id:btn.dataset.userToggle,active:btn.dataset.active!=='true'});
+    showToast('Acesso atualizado!');await loadUsers()
+  }catch(err){console.error(err);showToast(err.message||'Não foi possível alterar o acesso.');btn.disabled=false}
+});
 document.getElementById('editEmployeeForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('editEmployeeId').value;
