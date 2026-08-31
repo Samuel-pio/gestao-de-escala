@@ -718,7 +718,29 @@ function fmtDate(v){if(!v)return '—';const [y,m,d]=v.split('-');return `${d}/$
 function safe(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 let allRequests=[];
 async function loadAllRequests(){const body=document.getElementById('requestsTableBody');body.innerHTML='<tr><td colspan="5">Carregando...</td></tr>';try{allRequests=await sb('solicitacoes?select=id,data_pedido,data_inicial,data_final,status,motivo,observacao,equipe(nome)&order=data_pedido.desc');renderRequestsTable()}catch(e){console.error(e);body.innerHTML='<tr><td colspan="5">Erro ao carregar solicitações.</td></tr>'}}
-function renderRequestsTable(){const filter=document.getElementById('statusFilter').value;const list=filter?allRequests.filter(r=>r.status===filter):allRequests;document.getElementById('requestsTotal').textContent=`${list.length} solicitação${list.length===1?'':'ões'}`;const body=document.getElementById('requestsTableBody');if(!list.length){body.innerHTML='<tr><td colspan="5">Nenhuma solicitação encontrada.</td></tr>';return}body.innerHTML=list.map(r=>{const cls='status-'+r.status.replaceAll(' ','-');const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;const actions=r.status==='Pendente'?`<div class="actions"><button class="mini-btn approve" onclick="updateRequestStatus(${r.id},'Aprovada')">Aprovar</button><button class="mini-btn deny" onclick="updateRequestStatus(${r.id},'Negada')">Negar</button></div>`:`<div class="actions"><button class="mini-btn mutebtn" onclick="updateRequestStatus(${r.id},'Pendente')">Voltar p/ pendente</button></div>`;return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${period}</td><td>${safe(r.motivo||'—')}</td><td><span class="status-pill ${cls}">${safe(r.status)}</span></td><td>${actions}</td></tr>`}).join('')}
+function renderRequestsTable(){const filter=document.getElementById('statusFilter').value;const list=filter?allRequests.filter(r=>r.status===filter):allRequests;document.getElementById('requestsTotal').textContent=`${list.length} solicitação${list.length===1?'':'ões'}`;const body=document.getElementById('requestsTableBody');if(!list.length){body.innerHTML='<tr><td colspan="5">Nenhuma solicitação encontrada.</td></tr>';return}body.innerHTML=list.map(r=>{const cls='status-'+r.status.replaceAll(' ','-');const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;const baseActions=r.status==='Pendente'?`<button class="mini-btn approve" onclick="updateRequestStatus(${r.id},'Aprovada')">Aprovar</button><button class="mini-btn deny" onclick="updateRequestStatus(${r.id},'Negada')">Negar</button>`:`<button class="mini-btn mutebtn" onclick="updateRequestStatus(${r.id},'Pendente')">Voltar p/ pendente</button>`;const deleteAction=currentRole()==='admin'?`<button class="mini-btn deny" onclick="confirmDeleteRequest(${r.id})">Excluir</button>`:'';const actions=`<div class="actions">${baseActions}${deleteAction}</div>`;return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${period}</td><td>${safe(r.motivo||'—')}</td><td><span class="status-pill ${cls}">${safe(r.status)}</span></td><td>${actions}</td></tr>`}).join('')}
+function confirmDeleteRequest(id){
+  if(currentRole()!=='admin'){showToast('Somente administradores podem excluir solicitações.');return}
+  const r=allRequests.find(x=>x.id===id);
+  if(!r)return;
+  const nome=r.equipe?.nome||'Funcionário';
+  const periodo=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
+  const ok=window.confirm(`Excluir esta solicitação?\n\nFuncionário: ${nome}\nPeríodo: ${periodo}\nStatus: ${r.status}\n\nEsta ação não poderá ser desfeita.`);
+  if(ok)deleteRequest(id);
+}
+async function deleteRequest(id){
+  if(currentRole()!=='admin'){showToast('Somente administradores podem excluir solicitações.');return}
+  try{
+    await sb(`solicitacoes?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    showToast('Solicitação excluída com sucesso!');
+    await loadAllRequests();
+    await load();
+    if(document.getElementById('historyView').style.display!=='none')await loadHistory();
+  }catch(e){
+    console.error(e);
+    showToast('Não foi possível excluir a solicitação.');
+  }
+}
 async function updateRequestStatus(id,status){try{await sb(`solicitacoes?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status})});showToast(`Solicitação ${status==='Aprovada'?'aprovada':status==='Negada'?'negada':'atualizada'}.`);await loadAllRequests();await load()}catch(e){console.error(e);showToast('Erro ao atualizar a solicitação.')}}
 
 document.getElementById('prevMonth').onclick=()=>{viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()-1,1);load()};
