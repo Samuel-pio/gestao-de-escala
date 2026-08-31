@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestão de Escala</title><style>*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f6f9;color:#10203a}.app{display:flex;min-height:100vh}aside{width:235px;background:#071d3d;color:white;padding:26px 16px;display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0}.brand{padding:0 15px 30px}.brand b{font-size:27px;letter-spacing:1px}.brand span{display:block;color:#f59e0b;font-size:11px;font-weight:800;letter-spacing:2px}.nav{display:flex;gap:12px;align-items:center;padding:13px 15px;margin:4px 0;border-radius:9px;color:#c8d2e0;font-size:14px}.nav.on,.nav:hover{background:#12315e;color:white}.nav.on svg{color:#f59e0b}.profile{margin-top:auto;border-top:1px solid #29405e;padding:20px 8px 0;display:flex;gap:10px;align-items:center}.avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#f59e0b;color:#071d3d;font-weight:800}.profile small,.profile b{display:block}.profile small{color:#9baabd;font-size:11px;margin-top:3px}main{margin-left:235px;padding:32px 36px;width:calc(100% - 235px)}header{display:flex;justify-content:space-between;align-items:center}h1{margin:0;font-size:27px}header p,.boxhead p{color:#7a8799;margin:6px 0 0}.bell,.arrows button{border:1px solid #e0e5eb;background:white;border-radius:9px;padding:9px;color:#40516a}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin:28px 0}.card,.box{background:white;border:1px solid #e7ebf0;border-radius:13px;box-shadow:0 2px 8px #1b2b4210}.card{padding:19px 20px}.card p{margin:0;color:#6f7d91;font-size:13px}.card b{display:block;font-size:31px;margin:8px 0 4px}.card b.orange{color:#f59e0b}.card small{color:#9aa5b3}.grid{display:grid;grid-template-columns:minmax(650px,2.2fr) minmax(260px,.8fr);gap:18px}.calendar{padding:20px}.boxhead{display:flex;justify-content:space-between;align-items:center}.boxhead h2,.legend h2{font-size:17px;margin:0}.arrows{display:flex;gap:6px}.arrows button{padding:5px}.week,.month{display:grid;grid-template-columns:repeat(7,1fr)}.week{margin-top:18px;border-bottom:1px solid #e7ebf0}.week b{padding:9px;text-align:center;font-size:11px;color:#728096}.day{min-height:84px;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4;padding:8px;font-size:12px}.day:nth-child(7n){border-right:0;background:#fafbfc}.day small{display:block;margin-top:7px;white-space:nowrap;font-size:10px}.muted{color:#bcc3cd;background:#fafafa}.side{display:flex;flex-direction:column;gap:18px}.pending,.legend{padding:20px}.dashboard-note{padding:20px}.pending strong{background:#fff3dc;color:#d88700;padding:5px 9px;border-radius:20px;font-size:12px}.req{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid #edf0f4}.req span b,.req span small{display:block;font-size:12px}.req span small{color:#8995a5;margin-top:4px}.req em{font-style:normal;font-size:10px;background:#fff3dc;color:#d88700;padding:5px 7px;border-radius:6px}.legend p{font-size:12px;color:#536278;margin:13px 0}@media(max-width:900px){.nav span{display:none}aside{width:70px;padding:20px 8px}.brand span,.brand b{font-size:0}.brand b:after{content:'C';font-size:24px}.nav{justify-content:center}.nav{font-size:0}.profile>div:not(.avatar){display:none}main{margin-left:70px;width:calc(100% - 70px);padding:22px 16px}.cards{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.calendar{overflow:auto}.week,.month{min-width:650px}}.modal{position:fixed;inset:0;background:#071d3dcc;display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal.open{display:flex}.modal-card{width:min(620px,100%);background:white;border-radius:18px;box-shadow:0 20px 60px #0003;padding:24px}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}.modal-head h2{margin:0;font-size:22px}.modal-head p{margin:5px 0 0;color:#7a8799;font-size:13px}.close{border:0;background:#f2f4f7;width:36px;height:36px;border-radius:10px;font-size:20px;cursor:pointer}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:700;color:#31415a}.field input,.field select,.field textarea{width:100%;border:1px solid #dfe5ec;border-radius:10px;padding:11px 12px;font:inherit;background:white;color:#10203a;outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:#f59e0b;box-shadow:0 0 0 3px #f59e0b18}.field textarea{min-height:88px;resize:vertical}.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.btn{border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer}.btn.secondary{background:#eef2f6;color:#334155}.btn.primary{background:#f59e0b;color:#071d3d}.btn:disabled{opacity:.6;cursor:not-allowed}.toast{position:fixed;right:24px;bottom:24px;background:#10203a;color:white;padding:12px 16px;border-radius:10px;box-shadow:0 8px 30px #0003;display:none;z-index:60}.toast.show{display:block}.nav{cursor:pointer}@media(max-width:900px){.nav span{display:none}aside{width:70px;padding:20px 8px}.brand span,.brand b{font-size:0}.brand b:after{content:'C';font-size:24px}.nav{justify-content:center}.nav{font-size:0}.profile>div:not(.avatar){display:none}main{margin-left:70px;width:calc(100% - 70px);padding:22px 16px}.cards{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.calendar{overflow:auto}.week,.month{min-width:650px}}@media(max-width:520px){.cards{grid-template-columns:1fr 1fr;gap:10px}.card{padding:14px}.card b{font-size:25px}h1{font-size:22px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
 .requests-box{margin-top:28px;padding:20px}.requests-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.requests-toolbar select{border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a}.requests-toolbar span{font-size:12px;color:#7a8799}.table-wrap{overflow:auto}.requests-table{width:100%;border-collapse:collapse;min-width:760px}.requests-table th,.requests-table td{text-align:left;padding:14px 12px;border-bottom:1px solid #edf0f4;font-size:13px}.requests-table th{color:#6f7d91;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.status-pill{display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:700}.status-Pendente{background:#fff3dc;color:#d88700}.status-Aprovada{background:#fee9e7;color:#c8433b}.status-Negada{background:#eef2f6;color:#667085}.status-Férias{background:#e7f0ff;color:#2f6fd0}.status-Folga-do-Plantão{background:#f1e8ff;color:#7e4dc4}.actions{display:flex;gap:6px;flex-wrap:wrap}.mini-btn{border:0;border-radius:8px;padding:7px 9px;font-size:11px;font-weight:700;cursor:pointer}.approve{background:#e9f7ef;color:#227a43}.deny{background:#feeceb;color:#b73932}.mutebtn{background:#eef2f6;color:#475467}</style></head><body>
 <div class="app"><aside><div class="brand"><b>CONEX</b><span>INTERNET</span></div><nav>
-<div class="nav on" id="dashboardNav">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav">☷ <span>Solicitações</span></div><div class="nav" id="historyNav">↺ <span>Histórico</span></div><div class="nav" id="teamNav">👥 <span>Equipe</span></div><div class="nav">▤ <span>Relatórios</span></div>
+<div class="nav on" id="dashboardNav">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav">☷ <span>Solicitações</span></div><div class="nav" id="historyNav">↺ <span>Histórico</span></div><div class="nav" id="teamNav">👥 <span>Equipe</span></div><div class="nav" id="reportsNav">▤ <span>Relatórios</span></div>
 </nav><div class="profile"><div class="avatar">SP</div><div><b>Samuel Pio</b><small>Administrador</small></div></div></aside>
 <main><div id="dashboardView"><header><div><h1>Olá, Samuel 👋</h1><p>Acompanhe a escala e as solicitações da equipe.</p></div><button class="bell">🔔</button></header>
 <section class="cards"><div class="card"><p>Funcionários</p><b id="funcCount">—</b><small id="funcLabel">ativos</small></div><div class="card"><p>Pendentes</p><b class="orange" id="pendingCount">—</b><small id="pendingLabel">no mês</small></div><div class="card"><p>Férias</p><b id="vacationCount">—</b><small id="vacationLabel">no mês</small></div><div class="card"><p>Folgas no mês</p><b id="leaveCount">—</b><small id="leaveLabel">dias aprovados</small></div></section>
@@ -22,6 +22,12 @@
         <small id="teamTotal">Carregando...</small>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select id="teamStatusFilter"
+          style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a">
+          <option value="ativos">Ativos</option>
+          <option value="inativos">Inativos</option>
+          <option value="todos">Todos</option>
+        </select>
         <input id="teamSearch" type="search" placeholder="Buscar funcionário..."
           style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a;min-width:240px;outline:none">
         <button class="btn primary" id="openEmployee">+ Novo funcionário</button>
@@ -34,15 +40,108 @@
           <tr>
             <th>Funcionário</th>
             <th>Status</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody id="teamTableBody">
-          <tr><td colspan="2">Carregando...</td></tr>
+          <tr><td colspan="3">Carregando...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
+</section>
+<section id="reportsView" style="display:none">
+  <header>
+    <div>
+      <h1>Relatórios</h1>
+      <p>Acompanhe folgas, férias, plantões e pendências da equipe.</p>
+    </div>
+  </header>
+
+  <div class="box" style="margin-bottom:20px">
+    <div class="requests-toolbar">
+      <div>
+        <h2>Filtros</h2>
+        <small>Selecione o período e, se quiser, um funcionário.</small>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input id="reportMonth" type="month"
+          style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a">
+        <select id="reportEmployee"
+          style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a;min-width:220px">
+          <option value="">Todos os funcionários</option>
+        </select>
+        <button class="btn primary" id="refreshReports">Atualizar</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="cards">
+    <div class="card"><p>Folgas aprovadas</p><b id="reportApproved">0</b><small>no período</small></div>
+    <div class="card"><p>Dias de férias</p><b id="reportVacation">0</b><small>no período</small></div>
+    <div class="card"><p>Folga do Plantão</p><b id="reportPlantao">0</b><small>no período</small></div>
+    <div class="card"><p>Pendentes</p><b id="reportPending">0</b><small>no período</small></div>
+  </section>
+
+  <section class="grid" style="margin-top:20px">
+    <div class="box">
+      <div class="boxhead">
+        <div>
+          <h2>Resumo por funcionário</h2>
+          <p>Contagem de ocorrências e dias no período selecionado.</p>
+        </div>
+      </div>
+      <div class="requests-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Funcionário</th>
+              <th>Folgas</th>
+              <th>Férias</th>
+              <th>Plantão</th>
+              <th>Pendentes</th>
+            </tr>
+          </thead>
+          <tbody id="reportTableBody">
+            <tr><td colspan="5">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="box">
+        <div class="boxhead"><h2>Ranking de folgas</h2></div>
+        <div id="reportRanking" class="req"><span>Carregando...</span></div>
+      </div>
+      <div class="box" style="margin-top:16px">
+        <div class="boxhead"><h2>Motivos mais usados</h2></div>
+        <div id="reportReasons" class="req"><span>Carregando...</span></div>
+      </div>
+    </div>
+  </section>
 </section></main></div>
+<div class="modal" id="editEmployeeModal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div><h2>Editar funcionário</h2><p>Altere o nome do funcionário cadastrado.</p></div>
+      <button class="close" id="closeEditEmployee" aria-label="Fechar">×</button>
+    </div>
+    <form id="editEmployeeForm">
+      <input id="editEmployeeId" type="hidden">
+      <div class="form-grid">
+        <div class="field full">
+          <label for="editEmployeeName">Nome do funcionário</label>
+          <input id="editEmployeeName" type="text" required maxlength="100">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn secondary" id="cancelEditEmployee">Cancelar</button>
+        <button type="submit" class="btn primary" id="saveEditEmployee">Salvar alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
 <div class="modal" id="employeeModal" aria-hidden="true">
   <div class="modal-card">
     <div class="modal-head">
@@ -87,6 +186,19 @@ function statusMeta(status){
 }
 async function sb(path,options={}){const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...options,headers:{...headers,...(options.headers||{})}});if(!r.ok)throw new Error(await r.text());if(r.status===204)return null;const t=await r.text();return t?JSON.parse(t):null}
 function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+function editEmployee(id){
+  const row=(window.teamViewRows||[]).find(r=>r.id===id);
+  if(!row)return;
+  document.getElementById('editEmployeeId').value=id;
+  document.getElementById('editEmployeeName').value=row.nome||'';
+  document.getElementById('editEmployeeModal').classList.add('open');
+  document.getElementById('editEmployeeModal').setAttribute('aria-hidden','false');
+  setTimeout(()=>document.getElementById('editEmployeeName').focus(),50);
+}
+function closeEditEmployee(){
+  document.getElementById('editEmployeeModal').classList.remove('open');
+  document.getElementById('editEmployeeModal').setAttribute('aria-hidden','true');
+}
 function openEmployee(){document.getElementById('employeeModal').classList.add('open');document.getElementById('employeeModal').setAttribute('aria-hidden','false');setTimeout(()=>document.getElementById('employeeName').focus(),50)}
 function closeEmployee(){document.getElementById('employeeModal').classList.remove('open');document.getElementById('employeeModal').setAttribute('aria-hidden','true');document.getElementById('employeeForm').reset()}
 function openRequest(){document.getElementById('requestModal').classList.add('open');document.getElementById('requestModal').setAttribute('aria-hidden','false')}
@@ -144,34 +256,159 @@ function renderCalendar(requests){
 }
 
 function setActiveNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));const n=document.getElementById(id);if(n)n.classList.add('on')}
-function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
+function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
 function showDashboard(){hideViews();document.getElementById('dashboardView').style.display='block';setActiveNav('dashboardNav')}
 function showAgenda(){hideViews();document.getElementById('agendaView').style.display='block';setActiveNav('agendaNav')}
 async function showRequests(){hideViews();document.getElementById('requestsView').style.display='block';setActiveNav('requestsNav');await loadAllRequests()}
 async function showHistory(){hideViews();document.getElementById('historyView').style.display='block';setActiveNav('historyNav');await loadHistory()}
+async function showReports(){
+  hideViews();
+  document.getElementById('reportsView').style.display='block';
+  setActiveNav('reportsNav');
+  if(!document.getElementById('reportMonth').value){
+    const d=new Date();
+    document.getElementById('reportMonth').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+  await fillReportEmployees();
+  await loadReports();
+}
+async function fillReportEmployees(){
+  try{
+    const team=await sb('equipe?select=id,nome,ativo&order=nome.asc');
+    const sel=document.getElementById('reportEmployee');
+    const current=sel.value;
+    sel.innerHTML='<option value="">Todos os funcionários</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}${e.ativo?'':' (Inativo)'}</option>`).join('');
+    sel.value=current;
+  }catch(e){console.error(e)}
+}
+function overlapDays(start,end,from,to){
+  const s=new Date(start+'T00:00:00');
+  const e=new Date(end+'T00:00:00');
+  const f=new Date(from+'T00:00:00');
+  const t=new Date(to+'T00:00:00');
+  const a=s>f?s:f,b=e<t?e:t;
+  if(a>b)return 0;
+  return Math.floor((b-a)/86400000)+1;
+}
+async function loadReports(){
+  const month=document.getElementById('reportMonth').value;
+  if(!month)return;
+  const [y,m]=month.split('-').map(Number);
+  const from=`${y}-${String(m).padStart(2,'0')}-01`;
+  const last=new Date(y,m,0).getDate();
+  const to=`${y}-${String(m).padStart(2,'0')}-${String(last).padStart(2,'0')}`;
+  const empId=document.getElementById('reportEmployee').value;
+  let path=`solicitacoes?select=id,data_inicial,data_final,status,motivo,equipe(id,nome)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`;
+  if(empId)path+=`&funcionario_id=eq.${empId}`;
+  try{
+    const rows=await sb(path);
+    let approved=0,vacation=0,plantao=0,pending=0;
+    const byEmp={}, reasons={};
+    for(const r of rows){
+      const nome=r.equipe?.nome||'Funcionário';
+      if(!byEmp[nome])byEmp[nome]={folgas:0,ferias:0,plantao:0,pendentes:0};
+      const days=overlapDays(r.data_inicial,r.data_final,from,to);
+      if(r.status==='Aprovada'){
+        approved+=days;
+        byEmp[nome].folgas+=days;
+      }else if(r.status==='Férias'){
+        vacation+=days;
+        byEmp[nome].ferias+=days;
+      }else if(r.status==='Folga do Plantão'){
+        plantao+=days;
+        byEmp[nome].plantao+=days;
+      }else if(r.status==='Pendente'){
+        pending+=1;
+        byEmp[nome].pendentes+=1;
+      }
+      const motivo=(r.motivo||'Sem motivo').trim()||'Sem motivo';
+      reasons[motivo]=(reasons[motivo]||0)+1;
+    }
+    document.getElementById('reportApproved').textContent=approved;
+    document.getElementById('reportVacation').textContent=vacation;
+    document.getElementById('reportPlantao').textContent=plantao;
+    document.getElementById('reportPending').textContent=pending;
+
+    const entries=Object.entries(byEmp).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
+    const body=document.getElementById('reportTableBody');
+    body.innerHTML=entries.length?entries.map(([nome,v])=>`<tr>
+      <td><b>${safe(nome)}</b></td>
+      <td>${v.folgas}</td>
+      <td>${v.ferias} dia${v.ferias===1?'':'s'}</td>
+      <td>${v.plantao}</td>
+      <td>${v.pendentes}</td>
+    </tr>`).join(''):'<tr><td colspan="5">Nenhum registro no período.</td></tr>';
+
+    const ranking=Object.entries(byEmp).sort((a,b)=>b[1].folgas-a[1].folgas).filter(([,v])=>v.folgas>0).slice(0,5);
+    document.getElementById('reportRanking').innerHTML=ranking.length?ranking.map(([nome,v],i)=>`<span><b>${i+1}. ${safe(nome)}</b><small>${v.folgas} folga${v.folgas===1?'':'s'}</small></span>`).join(''):'<span><b>Sem folgas</b><small>No período selecionado</small></span>';
+
+    const reasonEntries=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    document.getElementById('reportReasons').innerHTML=reasonEntries.length?reasonEntries.map(([motivo,total])=>`<span><b>${safe(motivo)}</b><small>${total} registro${total===1?'':'s'}</small></span>`).join(''):'<span><b>Sem dados</b><small>No período selecionado</small></span>';
+  }catch(e){
+    console.error(e);
+    document.getElementById('reportTableBody').innerHTML='<tr><td colspan="5">Erro ao carregar relatório.</td></tr>';
+  }
+}
 async function showTeam(){hideViews();document.getElementById('teamView').style.display='block';setActiveNav('teamNav');await loadTeamView()}
 async function loadTeamView(){
   const body=document.getElementById('teamTableBody');
-  body.innerHTML='<tr><td colspan="2">Carregando...</td></tr>';
+  body.innerHTML='<tr><td colspan="3">Carregando...</td></tr>';
   try{
-    window.teamViewRows=await sb('equipe?select=id,nome,ativo&ativo=eq.true&order=nome.asc');
+    window.teamViewRows=await sb('equipe?select=id,nome,ativo&order=nome.asc');
     renderTeamView();
   }catch(e){
     console.error(e);
-    body.innerHTML='<tr><td colspan="2">Erro ao carregar equipe.</td></tr>';
+    body.innerHTML='<tr><td colspan="3">Erro ao carregar equipe.</td></tr>';
   }
 }
 function renderTeamView(){
   const q=(document.getElementById('teamSearch').value||'').trim().toLowerCase();
-  const rows=(window.teamViewRows||[]).filter(r=>!q||(r.nome||'').toLowerCase().includes(q));
-  document.getElementById('teamTotal').textContent=`${rows.length} funcionário${rows.length===1?'':'s'} ativo${rows.length===1?'':'s'}`;
+  const status=document.getElementById('teamStatusFilter').value;
+  const rows=(window.teamViewRows||[]).filter(r=>{
+    const nomeOk=!q||(r.nome||'').toLowerCase().includes(q);
+    const statusOk=status==='todos'||(status==='ativos'&&r.ativo)||(status==='inativos'&&!r.ativo);
+    return nomeOk&&statusOk;
+  });
+  const ativos=rows.filter(r=>r.ativo).length;
+  const inativos=rows.filter(r=>!r.ativo).length;
+  document.getElementById('teamTotal').textContent=`${rows.length} funcionário${rows.length===1?'':'s'} • ${ativos} ativo${ativos===1?'':'s'} • ${inativos} inativo${inativos===1?'':'s'}`;
   const body=document.getElementById('teamTableBody');
   if(!rows.length){
-    body.innerHTML='<tr><td colspan="2">Nenhum funcionário encontrado.</td></tr>';
+    body.innerHTML='<tr><td colspan="3">Nenhum funcionário encontrado.</td></tr>';
     return;
   }
-  body.innerHTML=rows.map(r=>`<tr><td><b>${safe(r.nome||'Funcionário')}</b></td><td><span class="status-pill" style="background:#eaf8ef;color:#16803c">● Ativo</span></td></tr>`).join('');
+  body.innerHTML=rows.map(r=>`<tr>
+    <td><b>${safe(r.nome||'Funcionário')}</b></td>
+    <td>${r.ativo
+      ? '<span class="status-pill" style="background:#eaf8ef;color:#16803c">● Ativo</span>'
+      : '<span class="status-pill" style="background:#f1f3f5;color:#697386">● Inativo</span>'}</td>
+    <td style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="action-btn approve" onclick="editEmployee(${r.id})">Editar</button>
+      <button class="action-btn ${r.ativo?'deny':'approve'}" onclick="toggleEmployee(${r.id},${r.ativo})">${r.ativo?'Inativar':'Ativar'}</button>
+    </td>
+  </tr>`).join('');
 }
+async function toggleEmployee(id,isActive){
+  const row=(window.teamViewRows||[]).find(r=>r.id===id);
+  if(!row)return;
+  try{
+    showToast(`${isActive?'Inativando':'Ativando'} ${row.nome}...`);
+    await sb(`equipe?id=eq.${id}`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({ativo:!isActive})
+    });
+    showToast(`Funcionário ${isActive?'inativado':'ativado'} com sucesso!`);
+    await loadTeamView();
+    teamCache=await sb('equipe?select=id,nome&ativo=eq.true&order=nome.asc');
+    fillEmployees();
+    await fillReportEmployees();
+  }catch(err){
+    console.error(err);
+    showToast('Não foi possível alterar o status do funcionário.');
+  }
+}
+
 async function loadHistory(){const body=document.getElementById('historyTableBody');body.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';try{window.historyRows=await sb('solicitacoes?select=id,data_pedido,data_inicial,data_final,status,motivo,observacao,equipe(nome)&order=data_pedido.desc');renderHistory()}catch(e){console.error(e);body.innerHTML='<tr><td colspan="6">Erro ao carregar histórico.</td></tr>'}}
 function renderHistory(){const filter=document.getElementById('historyStatusFilter').value;const rows=(window.historyRows||[]).filter(r=>!filter||r.status===filter);document.getElementById('historyTotal').textContent=`${rows.length} registro${rows.length===1?'':'s'}`;const body=document.getElementById('historyTableBody');if(!rows.length){body.innerHTML='<tr><td colspan="6">Nenhum registro encontrado.</td></tr>';return}body.innerHTML=rows.map(r=>{const cls='status-'+r.status.replaceAll(' ','-');const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;const pedido=r.data_pedido?new Date(r.data_pedido).toLocaleDateString('pt-BR'):'—';return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${pedido}</td><td>${period}</td><td>${safe(r.motivo||'—')}</td><td><span class="status-pill ${cls}">${safe(r.status)}</span></td><td>${safe(r.observacao||'—')}</td></tr>`}).join('')}
 function fmtDate(v){if(!v)return '—';const [y,m,d]=v.split('-');return `${d}/${m}/${y}`}
@@ -189,11 +426,44 @@ document.getElementById('agendaNav').onclick=showAgenda;
 document.getElementById('requestsNav').onclick=showRequests;
 document.getElementById('historyNav').onclick=showHistory;
 document.getElementById('teamNav').onclick=showTeam;
+document.getElementById('reportsNav').onclick=showReports;
+document.getElementById('refreshReports').onclick=loadReports;
+document.getElementById('reportMonth').onchange=loadReports;
+document.getElementById('reportEmployee').onchange=loadReports;
 document.getElementById('teamSearch').oninput=renderTeamView;
+document.getElementById('teamStatusFilter').onchange=renderTeamView;
 document.getElementById('openEmployee').onclick=openEmployee;
 document.getElementById('closeEmployee').onclick=closeEmployee;
 document.getElementById('cancelEmployee').onclick=closeEmployee;
 document.getElementById('employeeModal').onclick=e=>{if(e.target.id==='employeeModal')closeEmployee()};
+document.getElementById('closeEditEmployee').onclick=closeEditEmployee;
+document.getElementById('cancelEditEmployee').onclick=closeEditEmployee;
+document.getElementById('editEmployeeModal').onclick=e=>{if(e.target.id==='editEmployeeModal')closeEditEmployee()};
+document.getElementById('editEmployeeForm').onsubmit=async e=>{
+  e.preventDefault();
+  const id=document.getElementById('editEmployeeId').value;
+  const name=document.getElementById('editEmployeeName').value.trim().replace(/\s+/g,' ');
+  const btn=document.getElementById('saveEditEmployee');
+  if(!name){showToast('Informe o nome do funcionário.');return}
+  btn.disabled=true;btn.textContent='Salvando...';
+  try{
+    await sb(`equipe?id=eq.${id}`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({nome:name})
+    });
+    closeEditEmployee();
+    showToast('Funcionário atualizado com sucesso!');
+    await loadTeamView();
+    teamCache=await sb('equipe?select=id,nome&ativo=eq.true&order=nome.asc');
+    fillEmployees();
+    await load();
+  }catch(err){
+    console.error(err);
+    const msg=String(err.message||'');
+    showToast((msg.includes('duplicate')||msg.includes('unique'))?'Já existe um funcionário com esse nome.':'Não foi possível atualizar o funcionário.');
+  }finally{btn.disabled=false;btn.textContent='Salvar alterações'}
+};
 document.getElementById('employeeForm').onsubmit=async e=>{
   e.preventDefault();
   const name=document.getElementById('employeeName').value.trim().replace(/\s+/g,' ');
