@@ -72,6 +72,7 @@
           <option value="">Todos os funcionários</option>
         </select>
         <button class="btn primary" id="refreshReports">Atualizar</button>
+        <button class="btn secondary" id="exportReports">⬇ Exportar CSV</button>
       </div>
     </div>
   </div>
@@ -302,6 +303,8 @@ async function loadReports(){
   if(empId)path+=`&funcionario_id=eq.${empId}`;
   try{
     const rows=await sb(path);
+    window.currentReportRows=rows;
+    window.currentReportPeriod={month,from,to};
     let approved=0,vacation=0,plantao=0,pending=0;
     const byEmp={}, reasons={};
     for(const r of rows){
@@ -348,6 +351,46 @@ async function loadReports(){
     console.error(e);
     document.getElementById('reportTableBody').innerHTML='<tr><td colspan="5">Erro ao carregar relatório.</td></tr>';
   }
+}
+function csvCell(value){
+  const v=String(value??'').replace(/"/g,'""');
+  return `"${v}"`;
+}
+function exportReportsCSV(){
+  const rows=window.currentReportRows||[];
+  const period=window.currentReportPeriod;
+  if(!period){showToast('Atualize o relatório antes de exportar.');return}
+  if(!rows.length){showToast('Não há dados para exportar neste período.');return}
+
+  const header=['Funcionário','Data inicial','Data final','Dias no período','Motivo','Status','Observação'];
+  const lines=[header.map(csvCell).join(';')];
+
+  for(const r of rows){
+    const days=overlapDays(r.data_inicial,r.data_final,period.from,period.to);
+    lines.push([
+      r.equipe?.nome||'Funcionário',
+      r.data_inicial,
+      r.data_final,
+      days,
+      r.motivo||'',
+      r.status||'',
+      r.observacao||''
+    ].map(csvCell).join(';'));
+  }
+
+  const content='\ufeff'+lines.join('\r\n');
+  const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const emp=document.getElementById('reportEmployee');
+  const empName=emp.value ? (emp.options[emp.selectedIndex]?.text||'funcionario').replace(/\s+/g,'-').toLowerCase() : 'equipe';
+  a.href=url;
+  a.download=`relatorio-${empName}-${period.month}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Relatório exportado com sucesso!');
 }
 async function showTeam(){hideViews();document.getElementById('teamView').style.display='block';setActiveNav('teamNav');await loadTeamView()}
 async function loadTeamView(){
@@ -428,6 +471,7 @@ document.getElementById('historyNav').onclick=showHistory;
 document.getElementById('teamNav').onclick=showTeam;
 document.getElementById('reportsNav').onclick=showReports;
 document.getElementById('refreshReports').onclick=loadReports;
+document.getElementById('exportReports').onclick=exportReportsCSV;
 document.getElementById('reportMonth').onchange=loadReports;
 document.getElementById('reportEmployee').onchange=loadReports;
 document.getElementById('teamSearch').oninput=renderTeamView;
