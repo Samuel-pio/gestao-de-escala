@@ -424,8 +424,8 @@ async function load(){
       sb(`solicitacoes?select=id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
       sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`)
     ]);
-    agendaNotes=notes;renderAgendaNotes();fillAgendaNoteEmployees();
-    teamCache=team;fillEmployees();document.getElementById('funcCount').textContent=team.length;
+    teamCache=team;fillEmployees();fillAgendaNoteEmployees();document.getElementById('funcCount').textContent=team.length;
+    agendaNotes=notes;renderAgendaNotes();
     const pending=requests.filter(r=>r.status==='Pendente');
     document.getElementById('pendingCount').textContent=pending.length;
     document.getElementById('pendingBadge').textContent=pending.length;
