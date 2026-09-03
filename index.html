@@ -30,12 +30,12 @@
   </div>
 </div>
 <div class="app" id="appShell" style="display:none"><aside><div class="brand"><b>CONEX</b><span>INTERNET</span></div><nav>
-<div class="nav on" id="dashboardNav">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav">☷ <span>Solicitações</span></div><div class="nav" id="historyNav">↺ <span>Histórico</span></div><div class="nav" id="teamNav">👥 <span>Equipe</span></div><div class="nav" id="usersNav">👤 <span>Usuários</span></div><div class="nav" id="reportsNav">▤ <span>Relatórios</span></div>
+<div class="nav on" id="dashboardNav">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav">☷ <span>Solicitações</span></div><div class="nav" id="historyNav">↺ <span>Histórico</span></div><div class="nav" id="teamNav">👥 <span>Equipe</span></div><div class="nav" id="plantaoNav">🟠 <span>Plantões</span></div><div class="nav" id="usersNav">👤 <span>Usuários</span></div><div class="nav" id="reportsNav">▤ <span>Relatórios</span></div>
 </nav><div class="profile"><div class="avatar">SP</div><div><b id="profileName">Administrador</b><small id="profileEmail">Conectado</small></div><button class="logout-btn" id="logoutBtn">Sair</button></div></aside>
 <main><div id="dashboardView"><header><div><h1>Olá, Samuel 👋</h1><p>Acompanhe a escala e as solicitações da equipe.</p></div><button class="bell">🔔</button></header>
 <section class="cards"><div class="card"><p>Funcionários</p><b id="funcCount">—</b><small id="funcLabel">ativos</small></div><div class="card"><p>Pendentes</p><b class="orange" id="pendingCount">—</b><small id="pendingLabel">no mês</small></div><div class="card"><p>Férias</p><b id="vacationCount">—</b><small id="vacationLabel">no mês</small></div><div class="card"><p>Folgas no mês</p><b id="leaveCount">—</b><small id="leaveLabel">dias aprovados</small></div></section>
 <section class="grid"><div class="box pending"><div class="boxhead"><div><h2>Solicitações pendentes</h2><p>Pedidos que ainda precisam de análise.</p></div><strong id="pendingBadge">—</strong></div><div id="pendingList"><div class="req"><span><b>Carregando...</b><small></small></span></div></div></div><div class="box legend"><h2>Resumo do sistema</h2><p>Use a <b>Agenda</b> para visualizar folgas, férias e solicitações por dia.</p><p>Use <b>Solicitações</b> para aprovar ou negar pedidos.</p><p>Use <b>Histórico</b> para consultar todos os registros.</p></div></section></div>
-<section id="agendaView" style="display:none"><header><div><h1>Agenda</h1><p>Visualize a escala, folgas, férias e solicitações da equipe.</p></div></header><section class="grid" style="margin-top:28px"><div class="calendar box"><div class="boxhead"><div><h2>Calendário</h2><p id="monthTitle">Carregando...</p></div><div class="arrows"><button id="prevMonth">‹</button><button id="nextMonth">›</button></div></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="month" id="month"></div></div><div class="side"><div class="box legend"><h2>Legenda</h2><p>🔴 Folga</p><p>🟡 Pendente</p><p>🔵 Férias</p><p>🟣 Folga do Plantão</p></div>
+<section id="agendaView" style="display:none"><header><div><h1>Agenda</h1><p>Visualize a escala, folgas, férias e solicitações da equipe.</p></div></header><section class="grid" style="margin-top:28px"><div class="calendar box"><div class="boxhead"><div><h2>Calendário</h2><p id="monthTitle">Carregando...</p></div><div class="arrows"><button id="prevMonth">‹</button><button id="nextMonth">›</button></div></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="month" id="month"></div></div><div class="side"><div class="box legend"><h2>Legenda</h2><p>🔴 Folga</p><p>🟡 Pendente</p><p>🔵 Férias</p><p>🟣 Folga do Plantão</p><p>🟠 Plantão</p></div>
 <div class="box" id="agendaNotesBox" style="margin-top:18px">
 <h2 style="margin-bottom:6px">Anotações da Agenda</h2>
 <p style="color:#71809a;margin:0 0 14px;font-size:13px">Clique em um dia do calendário para adicionar uma anotação.</p>
@@ -95,6 +95,24 @@
       </table>
     </div>
   </div>
+</section>
+<section id="plantaoView" style="display:none">
+<header><div><h1>Plantões</h1><p>Controle os períodos de plantão e gere a folga do sábado seguinte.</p></div><button class="btn primary" id="newPlantaoBtn">+ Novo plantão</button></header>
+<div class="box requests-box">
+  <div class="requests-toolbar">
+    <div><h2>Escala de plantão</h2><small id="plantaoTotal">Carregando...</small></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <select id="plantaoSectorFilter" style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a">
+        <option value="">Todos os setores</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option>
+      </select>
+      <input id="plantaoMonthFilter" type="month" style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a">
+    </div>
+  </div>
+  <div class="requests-table"><table>
+    <thead><tr><th>Funcionário</th><th>Setor</th><th>Período</th><th>Observação</th><th>Folga seguinte</th><th>Ações</th></tr></thead>
+    <tbody id="plantaoTableBody"><tr><td colspan="6">Carregando...</td></tr></tbody>
+  </table></div>
+</div>
 </section>
 <section id="usersView" style="display:none"><header><div><h1>Usuários</h1><p>Gerencie quem pode acessar o sistema.</p></div><button class="primary" id="newUserBtn">+ Novo usuário</button></header><div class="box table-box"><div class="table-scroll"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Setor</th><th>Status</th><th>Último acesso</th><th>Ações</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="7">Carregando...</td></tr></tbody></table></div></div></section><section id="reportsView" style="display:none">
   <header>
@@ -224,6 +242,7 @@
           <label><input type="checkbox" class="userPerm" value="solicitacoes"> Solicitações</label>
           <label><input type="checkbox" class="userPerm" value="historico"> Histórico</label>
           <label><input type="checkbox" class="userPerm" value="equipe"> Equipe</label>
+          <label><input type="checkbox" class="userPerm" value="plantoes"> Plantões</label>
           <label><input type="checkbox" class="userPerm" value="relatorios"> Relatórios</label>
         </div>
       </div>
@@ -260,7 +279,22 @@
     </form>
   </div>
 </div>
-<div class="modal" id="requestModal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><div><h2>Nova Solicitação</h2><p>Cadastre folga, férias ou folga do plantão.</p></div><button class="close" id="closeRequest" aria-label="Fechar">×</button></div><form id="requestForm"><div class="form-grid"><div class="field full"><label for="requestSector">Setor</label><select id="requestSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div><div class="field full"><label for="employee">Funcionário</label><select id="employee" required><option value="">Selecione o setor primeiro...</option></select></div><div class="field"><label for="startDate">Data inicial</label><input id="startDate" type="date" required></div><div class="field"><label for="endDate">Data final</label><input id="endDate" type="date"></div><div class="field"><label for="requestType">Status</label><select id="requestType" required><option value="Pendente">Pendente</option><option value="Aprovada">Folga aprovada</option><option value="Férias">Férias</option><option value="Folga do Plantão">Folga do Plantão</option></select></div><div class="field"><label for="reason">Motivo</label><input id="reason" type="text" placeholder="Opcional"></div><div class="field full"><label for="notes">Observação</label><textarea id="notes" placeholder="Opcional"></textarea></div></div><div class="form-actions"><button type="button" class="btn secondary" id="cancelRequest">Cancelar</button><button type="submit" class="btn primary" id="saveRequest">Salvar solicitação</button></div></form></div></div><div class="toast" id="toast"></div>
+<div class="modal" id="plantaoModal" aria-hidden="true">
+<div class="modal-card">
+  <div class="modal-head"><div><h2>Novo plantão</h2><p>Cadastre o período completo do plantonista.</p></div><button class="close" id="closePlantao" aria-label="Fechar">×</button></div>
+  <form id="plantaoForm">
+    <div class="form-grid">
+      <div class="field full"><label for="plantaoSector">Setor</label><select id="plantaoSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div>
+      <div class="field full"><label for="plantaoEmployee">Funcionário</label><select id="plantaoEmployee" required><option value="">Selecione o setor primeiro...</option></select></div>
+      <div class="field"><label for="plantaoStart">Data inicial</label><input id="plantaoStart" type="date" required></div>
+      <div class="field"><label for="plantaoEnd">Data final</label><input id="plantaoEnd" type="date" required></div>
+      <div class="field full"><label for="plantaoObs">Observação</label><textarea id="plantaoObs" placeholder="Opcional"></textarea></div>
+      <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input id="plantaoGenerateLeave" type="checkbox" checked style="width:auto"> Gerar automaticamente a Folga do Plantão no sábado seguinte</label></div>
+    </div>
+    <div class="form-actions"><button type="button" class="btn secondary" id="cancelPlantao">Cancelar</button><button type="submit" class="btn primary" id="savePlantao">Salvar plantão</button></div>
+  </form>
+</div>
+</div><div class="modal" id="requestModal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><div><h2>Nova Solicitação</h2><p>Cadastre folga, férias ou folga do plantão.</p></div><button class="close" id="closeRequest" aria-label="Fechar">×</button></div><form id="requestForm"><div class="form-grid"><div class="field full"><label for="requestSector">Setor</label><select id="requestSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div><div class="field full"><label for="employee">Funcionário</label><select id="employee" required><option value="">Selecione o setor primeiro...</option></select></div><div class="field"><label for="startDate">Data inicial</label><input id="startDate" type="date" required></div><div class="field"><label for="endDate">Data final</label><input id="endDate" type="date"></div><div class="field"><label for="requestType">Status</label><select id="requestType" required><option value="Pendente">Pendente</option><option value="Aprovada">Folga aprovada</option><option value="Férias">Férias</option><option value="Folga do Plantão">Folga do Plantão</option></select></div><div class="field"><label for="reason">Motivo</label><input id="reason" type="text" placeholder="Opcional"></div><div class="field full"><label for="notes">Observação</label><textarea id="notes" placeholder="Opcional"></textarea></div></div><div class="form-actions"><button type="button" class="btn secondary" id="cancelRequest">Cancelar</button><button type="submit" class="btn primary" id="saveRequest">Salvar solicitação</button></div></form></div></div><div class="toast" id="toast"></div>
 <script>
 const SUPABASE_URL='https://ukslbooebvsucsgjnsqz.supabase.co';
 const SUPABASE_KEY='sb_publishable_h78yqOTcVdF8MFLMtIcajQ_6aUBDmsn';
@@ -318,10 +352,10 @@ function showLogin(){
   setTimeout(()=>document.getElementById('loginEmail').focus(),50);
 }
 
-const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','relatorios'];
+const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','relatorios'];
 const NAV_PERMISSION={
   dashboardNav:'dashboard',agendaNav:'agenda',openRequestNav:'nova_solicitacao',
-  requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',reportsNav:'relatorios'
+  requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',reportsNav:'relatorios'
 };
 function currentRole(){return authSession?.user?.app_metadata?.role||'usuario'}
 function currentSector(){return authSession?.user?.app_metadata?.sector||null}
@@ -344,6 +378,7 @@ function showFirstAllowedView(){
   if(canAccess('solicitacoes'))return showRequests();
   if(canAccess('historico'))return showHistory();
   if(canAccess('equipe'))return showTeam();
+  if(canAccess('plantoes'))return showPlantoes();
   if(canAccess('relatorios'))return showReports();
   hideViews();
 }
@@ -457,10 +492,11 @@ async function load(){
   document.getElementById('monthTitle').textContent=`${monthNames[mo]} de ${y}`;
   document.querySelectorAll('.card small').forEach((el,i)=>{if(i>0)el.textContent=monthNames[mo]});
   try{
-    const [team,requests,notes]=await Promise.all([
+    const [team,requests,notes,plantoes]=await Promise.all([
       sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc'),
       sb(`solicitacoes?select=id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
-      sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`)
+      sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`),
+      sb(`plantoes?select=id,data_inicial,data_final,funcionario_id,equipe(nome,setor)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`)
     ]);
     teamCache=team;fillEmployees();fillAgendaNoteEmployees();document.getElementById('funcCount').textContent=team.length;
     agendaNotes=notes;renderAgendaNotes();
@@ -476,7 +512,7 @@ async function load(){
       if(a<=b) leaveDays+=daysBetween(a,b);
     }
     document.getElementById('leaveCount').textContent=leaveDays;
-    renderCalendar(requests);
+    renderCalendar(requests,plantoes);
     renderPending(pending);
   }catch(e){
     console.error(e);
@@ -531,7 +567,7 @@ async function deleteAgendaNote(id){
   if(!window.confirm('Excluir esta anotação?'))return;
   try{await sb(`agenda_anotacoes?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Anotação excluída!');await load()}catch(e){console.error(e);showToast('Não foi possível excluir a anotação.')}
 }
-function renderCalendar(requests){
+function renderCalendar(requests,plantoes=[]){
   const m=document.getElementById('month');m.innerHTML='';
   const y=viewDate.getFullYear(), mo=viewDate.getMonth();
   const first=new Date(y,mo,1); let start=new Date(first);
@@ -543,16 +579,101 @@ function renderCalendar(requests){
     const key=iso(d);cell.dataset.date=key;cell.onclick=()=>selectAgendaDay(key,cell);
     const dayReq=requests.filter(r=>r.data_inicial<=key&&r.data_final>=key&&r.status!=='Negada');
     for(const r of dayReq){const [dot]=statusMeta(r.status);const sm=document.createElement('small');sm.textContent=`${dot} ${r.equipe?.nome||''}`;cell.appendChild(sm)}
+    const dayPlantao=plantoes.filter(r=>r.data_inicial<=key&&r.data_final>=key);
+    for(const r of dayPlantao){const sm=document.createElement('small');sm.textContent=`🟠 ${r.equipe?.nome||''}`;cell.appendChild(sm)}
     m.appendChild(cell);
   }
 }
 
 function setActiveNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));const n=document.getElementById(id);if(n)n.classList.add('on')}
-function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','usersView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
+function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','plantaoView','usersView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
 function showDashboard(){hideViews();document.getElementById('dashboardView').style.display='block';setActiveNav('dashboardNav')}
 function showAgenda(){hideViews();document.getElementById('agendaView').style.display='block';setActiveNav('agendaNav')}
 async function showRequests(){hideViews();document.getElementById('requestsView').style.display='block';setActiveNav('requestsNav');await loadAllRequests()}
 async function showHistory(){hideViews();document.getElementById('historyView').style.display='block';setActiveNav('historyNav');await loadHistory()}
+
+let plantaoRows=[];
+function nextSaturdayAfter(dateStr){
+  const d=new Date(dateStr+'T12:00:00');
+  let add=(6-d.getDay()+7)%7;if(add===0)add=7;
+  d.setDate(d.getDate()+add);return iso(d);
+}
+function fillPlantaoSectors(){
+  const sel=document.getElementById('plantaoSector');if(!sel)return;
+  const sectors=['Infraestrutura','Call Center','Operacional','Financeiro'];
+  if(currentRole()==='admin'){
+    sel.disabled=false;sel.innerHTML='<option value="">Selecione o setor...</option>'+sectors.map(x=>`<option>${x}</option>`).join('');
+  }else{
+    const sector=currentSector();sel.innerHTML=sector?`<option value="${safe(sector)}">${safe(sector)}</option>`:'<option value="">Setor não definido</option>';
+    sel.disabled=!!sector;sel.value=sector||'';
+  }
+  fillPlantaoEmployees();
+}
+function fillPlantaoEmployees(){
+  const sector=document.getElementById('plantaoSector').value;
+  const sel=document.getElementById('plantaoEmployee');
+  const list=sector?teamCache.filter(e=>e.setor===sector):[];
+  sel.innerHTML='<option value="">'+(sector?'Selecione...':'Selecione o setor primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+}
+function openPlantao(){
+  document.getElementById('plantaoForm').reset();
+  document.getElementById('plantaoGenerateLeave').checked=true;
+  fillPlantaoSectors();
+  document.getElementById('plantaoModal').classList.add('open');
+  document.getElementById('plantaoModal').setAttribute('aria-hidden','false');
+}
+function closePlantao(){
+  document.getElementById('plantaoModal').classList.remove('open');
+  document.getElementById('plantaoModal').setAttribute('aria-hidden','true');
+  document.getElementById('plantaoForm').reset();
+}
+async function showPlantoes(){
+  if(!canAccess('plantoes'))return;
+  hideViews();document.getElementById('plantaoView').style.display='block';setActiveNav('plantaoNav');
+  if(!document.getElementById('plantaoMonthFilter').value){
+    const d=new Date();document.getElementById('plantaoMonthFilter').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+  if(currentRole()!=='admin'){
+    const f=document.getElementById('plantaoSectorFilter');f.value=currentSector()||'';f.disabled=true;
+  }
+  await loadPlantoes();
+}
+async function loadPlantoes(){
+  const body=document.getElementById('plantaoTableBody');body.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';
+  try{
+    plantaoRows=await sb('plantoes?select=id,funcionario_id,data_inicial,data_final,observacao,folga_gerada,folga_solicitacao_id,equipe(nome,setor)&order=data_inicial.desc');
+    renderPlantoes();
+  }catch(e){console.error(e);body.innerHTML='<tr><td colspan="6">Erro ao carregar plantões.</td></tr>'}
+}
+function renderPlantoes(){
+  const sector=document.getElementById('plantaoSectorFilter').value;
+  const month=document.getElementById('plantaoMonthFilter').value;
+  let rows=plantaoRows.filter(r=>!sector||r.equipe?.setor===sector);
+  if(month){
+    const [y,m]=month.split('-').map(Number),from=`${y}-${String(m).padStart(2,'0')}-01`;
+    const last=new Date(y,m,0),to=iso(last);
+    rows=rows.filter(r=>r.data_inicial<=to&&r.data_final>=from);
+  }
+  document.getElementById('plantaoTotal').textContent=`${rows.length} plantão${rows.length===1?'':'ões'}`;
+  const body=document.getElementById('plantaoTableBody');
+  if(!rows.length){body.innerHTML='<tr><td colspan="6">Nenhum plantão encontrado.</td></tr>';return}
+  body.innerHTML=rows.map(r=>{
+    const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
+    const folga=r.folga_gerada?`🟣 ${fmtDate(nextSaturdayAfter(r.data_final))}`:'—';
+    const del=currentRole()==='admin'?`<button class="action-btn deny" onclick="deletePlantao(${r.id})">Excluir</button>`:'';
+    return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${safe(r.equipe?.setor||'—')}</td><td>${period}</td><td>${safe(r.observacao||'—')}</td><td>${folga}</td><td>${del||'—'}</td></tr>`;
+  }).join('');
+}
+async function deletePlantao(id){
+  if(currentRole()!=='admin')return;
+  const r=plantaoRows.find(x=>x.id===id);if(!r)return;
+  if(!window.confirm(`Excluir o plantão de ${r.equipe?.nome||'funcionário'} (${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)})?${r.folga_solicitacao_id?'\n\nA folga gerada automaticamente também será excluída.':''}`))return;
+  try{
+    if(r.folga_solicitacao_id)await sb(`solicitacoes?id=eq.${r.folga_solicitacao_id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    await sb(`plantoes?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    showToast('Plantão excluído!');await loadPlantoes();await load();
+  }catch(e){console.error(e);showToast('Não foi possível excluir o plantão.')}
+}
 async function showReports(){
   hideViews();
   document.getElementById('reportsView').style.display='block';
@@ -691,7 +812,7 @@ async function userAdminApi(payload){
 }
 function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Nunca'}
 function permissionLabel(p){
-  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',relatorios:'Relatórios'}[p]||p;
+  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',relatorios:'Relatórios'}[p]||p;
 }
 async function loadUsers(){
   const tbody=document.getElementById('usersTableBody');
@@ -849,6 +970,43 @@ async function updateRequestStatus(id,status){try{await sb(`solicitacoes?id=eq.$
 
 document.getElementById('saveAgendaNote').onclick=saveAgendaNote;
 document.getElementById('cancelAgendaNote').onclick=()=>{document.getElementById('agendaNoteForm').style.display='none';document.getElementById('saveAgendaNote').dataset.editId='';document.getElementById('saveAgendaNote').textContent='Salvar anotação';};
+
+document.getElementById('plantaoNav').onclick=()=>{if(canAccess('plantoes'))showPlantoes()};
+document.getElementById('newPlantaoBtn').onclick=openPlantao;
+document.getElementById('closePlantao').onclick=closePlantao;
+document.getElementById('cancelPlantao').onclick=closePlantao;
+document.getElementById('plantaoModal').onclick=e=>{if(e.target.id==='plantaoModal')closePlantao()};
+document.getElementById('plantaoSector').onchange=fillPlantaoEmployees;
+document.getElementById('plantaoSectorFilter').onchange=renderPlantoes;
+document.getElementById('plantaoMonthFilter').onchange=renderPlantoes;
+document.getElementById('plantaoForm').onsubmit=async e=>{
+  e.preventDefault();
+  const btn=document.getElementById('savePlantao');
+  const funcionario_id=Number(document.getElementById('plantaoEmployee').value);
+  const data_inicial=document.getElementById('plantaoStart').value;
+  const data_final=document.getElementById('plantaoEnd').value;
+  const observacao=document.getElementById('plantaoObs').value.trim()||null;
+  const gerarFolga=document.getElementById('plantaoGenerateLeave').checked;
+  if(!funcionario_id||!data_inicial||!data_final)return showToast('Preencha funcionário e período.');
+  if(data_final<data_inicial)return showToast('A data final não pode ser anterior à inicial.');
+  btn.disabled=true;btn.textContent='Salvando...';
+  try{
+    const created=await sb('plantoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({funcionario_id,data_inicial,data_final,observacao})});
+    const plantao=created?.[0];
+    if(gerarFolga&&plantao){
+      const folga=nextSaturdayAfter(data_final);
+      const req=await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
+        funcionario_id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
+        observacao:`Gerada automaticamente pelo plantão de ${fmtDate(data_inicial)} a ${fmtDate(data_final)}`
+      })});
+      const reqId=req?.[0]?.id;
+      if(reqId)await sb(`plantoes?id=eq.${plantao.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({folga_gerada:true,folga_solicitacao_id:reqId})});
+    }
+    closePlantao();showToast(gerarFolga?'Plantão e folga cadastrados!':'Plantão cadastrado!');
+    await loadPlantoes();await loadAllRequests();await load();
+  }catch(err){console.error(err);showToast('Não foi possível salvar o plantão.')}
+  finally{btn.disabled=false;btn.textContent='Salvar plantão'}
+};
 document.getElementById('prevMonth').onclick=()=>{viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()-1,1);load()};
 document.getElementById('nextMonth').onclick=()=>{viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()+1,1);load()};
 document.getElementById('openRequestNav').onclick=()=>{if(canAccess('nova_solicitacao'))openRequest()};
