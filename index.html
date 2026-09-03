@@ -509,6 +509,10 @@ function fillRequestSectors(){
   }
   fillEmployees();
 }
+async function sbSafe(path, fallback=[]){
+  try{return await sb(path)}
+  catch(err){console.error('Falha parcial ao carregar:', path, err);return fallback}
+}
 async function load(){
   const y=viewDate.getFullYear(), mo=viewDate.getMonth();
   const first=startOfMonth(viewDate), last=endOfMonth(viewDate), from=iso(first), to=iso(last);
@@ -519,7 +523,7 @@ async function load(){
       sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc'),
       sb(`solicitacoes?select=id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
       sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`),
-      sb(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe(nome,setor),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`)
+      sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`,[])
     ]);
     teamCache=team;fillEmployees();fillAgendaNoteEmployees();document.getElementById('funcCount').textContent=team.length;
     agendaNotes=notes;renderAgendaNotes();
@@ -702,7 +706,7 @@ async function buildAutoPlantaoPreview(){
   if(!autoPlantaoOrder.length)return showToast('Não há funcionários no rodízio.');
   try{
     const vacations=await sb(`solicitacoes?select=funcionario_id,data_inicial,data_final,status,equipe(nome)&status=eq.Férias&data_inicial=lte.${until}&data_final=gte.${start}&order=data_inicial.asc`);
-    const existing=await sb(`plantoes?select=id,funcionario_id,data_inicial,data_final,equipe(nome)&data_inicial=lte.${until}&data_final=gte.${start}`);
+    const existing=await sb(`plantoes?select=id,funcionario_id,data_inicial,data_final,equipe:equipe!plantoes_funcionario_id_fkey(nome)&data_inicial=lte.${until}&data_final=gte.${start}`);
     const rows=[];let weekStart=start;let cursor=0;let guard=0;
     while(weekStart<=until&&guard<200){
       guard++;
@@ -787,7 +791,7 @@ async function showPlantoes(){
 async function loadPlantoes(){
   const body=document.getElementById('plantaoTableBody');body.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';
   try{
-    plantaoRows=await sb('plantoes?select=id,funcionario_id,funcionario2_id,data_inicial,data_final,observacao,folga_gerada,folga_solicitacao_id,folga2_solicitacao_id,equipe(nome,setor),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor)&order=data_inicial.desc');
+    plantaoRows=await sb('plantoes?select=id,funcionario_id,funcionario2_id,data_inicial,data_final,observacao,folga_gerada,folga_solicitacao_id,folga2_solicitacao_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor)&order=data_inicial.desc');
     renderPlantoes();
   }catch(e){console.error(e);body.innerHTML='<tr><td colspan="6">Erro ao carregar plantões.</td></tr>'}
 }
