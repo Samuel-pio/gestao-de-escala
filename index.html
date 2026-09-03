@@ -131,7 +131,7 @@ header h1,header p{overflow-wrap:anywhere}
 <div class="app" id="appShell" style="display:none"><aside><button class="sidebar-toggle" id="sidebarToggle" title="Recolher menu" aria-label="Recolher menu">‹</button><div class="brand"><b>CONEX</b><span>INTERNET</span></div><nav>
 <div class="nav on" id="dashboardNav" data-label="Dashboard">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav" data-label="Agenda">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav" data-label="Nova Solicitação">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav" data-label="Solicitações">☷ <span>Solicitações</span></div><div class="nav" id="historyNav" data-label="Histórico">↺ <span>Histórico</span></div><div class="nav" id="teamNav" data-label="Equipe">👥 <span>Equipe</span></div><div class="nav" id="plantaoNav" data-label="Plantões">🟠 <span>Plantões</span></div><div class="nav" id="usersNav" data-label="Usuários">👤 <span>Usuários</span></div><div class="nav" id="reportsNav" data-label="Relatórios">▤ <span>Relatórios</span></div>
 </nav><div class="profile"><div class="avatar">SP</div><div><b id="profileName">Administrador</b><small id="profileEmail">Conectado</small></div><button class="logout-btn" id="logoutBtn">Sair</button></div></aside>
-<main><div id="dashboardView"><header><div><h1>Olá, Samuel 👋</h1><p>Acompanhe a escala e as solicitações da equipe.</p></div><button class="bell">🔔</button></header>
+<main><div id="dashboardView"><header><div><h1 id="dashboardGreeting">Olá 👋</h1><p>Acompanhe a escala e as solicitações da equipe.</p></div><button class="bell">🔔</button></header>
 <section class="cards">
 <div class="card"><p>Funcionários ativos</p><b id="funcCount">—</b><small>na equipe</small></div>
 <div class="card"><p>Trabalhando hoje</p><b id="workingTodayCount">—</b><small>disponíveis</small></div>
@@ -534,8 +534,16 @@ function showApp(){
   document.getElementById('appShell').style.display='flex';
   const email=authSession?.user?.email||'Usuário autenticado';
   document.getElementById('profileEmail').textContent=email;
-  const name=(authSession?.user?.user_metadata?.name||email.split('@')[0]||'Administrador').replace(/[._-]+/g,' ');
-  document.getElementById('profileName').textContent=name.replace(/\b\w/g,c=>c.toUpperCase());
+  const rawName=(authSession?.user?.user_metadata?.name||email.split('@')[0]||'Administrador').replace(/[._-]+/g,' ').trim();
+  const displayName=rawName.replace(/\b\w/g,c=>c.toUpperCase());
+  document.getElementById('profileName').textContent=displayName;
+  const greeting=document.getElementById('dashboardGreeting');
+  if(greeting)greeting.textContent=`Olá, ${displayName} 👋`;
+  const avatar=document.querySelector('.avatar');
+  if(avatar){
+    const initials=displayName.split(/\s+/).filter(Boolean).slice(0,2).map(p=>p[0]).join('').toUpperCase();
+    avatar.textContent=initials||'U';
+  }
   applyAccessControls();
 }
 async function initAuth(){
