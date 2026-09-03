@@ -73,6 +73,9 @@
           <option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option>
           <option value="__sem__">Sem setor</option>
         </select>
+        <select id="teamCityFilter" style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a">
+          <option value="">Todas as cidades</option><option>Buritis</option><option>Cabeceiras</option><option>Arinos</option><option>Urucuia</option><option value="__sem__">Sem cidade</option>
+        </select>
         <input id="teamSearch" type="search" placeholder="Buscar funcionário..."
           style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a;min-width:240px;outline:none">
         <button class="btn primary" id="openEmployee">+ Novo funcionário</button>
@@ -85,19 +88,20 @@
           <tr>
             <th>Funcionário</th>
             <th>Setor</th>
+            <th>Cidade</th>
             <th>Status</th>
             <th>Ações</th>
           </tr>
         </thead>
         <tbody id="teamTableBody">
-          <tr><td colspan="4">Carregando...</td></tr>
+          <tr><td colspan="5">Carregando...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 </section>
 <section id="plantaoView" style="display:none">
-<header><div><h1>Plantões</h1><p>Controle os períodos de plantão e gere a folga do sábado seguinte.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn secondary" id="autoPlantaoBtn">⚙ Gerar escala automática</button><button class="btn primary" id="newPlantaoBtn">+ Novo plantão</button></div></header>
+<header><div><h1>Plantões</h1><p>Controle os períodos de plantão de Buritis e gere a folga do sábado seguinte.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn secondary" id="autoPlantaoBtn">⚙ Gerar escala automática</button><button class="btn primary" id="newPlantaoBtn">+ Novo plantão</button></div></header>
 <div class="box requests-box">
   <div class="requests-toolbar">
     <div><h2>Escala de plantão</h2><small id="plantaoTotal">Carregando...</small></div>
@@ -203,6 +207,10 @@
           <label for="editEmployeeSector">Setor</label>
           <select id="editEmployeeSector"><option value="">Sem setor</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select>
         </div>
+        <div class="field full">
+          <label for="editEmployeeCity">Cidade</label>
+          <select id="editEmployeeCity" required><option value="">Selecione a cidade...</option><option>Buritis</option><option>Cabeceiras</option><option>Arinos</option><option>Urucuia</option></select>
+        </div>
       </div>
       <div class="form-actions">
         <button type="button" class="btn secondary" id="cancelEditEmployee">Cancelar</button>
@@ -271,6 +279,10 @@
           <label for="employeeSector">Setor</label>
           <select id="employeeSector"><option value="">Sem setor</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select>
         </div>
+        <div class="field full">
+          <label for="employeeCity">Cidade</label>
+          <select id="employeeCity" required><option value="">Selecione a cidade...</option><option>Buritis</option><option>Cabeceiras</option><option>Arinos</option><option>Urucuia</option></select>
+        </div>
       </div>
       <div class="form-actions">
         <button type="button" class="btn secondary" id="cancelEmployee">Cancelar</button>
@@ -304,7 +316,7 @@
 </div>
 </div><div class="modal" id="plantaoModal" aria-hidden="true">
 <div class="modal-card">
-  <div class="modal-head"><div><h2>Novo plantão</h2><p>Cadastre o período completo do plantonista.</p></div><button class="close" id="closePlantao" aria-label="Fechar">×</button></div>
+  <div class="modal-head"><div><h2>Novo plantão</h2><p>Cadastre a dupla de Buritis para o período completo do plantão.</p></div><button class="close" id="closePlantao" aria-label="Fechar">×</button></div>
   <form id="plantaoForm">
     <div class="form-grid">
       <div class="field full"><label for="plantaoSector">Setor</label><select id="plantaoSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div>
@@ -477,6 +489,7 @@ function editEmployee(id){
   document.getElementById('editEmployeeId').value=id;
   document.getElementById('editEmployeeName').value=row.nome||'';
   document.getElementById('editEmployeeSector').value=row.setor||'';
+  document.getElementById('editEmployeeCity').value=row.cidade||'';
   document.getElementById('editEmployeeModal').classList.add('open');
   document.getElementById('editEmployeeModal').setAttribute('aria-hidden','false');
   setTimeout(()=>document.getElementById('editEmployeeName').focus(),50);
@@ -520,7 +533,7 @@ async function load(){
   document.querySelectorAll('.card small').forEach((el,i)=>{if(i>0)el.textContent=monthNames[mo]});
   try{
     const [team,requests,notes,plantoes]=await Promise.all([
-      sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc'),
+      sb('equipe?select=id,nome,setor,cidade,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc'),
       sb(`solicitacoes?select=id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
       sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`),
       sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`,[])
@@ -638,8 +651,8 @@ function fillPlantaoSectors(){
 }
 function fillPlantaoEmployees(){
   const sector=document.getElementById('plantaoSector').value;
-  const list=sector?teamCache.filter(e=>e.setor===sector):[];
-  const html='<option value="">'+(sector?'Selecione...':'Selecione o setor primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  const list=sector?teamCache.filter(e=>e.setor===sector&&e.cidade==='Buritis'):[];
+  const html='<option value="">'+(sector?'Selecione técnico de Buritis...':'Selecione o setor primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
   document.getElementById('plantaoEmployee').innerHTML=html;
   document.getElementById('plantaoEmployee2').innerHTML=html;
 }
@@ -673,14 +686,14 @@ function closeAutoPlantao(){
 }
 function loadAutoPlantaoEmployees(){
   const sector=document.getElementById('autoPlantaoSector').value;
-  autoPlantaoOrder=sector?teamCache.filter(e=>e.setor===sector).map(e=>({id:e.id,nome:e.nome})):[];
+  autoPlantaoOrder=sector?teamCache.filter(e=>e.setor===sector&&e.cidade==='Buritis').map(e=>({id:e.id,nome:e.nome})):[];
   renderAutoPlantaoOrder();
   document.getElementById('autoPlantaoPreview').style.display='none';
   document.getElementById('saveAutoPlantao').disabled=true;
 }
 function renderAutoPlantaoOrder(){
   const box=document.getElementById('autoPlantaoOrder');
-  if(!autoPlantaoOrder.length){box.innerHTML='<div style="padding:12px;color:#64748b">Nenhum funcionário ativo neste setor.</div>';return}
+  if(!autoPlantaoOrder.length){box.innerHTML='<div style="padding:12px;color:#64748b">Nenhum técnico ativo de Buritis neste setor.</div>';return}
   box.innerHTML=autoPlantaoOrder.map((e,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:${i?'1px solid #edf1f5':'0'}">
     <b style="width:28px">${i+1}.</b><span style="flex:1">${safe(e.nome)}</span>
     <button type="button" class="mini-btn mutebtn" onclick="moveAutoPlantao(${i},-1)" ${i===0?'disabled':''}>↑</button>
@@ -1028,36 +1041,39 @@ function closeUserModal(){
 async function showTeam(){hideViews();document.getElementById('teamView').style.display='block';setActiveNav('teamNav');await loadTeamView()}
 async function loadTeamView(){
   const body=document.getElementById('teamTableBody');
-  body.innerHTML='<tr><td colspan="4">Carregando...</td></tr>';
+  body.innerHTML='<tr><td colspan="5">Carregando...</td></tr>';
   try{
-    window.teamViewRows=await sb('equipe?select=id,nome,setor,ativo&order=setor.asc.nullslast,nome.asc');
+    window.teamViewRows=await sb('equipe?select=id,nome,setor,cidade,ativo&order=setor.asc.nullslast,nome.asc');
     renderTeamView();
   }catch(e){
     console.error(e);
-    body.innerHTML='<tr><td colspan="4">Erro ao carregar equipe.</td></tr>';
+    body.innerHTML='<tr><td colspan="5">Erro ao carregar equipe.</td></tr>';
   }
 }
 function renderTeamView(){
   const q=(document.getElementById('teamSearch').value||'').trim().toLowerCase();
   const status=document.getElementById('teamStatusFilter').value;
   const sector=document.getElementById('teamSectorFilter').value;
+  const city=document.getElementById('teamCityFilter').value;
   const rows=(window.teamViewRows||[]).filter(r=>{
     const nomeOk=!q||(r.nome||'').toLowerCase().includes(q);
     const statusOk=status==='todos'||(status==='ativos'&&r.ativo)||(status==='inativos'&&!r.ativo);
     const sectorOk=!sector||(sector==='__sem__'?!r.setor:r.setor===sector);
-    return nomeOk&&statusOk&&sectorOk;
+    const cityOk=!city||(city==='__sem__'?!r.cidade:r.cidade===city);
+    return nomeOk&&statusOk&&sectorOk&&cityOk;
   });
   const ativos=rows.filter(r=>r.ativo).length;
   const inativos=rows.filter(r=>!r.ativo).length;
   document.getElementById('teamTotal').textContent=`${rows.length} funcionário${rows.length===1?'':'s'} • ${ativos} ativo${ativos===1?'':'s'} • ${inativos} inativo${inativos===1?'':'s'}`;
   const body=document.getElementById('teamTableBody');
   if(!rows.length){
-    body.innerHTML='<tr><td colspan="4">Nenhum funcionário encontrado.</td></tr>';
+    body.innerHTML='<tr><td colspan="5">Nenhum funcionário encontrado.</td></tr>';
     return;
   }
   body.innerHTML=rows.map(r=>`<tr>
     <td><b>${safe(r.nome||'Funcionário')}</b></td>
     <td>${r.setor?`<span class="status-pill" style="background:#eef4ff;color:#234a7d">${safe(r.setor)}</span>`:'<span style="color:#94a3b8">Sem setor</span>'}</td>
+    <td>${r.cidade?`<span class="status-pill" style="background:#f6f3ff;color:#5b3fa3">${safe(r.cidade)}</span>`:'<span style="color:#94a3b8">Sem cidade</span>'}</td>
     <td>${r.ativo
       ? '<span class="status-pill" style="background:#eaf8ef;color:#16803c">● Ativo</span>'
       : '<span class="status-pill" style="background:#f1f3f5;color:#697386">● Inativo</span>'}</td>
@@ -1079,7 +1095,7 @@ async function toggleEmployee(id,isActive){
     });
     showToast(`Funcionário ${isActive?'inativado':'ativado'} com sucesso!`);
     await loadTeamView();
-    teamCache=await sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc');
+    teamCache=await sb('equipe?select=id,nome,setor,cidade,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc');
     fillEmployees();
     await fillReportEmployees();
   }catch(err){
@@ -1188,6 +1204,7 @@ document.getElementById('reportEmployee').onchange=loadReports;
 document.getElementById('teamSearch').oninput=renderTeamView;
 document.getElementById('teamStatusFilter').onchange=renderTeamView;
 document.getElementById('teamSectorFilter').onchange=renderTeamView;
+document.getElementById('teamCityFilter').onchange=renderTeamView;
 document.getElementById('openEmployee').onclick=openEmployee;
 document.getElementById('closeEmployee').onclick=closeEmployee;
 document.getElementById('cancelEmployee').onclick=closeEmployee;
@@ -1268,6 +1285,7 @@ document.getElementById('editEmployeeForm').onsubmit=async e=>{
   const id=document.getElementById('editEmployeeId').value;
   const name=document.getElementById('editEmployeeName').value.trim().replace(/\s+/g,' ');
   const setor=document.getElementById('editEmployeeSector').value||null;
+  const cidade=document.getElementById('editEmployeeCity').value||null;
   const btn=document.getElementById('saveEditEmployee');
   if(!name){showToast('Informe o nome do funcionário.');return}
   btn.disabled=true;btn.textContent='Salvando...';
@@ -1275,12 +1293,12 @@ document.getElementById('editEmployeeForm').onsubmit=async e=>{
     await sb(`equipe?id=eq.${id}`,{
       method:'PATCH',
       headers:{'Content-Type':'application/json','Prefer':'return=representation'},
-      body:JSON.stringify({nome:name,setor})
+      body:JSON.stringify({nome:name,setor,cidade})
     });
     closeEditEmployee();
     showToast('Funcionário atualizado com sucesso!');
     await loadTeamView();
-    teamCache=await sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc');
+    teamCache=await sb('equipe?select=id,nome,setor,cidade,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc');
     fillEmployees();fillAgendaNoteEmployees();
     await load();
   }catch(err){
@@ -1293,20 +1311,22 @@ document.getElementById('employeeForm').onsubmit=async e=>{
   e.preventDefault();
   const name=document.getElementById('employeeName').value.trim().replace(/\s+/g,' ');
   const setor=document.getElementById('employeeSector').value||null;
+  const cidade=document.getElementById('employeeCity').value||null;
   const btn=document.getElementById('saveEmployee');
   if(!name){showToast('Informe o nome do funcionário.');return}
+  if(!cidade){showToast('Selecione a cidade do funcionário.');return}
   btn.disabled=true;
   btn.textContent='Cadastrando...';
   try{
     await sb('equipe',{
       method:'POST',
       headers:{'Content-Type':'application/json','Prefer':'return=representation'},
-      body:JSON.stringify({nome:name,setor,ativo:true})
+      body:JSON.stringify({nome:name,setor,cidade,ativo:true})
     });
     closeEmployee();
     showToast('Funcionário cadastrado com sucesso!');
     await loadTeamView();
-    teamCache=await sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc');
+    teamCache=await sb('equipe?select=id,nome,setor,cidade,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc');
     fillEmployees();fillAgendaNoteEmployees();
   }catch(err){
     console.error(err);
