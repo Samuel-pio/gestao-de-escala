@@ -96,7 +96,7 @@
     </div>
   </div>
 </section>
-<section id="usersView" style="display:none"><header><div><h1>Usuários</h1><p>Gerencie quem pode acessar o sistema.</p></div><button class="primary" id="newUserBtn">+ Novo usuário</button></header><div class="box table-box"><div class="table-scroll"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Último acesso</th><th>Ações</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="6">Carregando...</td></tr></tbody></table></div></div></section><section id="reportsView" style="display:none">
+<section id="usersView" style="display:none"><header><div><h1>Usuários</h1><p>Gerencie quem pode acessar o sistema.</p></div><button class="primary" id="newUserBtn">+ Novo usuário</button></header><div class="box table-box"><div class="table-scroll"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Setor</th><th>Status</th><th>Último acesso</th><th>Ações</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="7">Carregando...</td></tr></tbody></table></div></div></section><section id="reportsView" style="display:none">
   <header>
     <div>
       <h1>Relatórios</h1>
@@ -211,6 +211,9 @@
             <option value="admin">Administrador</option>
           </select>
         </label>
+        <label id="userSectorLabel">Setor de acesso
+          <select id="userSector"><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select>
+        </label>
       </div>
       <div id="permissionsBox" style="margin-top:18px;border-top:1px solid #e5e7eb;padding-top:16px">
         <div style="margin-bottom:10px"><b>Permissões de acesso</b><div id="permissionsHint" style="font-size:12px;color:#64748b;margin-top:3px">Marque apenas as áreas que esse usuário poderá acessar.</div></div>
@@ -257,7 +260,7 @@
     </form>
   </div>
 </div>
-<div class="modal" id="requestModal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><div><h2>Nova Solicitação</h2><p>Cadastre folga, férias ou folga do plantão.</p></div><button class="close" id="closeRequest" aria-label="Fechar">×</button></div><form id="requestForm"><div class="form-grid"><div class="field full"><label for="employee">Funcionário</label><select id="employee" required><option value="">Carregando equipe...</option></select></div><div class="field"><label for="startDate">Data inicial</label><input id="startDate" type="date" required></div><div class="field"><label for="endDate">Data final</label><input id="endDate" type="date"></div><div class="field"><label for="requestType">Status</label><select id="requestType" required><option value="Pendente">Pendente</option><option value="Aprovada">Folga aprovada</option><option value="Férias">Férias</option><option value="Folga do Plantão">Folga do Plantão</option></select></div><div class="field"><label for="reason">Motivo</label><input id="reason" type="text" placeholder="Opcional"></div><div class="field full"><label for="notes">Observação</label><textarea id="notes" placeholder="Opcional"></textarea></div></div><div class="form-actions"><button type="button" class="btn secondary" id="cancelRequest">Cancelar</button><button type="submit" class="btn primary" id="saveRequest">Salvar solicitação</button></div></form></div></div><div class="toast" id="toast"></div>
+<div class="modal" id="requestModal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><div><h2>Nova Solicitação</h2><p>Cadastre folga, férias ou folga do plantão.</p></div><button class="close" id="closeRequest" aria-label="Fechar">×</button></div><form id="requestForm"><div class="form-grid"><div class="field full"><label for="requestSector">Setor</label><select id="requestSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div><div class="field full"><label for="employee">Funcionário</label><select id="employee" required><option value="">Selecione o setor primeiro...</option></select></div><div class="field"><label for="startDate">Data inicial</label><input id="startDate" type="date" required></div><div class="field"><label for="endDate">Data final</label><input id="endDate" type="date"></div><div class="field"><label for="requestType">Status</label><select id="requestType" required><option value="Pendente">Pendente</option><option value="Aprovada">Folga aprovada</option><option value="Férias">Férias</option><option value="Folga do Plantão">Folga do Plantão</option></select></div><div class="field"><label for="reason">Motivo</label><input id="reason" type="text" placeholder="Opcional"></div><div class="field full"><label for="notes">Observação</label><textarea id="notes" placeholder="Opcional"></textarea></div></div><div class="form-actions"><button type="button" class="btn secondary" id="cancelRequest">Cancelar</button><button type="submit" class="btn primary" id="saveRequest">Salvar solicitação</button></div></form></div></div><div class="toast" id="toast"></div>
 <script>
 const SUPABASE_URL='https://ukslbooebvsucsgjnsqz.supabase.co';
 const SUPABASE_KEY='sb_publishable_h78yqOTcVdF8MFLMtIcajQ_6aUBDmsn';
@@ -321,6 +324,7 @@ const NAV_PERMISSION={
   requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',reportsNav:'relatorios'
 };
 function currentRole(){return authSession?.user?.app_metadata?.role||'usuario'}
+function currentSector(){return authSession?.user?.app_metadata?.sector||null}
 function currentPermissions(){
   if(currentRole()==='admin')return ALL_PERMISSIONS;
   const p=authSession?.user?.app_metadata?.permissions;
@@ -425,9 +429,28 @@ function closeEditEmployee(){
 }
 function openEmployee(){document.getElementById('employeeModal').classList.add('open');document.getElementById('employeeModal').setAttribute('aria-hidden','false');setTimeout(()=>document.getElementById('employeeName').focus(),50)}
 function closeEmployee(){document.getElementById('employeeModal').classList.remove('open');document.getElementById('employeeModal').setAttribute('aria-hidden','true');document.getElementById('employeeForm').reset()}
-function openRequest(){document.getElementById('requestModal').classList.add('open');document.getElementById('requestModal').setAttribute('aria-hidden','false')}
+function openRequest(){fillRequestSectors();document.getElementById('requestModal').classList.add('open');document.getElementById('requestModal').setAttribute('aria-hidden','false')}
 function closeRequest(){document.getElementById('requestModal').classList.remove('open');document.getElementById('requestModal').setAttribute('aria-hidden','true')}
-function fillEmployees(){const select=document.getElementById('employee');select.innerHTML='<option value="">Selecione...</option>'+teamCache.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('')}
+function fillEmployees(){
+  const select=document.getElementById('employee');
+  const sector=document.getElementById('requestSector')?.value||'';
+  const list=sector?teamCache.filter(e=>e.setor===sector):[];
+  select.innerHTML='<option value="">'+(sector?'Selecione...':'Selecione o setor primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+}
+function fillRequestSectors(){
+  const sel=document.getElementById('requestSector');if(!sel)return;
+  const sectors=['Infraestrutura','Call Center','Operacional','Financeiro'];
+  if(currentRole()==='admin'){
+    sel.disabled=false;
+    sel.innerHTML='<option value="">Selecione o setor...</option>'+sectors.map(x=>`<option>${x}</option>`).join('');
+  }else{
+    const sector=currentSector();
+    sel.innerHTML=sector?`<option value="${safe(sector)}">${safe(sector)}</option>`:'<option value="">Setor não definido</option>';
+    sel.disabled=!!sector;
+    sel.value=sector||'';
+  }
+  fillEmployees();
+}
 async function load(){
   const y=viewDate.getFullYear(), mo=viewDate.getMonth();
   const first=startOfMonth(viewDate), last=endOfMonth(viewDate), from=iso(first), to=iso(last);
@@ -435,7 +458,7 @@ async function load(){
   document.querySelectorAll('.card small').forEach((el,i)=>{if(i>0)el.textContent=monthNames[mo]});
   try{
     const [team,requests,notes]=await Promise.all([
-      sb('equipe?select=id,nome&ativo=eq.true&order=nome.asc'),
+      sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc'),
       sb(`solicitacoes?select=id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
       sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`)
     ]);
@@ -672,7 +695,7 @@ function permissionLabel(p){
 }
 async function loadUsers(){
   const tbody=document.getElementById('usersTableBody');
-  tbody.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="7">Carregando...</td></tr>';
   try{
     const {users}=await userAdminApi({action:'list'});
     window.userRows=users;
@@ -682,6 +705,7 @@ async function loadUsers(){
         <td>${safe(u.name||'-')}<div style="font-size:11px;color:#64748b;margin-top:3px">${safe(perms)}</div></td>
         <td>${safe(u.email||'-')}</td>
         <td>${u.role==='admin'?'Administrador':'Usuário'}</td>
+        <td>${u.role==='admin'?'<span style="color:#64748b">Todos</span>':safe(u.sector||'Não definido')}</td>
         <td>${u.active?'🟢 Ativo':'⚪ Inativo'}</td>
         <td>${fmtLastAccess(u.last_sign_in_at)}</td>
         <td>
@@ -689,8 +713,8 @@ async function loadUsers(){
           <button type="button" class="action-btn ${u.active?'deny':'approve'}" data-user-toggle="${u.id}" data-active="${u.active}">${u.active?'Inativar':'Ativar'}</button>
         </td>
       </tr>`;
-    }).join('')||'<tr><td colspan="6">Nenhum usuário.</td></tr>';
-  }catch(err){console.error(err);tbody.innerHTML=`<tr><td colspan="6">${safe(err.message)}</td></tr>`}
+    }).join('')||'<tr><td colspan="7">Nenhum usuário.</td></tr>';
+  }catch(err){console.error(err);tbody.innerHTML=`<tr><td colspan="7">${safe(err.message)}</td></tr>`}
 }
 async function showUsers(){
   if(currentRole()!=='admin'){showToast('Acesso restrito a administradores.');return}
@@ -700,7 +724,12 @@ function selectedUserPermissions(){return [...document.querySelectorAll('.userPe
 function updatePermissionUI(){
   const isAdmin=document.getElementById('userRole').value==='admin';
   document.querySelectorAll('.userPerm').forEach(cb=>{cb.disabled=isAdmin;if(isAdmin)cb.checked=true});
-  document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema.':'Marque apenas as áreas que esse usuário poderá acessar.';
+  const sector=document.getElementById('userSector');
+  sector.disabled=isAdmin;
+  sector.required=!isAdmin;
+  if(isAdmin)sector.value='';
+  document.getElementById('userSectorLabel').style.opacity=isAdmin?'.55':'1';
+  document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema e a todos os setores.':'Marque apenas as áreas que esse usuário poderá acessar.';
 }
 function openUserModal(user=null){
   document.getElementById('userForm').reset();
@@ -709,6 +738,7 @@ function openUserModal(user=null){
   document.getElementById('userEmail').value=user?.email||'';
   document.getElementById('userEmail').disabled=!!user;
   document.getElementById('userRole').value=user?.role||'usuario';
+  document.getElementById('userSector').value=user?.sector||'';
   document.getElementById('userPassword').required=!user;
   document.getElementById('userPassword').placeholder=user?'Deixe em branco para manter a senha':'Mínimo 6 caracteres';
   document.getElementById('userModalTitle').textContent=user?'Editar usuário':'Novo usuário';
@@ -726,13 +756,13 @@ function closeUserModal(){
 async function showTeam(){hideViews();document.getElementById('teamView').style.display='block';setActiveNav('teamNav');await loadTeamView()}
 async function loadTeamView(){
   const body=document.getElementById('teamTableBody');
-  body.innerHTML='<tr><td colspan="3">Carregando...</td></tr>';
+  body.innerHTML='<tr><td colspan="4">Carregando...</td></tr>';
   try{
     window.teamViewRows=await sb('equipe?select=id,nome,setor,ativo&order=setor.asc.nullslast,nome.asc');
     renderTeamView();
   }catch(e){
     console.error(e);
-    body.innerHTML='<tr><td colspan="3">Erro ao carregar equipe.</td></tr>';
+    body.innerHTML='<tr><td colspan="4">Erro ao carregar equipe.</td></tr>';
   }
 }
 function renderTeamView(){
@@ -777,7 +807,7 @@ async function toggleEmployee(id,isActive){
     });
     showToast(`Funcionário ${isActive?'inativado':'ativado'} com sucesso!`);
     await loadTeamView();
-    teamCache=await sb('equipe?select=id,nome&ativo=eq.true&order=nome.asc');
+    teamCache=await sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc');
     fillEmployees();
     await fillReportEmployees();
   }catch(err){
@@ -879,15 +909,17 @@ document.getElementById('userForm').onsubmit=async e=>{
     const id=document.getElementById('userId').value;
     const role=document.getElementById('userRole').value;
     const permissions=role==='admin'?ALL_PERMISSIONS:selectedUserPermissions();
+    const sector=role==='admin'?null:document.getElementById('userSector').value;
     if(role!=='admin'&&!permissions.length)throw new Error('Selecione pelo menos uma permissão para o usuário.');
+    if(role!=='admin'&&!sector)throw new Error('Selecione o setor de acesso do usuário.');
     if(id){
-      const payload={action:'update',id,name:document.getElementById('userName').value.trim(),role,permissions};
+      const payload={action:'update',id,name:document.getElementById('userName').value.trim(),role,permissions,sector};
       const pwd=document.getElementById('userPassword').value;
       if(pwd)payload.password=pwd;
       await userAdminApi(payload);
       showToast('Usuário atualizado com sucesso!');
     }else{
-      await userAdminApi({action:'create',name:document.getElementById('userName').value.trim(),email:document.getElementById('userEmail').value.trim(),password:document.getElementById('userPassword').value,role,permissions});
+      await userAdminApi({action:'create',name:document.getElementById('userName').value.trim(),email:document.getElementById('userEmail').value.trim(),password:document.getElementById('userPassword').value,role,permissions,sector});
       showToast('Usuário cadastrado com sucesso!');
     }
     closeUserModal();await loadUsers()
@@ -925,8 +957,8 @@ document.getElementById('editEmployeeForm').onsubmit=async e=>{
     closeEditEmployee();
     showToast('Funcionário atualizado com sucesso!');
     await loadTeamView();
-    teamCache=await sb('equipe?select=id,nome&ativo=eq.true&order=nome.asc');
-    fillEmployees();
+    teamCache=await sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc');
+    fillEmployees();fillAgendaNoteEmployees();
     await load();
   }catch(err){
     console.error(err);
@@ -951,8 +983,8 @@ document.getElementById('employeeForm').onsubmit=async e=>{
     closeEmployee();
     showToast('Funcionário cadastrado com sucesso!');
     await loadTeamView();
-    teamCache=await sb('equipe?select=id,nome&ativo=eq.true&order=nome.asc');
-    fillEmployees();
+    teamCache=await sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc');
+    fillEmployees();fillAgendaNoteEmployees();
   }catch(err){
     console.error(err);
     const msg=String(err.message||'');
@@ -968,10 +1000,11 @@ document.getElementById('employeeForm').onsubmit=async e=>{
 };
 document.getElementById('historyStatusFilter').onchange=renderHistory;
 document.getElementById('newRequestBtn').onclick=openRequest;
+document.getElementById('requestSector').onchange=fillEmployees;
 document.getElementById('statusFilter').onchange=renderRequestsTable;
 document.getElementById('closeRequest').onclick=closeRequest;
 document.getElementById('cancelRequest').onclick=closeRequest;
 document.getElementById('requestModal').onclick=e=>{if(e.target.id==='requestModal')closeRequest()};
-document.getElementById('requestForm').onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('saveRequest');const employee=Number(document.getElementById('employee').value);const start=document.getElementById('startDate').value;const end=document.getElementById('endDate').value||start;const status=document.getElementById('requestType').value;const motivo=document.getElementById('reason').value.trim()||null;const observacao=document.getElementById('notes').value.trim()||null;if(!employee||!start)return showToast('Preencha funcionário e data inicial.');if(end<start)return showToast('A data final não pode ser anterior à inicial.');btn.disabled=true;btn.textContent='Salvando...';try{await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({funcionario_id:employee,data_inicial:start,data_final:end,status,motivo,observacao})});document.getElementById('requestForm').reset();document.getElementById('requestType').value='Pendente';closeRequest();showToast('Solicitação salva com sucesso.');viewDate=new Date(start+'T12:00:00');await load()}catch(err){console.error(err);showToast('Erro ao salvar a solicitação.')}finally{btn.disabled=false;btn.textContent='Salvar solicitação'}};
+document.getElementById('requestForm').onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('saveRequest');const sector=document.getElementById('requestSector').value;const employee=Number(document.getElementById('employee').value);const start=document.getElementById('startDate').value;const end=document.getElementById('endDate').value||start;const status=document.getElementById('requestType').value;const motivo=document.getElementById('reason').value.trim()||null;const observacao=document.getElementById('notes').value.trim()||null;if(!sector||!employee||!start)return showToast('Preencha setor, funcionário e data inicial.');if(end<start)return showToast('A data final não pode ser anterior à inicial.');btn.disabled=true;btn.textContent='Salvando...';try{await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({funcionario_id:employee,data_inicial:start,data_final:end,status,motivo,observacao})});document.getElementById('requestForm').reset();document.getElementById('requestType').value='Pendente';closeRequest();showToast('Solicitação salva com sucesso.');viewDate=new Date(start+'T12:00:00');await load()}catch(err){console.error(err);showToast('Erro ao salvar a solicitação.')}finally{btn.disabled=false;btn.textContent='Salvar solicitação'}};
 initAuth();
 </script></body></html>
