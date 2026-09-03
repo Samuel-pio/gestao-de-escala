@@ -109,7 +109,7 @@
     </div>
   </div>
   <div class="requests-table"><table>
-    <thead><tr><th>Funcionário</th><th>Setor</th><th>Período</th><th>Observação</th><th>Folga seguinte</th><th>Ações</th></tr></thead>
+    <thead><tr><th>Dupla</th><th>Setor</th><th>Período</th><th>Observação</th><th>Folga seguinte</th><th>Ações</th></tr></thead>
     <tbody id="plantaoTableBody"><tr><td colspan="6">Carregando...</td></tr></tbody>
   </table></div>
 </div>
@@ -281,7 +281,7 @@
 </div>
 <div class="modal" id="autoPlantaoModal" aria-hidden="true">
 <div class="modal-card" style="max-width:760px">
-  <div class="modal-head"><div><h2>Gerar escala automática</h2><p>Monte o rodízio semanal e pule automaticamente quem estiver de férias.</p></div><button class="close" id="closeAutoPlantao" aria-label="Fechar">×</button></div>
+  <div class="modal-head"><div><h2>Gerar escala automática</h2><p>Monte o rodízio em duplas e pule automaticamente quem estiver de férias.</p></div><button class="close" id="closeAutoPlantao" aria-label="Fechar">×</button></div>
   <form id="autoPlantaoForm">
     <div class="form-grid">
       <div class="field"><label for="autoPlantaoSector">Setor</label><select id="autoPlantaoSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div>
@@ -290,7 +290,7 @@
       <div class="field"><label style="display:flex;align-items:center;gap:8px;margin-top:28px"><input id="autoPlantaoGenerateLeave" type="checkbox" checked style="width:auto"> Gerar folga no sábado seguinte</label></div>
       <div class="field full">
         <label>Ordem do rodízio</label>
-        <p style="font-size:12px;color:#64748b;margin:4px 0 8px">Use ↑ e ↓ para definir quem vem primeiro. Quem estiver de férias na semana será pulado automaticamente.</p>
+        <p style="font-size:12px;color:#64748b;margin:4px 0 8px">Use ↑ e ↓ para definir quem vem primeiro. A cada semana o sistema seleciona 2 técnicos. Quem estiver de férias será pulado automaticamente.</p>
         <div id="autoPlantaoOrder" style="border:1px solid #dfe5ec;border-radius:10px;overflow:hidden"><div style="padding:12px;color:#64748b">Selecione um setor.</div></div>
       </div>
     </div>
@@ -308,7 +308,7 @@
   <form id="plantaoForm">
     <div class="form-grid">
       <div class="field full"><label for="plantaoSector">Setor</label><select id="plantaoSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div>
-      <div class="field full"><label for="plantaoEmployee">Funcionário</label><select id="plantaoEmployee" required><option value="">Selecione o setor primeiro...</option></select></div>
+      <div class="field"><label for="plantaoEmployee">Técnico 1</label><select id="plantaoEmployee" required><option value="">Selecione o setor primeiro...</option></select></div><div class="field"><label for="plantaoEmployee2">Técnico 2</label><select id="plantaoEmployee2" required><option value="">Selecione o setor primeiro...</option></select></div>
       <div class="field"><label for="plantaoStart">Data inicial</label><input id="plantaoStart" type="date" required></div>
       <div class="field"><label for="plantaoEnd">Data final</label><input id="plantaoEnd" type="date" required></div>
       <div class="field full"><label for="plantaoObs">Observação</label><textarea id="plantaoObs" placeholder="Opcional"></textarea></div>
@@ -519,7 +519,7 @@ async function load(){
       sb('equipe?select=id,nome,setor,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc'),
       sb(`solicitacoes?select=id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
       sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`),
-      sb(`plantoes?select=id,data_inicial,data_final,funcionario_id,equipe(nome,setor)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`)
+      sb(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe(nome,setor),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`)
     ]);
     teamCache=team;fillEmployees();fillAgendaNoteEmployees();document.getElementById('funcCount').textContent=team.length;
     agendaNotes=notes;renderAgendaNotes();
@@ -603,7 +603,7 @@ function renderCalendar(requests,plantoes=[]){
     const dayReq=requests.filter(r=>r.data_inicial<=key&&r.data_final>=key&&r.status!=='Negada');
     for(const r of dayReq){const [dot]=statusMeta(r.status);const sm=document.createElement('small');sm.textContent=`${dot} ${r.equipe?.nome||''}`;cell.appendChild(sm)}
     const dayPlantao=plantoes.filter(r=>r.data_inicial<=key&&r.data_final>=key);
-    for(const r of dayPlantao){const sm=document.createElement('small');sm.textContent=`🟠 ${r.equipe?.nome||''}`;cell.appendChild(sm)}
+    for(const r of dayPlantao){const sm=document.createElement('small');const nomes=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ');sm.textContent=`🟠 ${nomes}`;cell.appendChild(sm)}
     m.appendChild(cell);
   }
 }
@@ -634,9 +634,10 @@ function fillPlantaoSectors(){
 }
 function fillPlantaoEmployees(){
   const sector=document.getElementById('plantaoSector').value;
-  const sel=document.getElementById('plantaoEmployee');
   const list=sector?teamCache.filter(e=>e.setor===sector):[];
-  sel.innerHTML='<option value="">'+(sector?'Selecione...':'Selecione o setor primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  const html='<option value="">'+(sector?'Selecione...':'Selecione o setor primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  document.getElementById('plantaoEmployee').innerHTML=html;
+  document.getElementById('plantaoEmployee2').innerHTML=html;
 }
 
 let autoPlantaoOrder=[];
@@ -706,25 +707,26 @@ async function buildAutoPlantaoPreview(){
     while(weekStart<=until&&guard<200){
       guard++;
       let weekEnd=addDaysIso(weekStart,6);if(weekEnd>until)weekEnd=until;
-      let chosen=null,skipped=[];
-      for(let tries=0;tries<autoPlantaoOrder.length;tries++){
-        const cand=autoPlantaoOrder[cursor%autoPlantaoOrder.length];cursor++;
+      const chosen=[],skipped=[];let tries=0;
+      while(chosen.length<2&&tries<autoPlantaoOrder.length*2){
+        const cand=autoPlantaoOrder[cursor%autoPlantaoOrder.length];cursor++;tries++;
+        if(chosen.some(x=>x.id===cand.id))continue;
         const vac=vacations.find(v=>v.funcionario_id===cand.id&&v.data_inicial<=weekEnd&&v.data_final>=weekStart);
         if(vac){skipped.push(`${cand.nome} (férias)`);continue}
-        chosen=cand;break;
+        chosen.push(cand);
       }
       const conflict=existing.find(p=>p.data_inicial<=weekEnd&&p.data_final>=weekStart);
-      rows.push({data_inicial:weekStart,data_final:weekEnd,funcionario:chosen,skipped,conflict});
+      rows.push({data_inicial:weekStart,data_final:weekEnd,funcionarios:chosen,skipped,conflict});
       weekStart=addDaysIso(weekStart,7);
     }
     autoPlantaoPreviewRows=rows;
     const box=document.getElementById('autoPlantaoPreview');box.style.display='block';
     box.innerHTML=`<h3 style="margin:0 0 10px">Prévia da escala</h3>`+rows.map(r=>{
-      const nome=r.funcionario?safe(r.funcionario.nome):'<b style="color:#b91c1c">Sem funcionário disponível</b>';
+      const nome=r.funcionarios?.length===2?r.funcionarios.map(x=>safe(x.nome)).join(' + '):'<b style="color:#b91c1c">Dupla incompleta</b>';
       const avisos=[r.skipped.length?`Pulados: ${safe(r.skipped.join(', '))}`:'',r.conflict?`Já existe plantão no período (${safe(r.conflict.equipe?.nome||'funcionário')})`:'' ].filter(Boolean).join(' • ');
       return `<div style="padding:9px 0;border-top:1px solid #edf1f5"><b>${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)} — ${nome}</b>${avisos?`<div style="font-size:12px;color:#b45309;margin-top:3px">${avisos}</div>`:''}</div>`;
     }).join('');
-    const invalid=rows.some(r=>!r.funcionario||r.conflict);
+    const invalid=rows.some(r=>!r.funcionarios||r.funcionarios.length<2||r.conflict);
     document.getElementById('saveAutoPlantao').disabled=invalid;
     if(invalid)showToast('Revise a prévia: há semana sem funcionário ou conflito com plantão existente.');
   }catch(e){console.error(e);showToast('Não foi possível montar a prévia da escala.')}
@@ -736,18 +738,22 @@ async function saveAutoPlantaoScale(){
   try{
     for(const row of autoPlantaoPreviewRows){
       const created=await sb('plantoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
-        funcionario_id:row.funcionario.id,data_inicial:row.data_inicial,data_final:row.data_final,
+        funcionario_id:row.funcionarios[0].id,funcionario2_id:row.funcionarios[1].id,data_inicial:row.data_inicial,data_final:row.data_final,
         observacao:'Gerado automaticamente pelo rodízio de plantão'
       })});
       const plantao=created?.[0];
       if(gerarFolga&&plantao){
         const folga=nextSaturdayAfter(row.data_final);
         const req=await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
-          funcionario_id:row.funcionario.id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
+          funcionario_id:row.funcionarios[0].id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
           observacao:`Gerada automaticamente pelo plantão de ${fmtDate(row.data_inicial)} a ${fmtDate(row.data_final)}`
         })});
-        const reqId=req?.[0]?.id;
-        if(reqId)await sb(`plantoes?id=eq.${plantao.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({folga_gerada:true,folga_solicitacao_id:reqId})});
+        const req2=await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
+          funcionario_id:row.funcionarios[1].id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
+          observacao:`Gerada automaticamente pelo plantão de ${fmtDate(row.data_inicial)} a ${fmtDate(row.data_final)}`
+        })});
+        const reqId=req?.[0]?.id, reqId2=req2?.[0]?.id;
+        if(reqId||reqId2)await sb(`plantoes?id=eq.${plantao.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({folga_gerada:true,folga_solicitacao_id:reqId||null,folga2_solicitacao_id:reqId2||null})});
       }
     }
     closeAutoPlantao();showToast('Escala automática gerada com sucesso!');
@@ -781,7 +787,7 @@ async function showPlantoes(){
 async function loadPlantoes(){
   const body=document.getElementById('plantaoTableBody');body.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';
   try{
-    plantaoRows=await sb('plantoes?select=id,funcionario_id,data_inicial,data_final,observacao,folga_gerada,folga_solicitacao_id,equipe(nome,setor)&order=data_inicial.desc');
+    plantaoRows=await sb('plantoes?select=id,funcionario_id,funcionario2_id,data_inicial,data_final,observacao,folga_gerada,folga_solicitacao_id,folga2_solicitacao_id,equipe(nome,setor),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor)&order=data_inicial.desc');
     renderPlantoes();
   }catch(e){console.error(e);body.innerHTML='<tr><td colspan="6">Erro ao carregar plantões.</td></tr>'}
 }
@@ -799,17 +805,18 @@ function renderPlantoes(){
   if(!rows.length){body.innerHTML='<tr><td colspan="6">Nenhum plantão encontrado.</td></tr>';return}
   body.innerHTML=rows.map(r=>{
     const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
-    const folga=r.folga_gerada?`🟣 ${fmtDate(nextSaturdayAfter(r.data_final))}`:'—';
+    const folga=r.folga_gerada?`🟣 ${fmtDate(nextSaturdayAfter(r.data_final))} (dupla)`:'—';
     const del=currentRole()==='admin'?`<button class="action-btn deny" onclick="deletePlantao(${r.id})">Excluir</button>`:'';
-    return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${safe(r.equipe?.setor||'—')}</td><td>${period}</td><td>${safe(r.observacao||'—')}</td><td>${folga}</td><td>${del||'—'}</td></tr>`;
+    const dupla=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).map(safe).join(' + ');
+    return `<tr><td><b>${dupla||'Funcionário'}</b></td><td>${safe(r.equipe?.setor||'—')}</td><td>${period}</td><td>${safe(r.observacao||'—')}</td><td>${folga}</td><td>${del||'—'}</td></tr>`;
   }).join('');
 }
 async function deletePlantao(id){
   if(currentRole()!=='admin')return;
   const r=plantaoRows.find(x=>x.id===id);if(!r)return;
-  if(!window.confirm(`Excluir o plantão de ${r.equipe?.nome||'funcionário'} (${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)})?${r.folga_solicitacao_id?'\n\nA folga gerada automaticamente também será excluída.':''}`))return;
+  if(!window.confirm(`Excluir o plantão de ${[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ')||'funcionário'} (${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)})?${r.folga_solicitacao_id?'\n\nA folga gerada automaticamente também será excluída.':''}`))return;
   try{
-    if(r.folga_solicitacao_id)await sb(`solicitacoes?id=eq.${r.folga_solicitacao_id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    if(r.folga_solicitacao_id)await sb(`solicitacoes?id=eq.${r.folga_solicitacao_id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}}); if(r.folga2_solicitacao_id)await sb(`solicitacoes?id=eq.${r.folga2_solicitacao_id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     await sb(`plantoes?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     showToast('Plantão excluído!');await loadPlantoes();await load();
   }catch(e){console.error(e);showToast('Não foi possível excluir o plantão.')}
@@ -1131,15 +1138,17 @@ document.getElementById('plantaoForm').onsubmit=async e=>{
   e.preventDefault();
   const btn=document.getElementById('savePlantao');
   const funcionario_id=Number(document.getElementById('plantaoEmployee').value);
+  const funcionario2_id=Number(document.getElementById('plantaoEmployee2').value);
   const data_inicial=document.getElementById('plantaoStart').value;
   const data_final=document.getElementById('plantaoEnd').value;
   const observacao=document.getElementById('plantaoObs').value.trim()||null;
   const gerarFolga=document.getElementById('plantaoGenerateLeave').checked;
-  if(!funcionario_id||!data_inicial||!data_final)return showToast('Preencha funcionário e período.');
+  if(!funcionario_id||!funcionario2_id||!data_inicial||!data_final)return showToast('Selecione os dois técnicos e o período.');
+  if(funcionario_id===funcionario2_id)return showToast('Selecione dois técnicos diferentes.');
   if(data_final<data_inicial)return showToast('A data final não pode ser anterior à inicial.');
   btn.disabled=true;btn.textContent='Salvando...';
   try{
-    const created=await sb('plantoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({funcionario_id,data_inicial,data_final,observacao})});
+    const created=await sb('plantoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({funcionario_id,funcionario2_id,data_inicial,data_final,observacao})});
     const plantao=created?.[0];
     if(gerarFolga&&plantao){
       const folga=nextSaturdayAfter(data_final);
@@ -1147,8 +1156,12 @@ document.getElementById('plantaoForm').onsubmit=async e=>{
         funcionario_id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
         observacao:`Gerada automaticamente pelo plantão de ${fmtDate(data_inicial)} a ${fmtDate(data_final)}`
       })});
-      const reqId=req?.[0]?.id;
-      if(reqId)await sb(`plantoes?id=eq.${plantao.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({folga_gerada:true,folga_solicitacao_id:reqId})});
+      const req2=await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
+        funcionario_id:funcionario2_id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
+        observacao:`Gerada automaticamente pelo plantão de ${fmtDate(data_inicial)} a ${fmtDate(data_final)}`
+      })});
+      const reqId=req?.[0]?.id, reqId2=req2?.[0]?.id;
+      if(reqId||reqId2)await sb(`plantoes?id=eq.${plantao.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({folga_gerada:true,folga_solicitacao_id:reqId||null,folga2_solicitacao_id:reqId2||null})});
     }
     closePlantao();showToast(gerarFolga?'Plantão e folga cadastrados!':'Plantão cadastrado!');
     await loadPlantoes();await loadAllRequests();await load();
