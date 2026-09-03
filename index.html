@@ -97,7 +97,7 @@
   </div>
 </section>
 <section id="plantaoView" style="display:none">
-<header><div><h1>Plantões</h1><p>Controle os períodos de plantão e gere a folga do sábado seguinte.</p></div><button class="btn primary" id="newPlantaoBtn">+ Novo plantão</button></header>
+<header><div><h1>Plantões</h1><p>Controle os períodos de plantão e gere a folga do sábado seguinte.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn secondary" id="autoPlantaoBtn">⚙ Gerar escala automática</button><button class="btn primary" id="newPlantaoBtn">+ Novo plantão</button></div></header>
 <div class="box requests-box">
   <div class="requests-toolbar">
     <div><h2>Escala de plantão</h2><small id="plantaoTotal">Carregando...</small></div>
@@ -279,7 +279,30 @@
     </form>
   </div>
 </div>
-<div class="modal" id="plantaoModal" aria-hidden="true">
+<div class="modal" id="autoPlantaoModal" aria-hidden="true">
+<div class="modal-card" style="max-width:760px">
+  <div class="modal-head"><div><h2>Gerar escala automática</h2><p>Monte o rodízio semanal e pule automaticamente quem estiver de férias.</p></div><button class="close" id="closeAutoPlantao" aria-label="Fechar">×</button></div>
+  <form id="autoPlantaoForm">
+    <div class="form-grid">
+      <div class="field"><label for="autoPlantaoSector">Setor</label><select id="autoPlantaoSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div>
+      <div class="field"><label for="autoPlantaoStart">Início da primeira semana</label><input id="autoPlantaoStart" type="date" required></div>
+      <div class="field"><label for="autoPlantaoUntil">Gerar até</label><input id="autoPlantaoUntil" type="date" required></div>
+      <div class="field"><label style="display:flex;align-items:center;gap:8px;margin-top:28px"><input id="autoPlantaoGenerateLeave" type="checkbox" checked style="width:auto"> Gerar folga no sábado seguinte</label></div>
+      <div class="field full">
+        <label>Ordem do rodízio</label>
+        <p style="font-size:12px;color:#64748b;margin:4px 0 8px">Use ↑ e ↓ para definir quem vem primeiro. Quem estiver de férias na semana será pulado automaticamente.</p>
+        <div id="autoPlantaoOrder" style="border:1px solid #dfe5ec;border-radius:10px;overflow:hidden"><div style="padding:12px;color:#64748b">Selecione um setor.</div></div>
+      </div>
+    </div>
+    <div id="autoPlantaoPreview" style="display:none;margin-top:16px;border-top:1px solid #e5e7eb;padding-top:14px"></div>
+    <div class="form-actions">
+      <button type="button" class="btn secondary" id="cancelAutoPlantao">Cancelar</button>
+      <button type="button" class="btn secondary" id="previewAutoPlantao">Visualizar escala</button>
+      <button type="submit" class="btn primary" id="saveAutoPlantao" disabled>Gerar escala</button>
+    </div>
+  </form>
+</div>
+</div><div class="modal" id="plantaoModal" aria-hidden="true">
 <div class="modal-card">
   <div class="modal-head"><div><h2>Novo plantão</h2><p>Cadastre o período completo do plantonista.</p></div><button class="close" id="closePlantao" aria-label="Fechar">×</button></div>
   <form id="plantaoForm">
@@ -614,6 +637,123 @@ function fillPlantaoEmployees(){
   const sel=document.getElementById('plantaoEmployee');
   const list=sector?teamCache.filter(e=>e.setor===sector):[];
   sel.innerHTML='<option value="">'+(sector?'Selecione...':'Selecione o setor primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+}
+
+let autoPlantaoOrder=[];
+let autoPlantaoPreviewRows=[];
+function fillAutoPlantaoSectors(){
+  const sel=document.getElementById('autoPlantaoSector');
+  const sectors=['Infraestrutura','Call Center','Operacional','Financeiro'];
+  if(currentRole()==='admin'){
+    sel.disabled=false;sel.innerHTML='<option value="">Selecione o setor...</option>'+sectors.map(x=>`<option>${x}</option>`).join('');
+  }else{
+    const sector=currentSector();sel.innerHTML=sector?`<option value="${safe(sector)}">${safe(sector)}</option>`:'<option value="">Setor não definido</option>';
+    sel.disabled=!!sector;sel.value=sector||'';
+  }
+  loadAutoPlantaoEmployees();
+}
+function openAutoPlantao(){
+  document.getElementById('autoPlantaoForm').reset();
+  document.getElementById('autoPlantaoGenerateLeave').checked=true;
+  document.getElementById('autoPlantaoPreview').style.display='none';
+  document.getElementById('saveAutoPlantao').disabled=true;
+  autoPlantaoPreviewRows=[];
+  fillAutoPlantaoSectors();
+  document.getElementById('autoPlantaoModal').classList.add('open');
+  document.getElementById('autoPlantaoModal').setAttribute('aria-hidden','false');
+}
+function closeAutoPlantao(){
+  document.getElementById('autoPlantaoModal').classList.remove('open');
+  document.getElementById('autoPlantaoModal').setAttribute('aria-hidden','true');
+}
+function loadAutoPlantaoEmployees(){
+  const sector=document.getElementById('autoPlantaoSector').value;
+  autoPlantaoOrder=sector?teamCache.filter(e=>e.setor===sector).map(e=>({id:e.id,nome:e.nome})):[];
+  renderAutoPlantaoOrder();
+  document.getElementById('autoPlantaoPreview').style.display='none';
+  document.getElementById('saveAutoPlantao').disabled=true;
+}
+function renderAutoPlantaoOrder(){
+  const box=document.getElementById('autoPlantaoOrder');
+  if(!autoPlantaoOrder.length){box.innerHTML='<div style="padding:12px;color:#64748b">Nenhum funcionário ativo neste setor.</div>';return}
+  box.innerHTML=autoPlantaoOrder.map((e,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:${i?'1px solid #edf1f5':'0'}">
+    <b style="width:28px">${i+1}.</b><span style="flex:1">${safe(e.nome)}</span>
+    <button type="button" class="mini-btn mutebtn" onclick="moveAutoPlantao(${i},-1)" ${i===0?'disabled':''}>↑</button>
+    <button type="button" class="mini-btn mutebtn" onclick="moveAutoPlantao(${i},1)" ${i===autoPlantaoOrder.length-1?'disabled':''}>↓</button>
+  </div>`).join('');
+}
+function moveAutoPlantao(index,dir){
+  const j=index+dir;if(j<0||j>=autoPlantaoOrder.length)return;
+  [autoPlantaoOrder[index],autoPlantaoOrder[j]]=[autoPlantaoOrder[j],autoPlantaoOrder[index]];
+  renderAutoPlantaoOrder();
+  document.getElementById('autoPlantaoPreview').style.display='none';
+  document.getElementById('saveAutoPlantao').disabled=true;
+}
+function addDaysIso(dateStr,days){
+  const d=new Date(dateStr+'T12:00:00');d.setDate(d.getDate()+days);return iso(d);
+}
+async function buildAutoPlantaoPreview(){
+  const sector=document.getElementById('autoPlantaoSector').value;
+  const start=document.getElementById('autoPlantaoStart').value;
+  const until=document.getElementById('autoPlantaoUntil').value;
+  if(!sector||!start||!until)return showToast('Preencha setor e período.');
+  if(until<start)return showToast('A data final não pode ser anterior à inicial.');
+  if(!autoPlantaoOrder.length)return showToast('Não há funcionários no rodízio.');
+  try{
+    const vacations=await sb(`solicitacoes?select=funcionario_id,data_inicial,data_final,status,equipe(nome)&status=eq.Férias&data_inicial=lte.${until}&data_final=gte.${start}&order=data_inicial.asc`);
+    const existing=await sb(`plantoes?select=id,funcionario_id,data_inicial,data_final,equipe(nome)&data_inicial=lte.${until}&data_final=gte.${start}`);
+    const rows=[];let weekStart=start;let cursor=0;let guard=0;
+    while(weekStart<=until&&guard<200){
+      guard++;
+      let weekEnd=addDaysIso(weekStart,6);if(weekEnd>until)weekEnd=until;
+      let chosen=null,skipped=[];
+      for(let tries=0;tries<autoPlantaoOrder.length;tries++){
+        const cand=autoPlantaoOrder[cursor%autoPlantaoOrder.length];cursor++;
+        const vac=vacations.find(v=>v.funcionario_id===cand.id&&v.data_inicial<=weekEnd&&v.data_final>=weekStart);
+        if(vac){skipped.push(`${cand.nome} (férias)`);continue}
+        chosen=cand;break;
+      }
+      const conflict=existing.find(p=>p.data_inicial<=weekEnd&&p.data_final>=weekStart);
+      rows.push({data_inicial:weekStart,data_final:weekEnd,funcionario:chosen,skipped,conflict});
+      weekStart=addDaysIso(weekStart,7);
+    }
+    autoPlantaoPreviewRows=rows;
+    const box=document.getElementById('autoPlantaoPreview');box.style.display='block';
+    box.innerHTML=`<h3 style="margin:0 0 10px">Prévia da escala</h3>`+rows.map(r=>{
+      const nome=r.funcionario?safe(r.funcionario.nome):'<b style="color:#b91c1c">Sem funcionário disponível</b>';
+      const avisos=[r.skipped.length?`Pulados: ${safe(r.skipped.join(', '))}`:'',r.conflict?`Já existe plantão no período (${safe(r.conflict.equipe?.nome||'funcionário')})`:'' ].filter(Boolean).join(' • ');
+      return `<div style="padding:9px 0;border-top:1px solid #edf1f5"><b>${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)} — ${nome}</b>${avisos?`<div style="font-size:12px;color:#b45309;margin-top:3px">${avisos}</div>`:''}</div>`;
+    }).join('');
+    const invalid=rows.some(r=>!r.funcionario||r.conflict);
+    document.getElementById('saveAutoPlantao').disabled=invalid;
+    if(invalid)showToast('Revise a prévia: há semana sem funcionário ou conflito com plantão existente.');
+  }catch(e){console.error(e);showToast('Não foi possível montar a prévia da escala.')}
+}
+async function saveAutoPlantaoScale(){
+  if(!autoPlantaoPreviewRows.length)return;
+  const gerarFolga=document.getElementById('autoPlantaoGenerateLeave').checked;
+  const btn=document.getElementById('saveAutoPlantao');btn.disabled=true;btn.textContent='Gerando...';
+  try{
+    for(const row of autoPlantaoPreviewRows){
+      const created=await sb('plantoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
+        funcionario_id:row.funcionario.id,data_inicial:row.data_inicial,data_final:row.data_final,
+        observacao:'Gerado automaticamente pelo rodízio de plantão'
+      })});
+      const plantao=created?.[0];
+      if(gerarFolga&&plantao){
+        const folga=nextSaturdayAfter(row.data_final);
+        const req=await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
+          funcionario_id:row.funcionario.id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
+          observacao:`Gerada automaticamente pelo plantão de ${fmtDate(row.data_inicial)} a ${fmtDate(row.data_final)}`
+        })});
+        const reqId=req?.[0]?.id;
+        if(reqId)await sb(`plantoes?id=eq.${plantao.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({folga_gerada:true,folga_solicitacao_id:reqId})});
+      }
+    }
+    closeAutoPlantao();showToast('Escala automática gerada com sucesso!');
+    await loadPlantoes();await loadAllRequests();await load();
+  }catch(e){console.error(e);showToast('Erro ao gerar a escala automática.')}
+  finally{btn.textContent='Gerar escala'}
 }
 function openPlantao(){
   document.getElementById('plantaoForm').reset();
@@ -971,6 +1111,14 @@ async function updateRequestStatus(id,status){try{await sb(`solicitacoes?id=eq.$
 document.getElementById('saveAgendaNote').onclick=saveAgendaNote;
 document.getElementById('cancelAgendaNote').onclick=()=>{document.getElementById('agendaNoteForm').style.display='none';document.getElementById('saveAgendaNote').dataset.editId='';document.getElementById('saveAgendaNote').textContent='Salvar anotação';};
 
+
+document.getElementById('autoPlantaoBtn').onclick=openAutoPlantao;
+document.getElementById('closeAutoPlantao').onclick=closeAutoPlantao;
+document.getElementById('cancelAutoPlantao').onclick=closeAutoPlantao;
+document.getElementById('autoPlantaoModal').onclick=e=>{if(e.target.id==='autoPlantaoModal')closeAutoPlantao()};
+document.getElementById('autoPlantaoSector').onchange=loadAutoPlantaoEmployees;
+document.getElementById('previewAutoPlantao').onclick=buildAutoPlantaoPreview;
+document.getElementById('autoPlantaoForm').onsubmit=async e=>{e.preventDefault();await saveAutoPlantaoScale()};
 document.getElementById('plantaoNav').onclick=()=>{if(canAccess('plantoes'))showPlantoes()};
 document.getElementById('newPlantaoBtn').onclick=openPlantao;
 document.getElementById('closePlantao').onclick=closePlantao;
