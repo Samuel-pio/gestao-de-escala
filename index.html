@@ -230,7 +230,26 @@ header h1,header p{overflow-wrap:anywhere}
   </table></div>
 </div>
 </section>
-<section id="usersView" style="display:none"><header><div><h1>Usuários</h1><p>Gerencie quem pode acessar o sistema.</p></div><button class="primary" id="newUserBtn">+ Novo usuário</button></header><div class="box table-box"><div class="table-scroll"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Setor</th><th>Status</th><th>Último acesso</th><th>Ações</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="7">Carregando...</td></tr></tbody></table></div></div></section><section id="reportsView" style="display:none">
+<section id="usersView" style="display:none"><header><div><h1>Usuários</h1><p>Gerencie quem pode acessar o sistema.</p></div><button class="primary" id="newUserBtn">+ Novo usuário</button></header><div class="box table-box"><div class="table-scroll"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Setor</th><th>Status</th><th>Último acesso</th><th>Ações</th></tr></thead><tbody id="usersTableBody"><tr><td colspan="7">Carregando...</td></tr></tbody></table></div></div></section><section id="errorsView" style="display:none">
+<header><div><h1>Erros da Equipe</h1><p>Registre e acompanhe os erros das duplas durante o mês.</p></div><button class="primary" id="newErrorBtn">+ Registrar erro</button></header>
+<div class="box" style="margin-top:24px;padding:20px">
+  <div class="requests-toolbar">
+    <div><h2>Resumo mensal</h2><small>O lançamento conta para os dois integrantes da dupla.</small></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <input id="errorMonthFilter" type="month">
+      <select id="errorEmployeeFilter"><option value="">Todos os funcionários</option></select>
+    </div>
+  </div>
+  <div id="errorSummary" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0"></div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;min-width:760px">
+      <thead><tr><th>DATA</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>OBSERVAÇÃO</th><th>AÇÕES</th></tr></thead>
+      <tbody id="errorsTableBody"><tr><td colspan="5">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+</section>
+<section id="reportsView" style="display:none">
   <header>
     <div>
       <h1>Relatórios</h1>
