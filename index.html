@@ -108,7 +108,7 @@ header h1,header p{overflow-wrap:anywhere}
   #requestsView table,#historyView table,#teamView table,#plantaoView table,#usersView table,#reportsView table{min-width:680px}
 }
 
-</style></head><body>
+#errorsView th,#errorsView td{padding:12px 10px;border-bottom:1px solid #edf0f4;text-align:left;font-size:12px}#errorsView th{color:#6f7d91;font-size:10px}.mini{border:1px solid #dfe5ec;background:white;border-radius:6px;padding:5px 8px;cursor:pointer}.mini.danger{color:#d33;border-color:#e8b7b7}</style></head><body>
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
     <div class="login-logo"><b>CONEX</b><span>INTERNET</span></div>
@@ -129,7 +129,7 @@ header h1,header p{overflow-wrap:anywhere}
   </div>
 </div>
 <div class="app" id="appShell" style="display:none"><aside><button class="sidebar-toggle" id="sidebarToggle" title="Recolher menu" aria-label="Recolher menu">‹</button><div class="brand"><b>CONEX</b><span>INTERNET</span></div><nav>
-<div class="nav on" id="dashboardNav" data-label="Dashboard">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav" data-label="Agenda">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav" data-label="Nova Solicitação">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav" data-label="Solicitações">☷ <span>Solicitações</span></div><div class="nav" id="historyNav" data-label="Histórico">↺ <span>Histórico</span></div><div class="nav" id="teamNav" data-label="Equipe">👥 <span>Equipe</span></div><div class="nav" id="plantaoNav" data-label="Plantões">🟠 <span>Plantões</span></div><div class="nav" id="usersNav" data-label="Usuários">👤 <span>Usuários</span></div><div class="nav" id="reportsNav" data-label="Relatórios">▤ <span>Relatórios</span></div>
+<div class="nav on" id="dashboardNav" data-label="Dashboard">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav" data-label="Agenda">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav" data-label="Nova Solicitação">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav" data-label="Solicitações">☷ <span>Solicitações</span></div><div class="nav" id="historyNav" data-label="Histórico">↺ <span>Histórico</span></div><div class="nav" id="teamNav" data-label="Equipe">👥 <span>Equipe</span></div><div class="nav" id="plantaoNav" data-label="Plantões">🟠 <span>Plantões</span></div><div class="nav" id="errorsNav" data-label="Erros da Equipe">⚠️ <span>Erros da Equipe</span></div><div class="nav" id="usersNav" data-label="Usuários">👤 <span>Usuários</span></div><div class="nav" id="reportsNav" data-label="Relatórios">▤ <span>Relatórios</span></div>
 </nav><div class="profile"><div class="avatar">SP</div><div><b id="profileName">Administrador</b><small id="profileEmail">Conectado</small></div><button class="logout-btn" id="logoutBtn">Sair</button></div></aside>
 <main><div id="dashboardView"><header><div><h1 id="dashboardGreeting">Olá 👋</h1><p>Acompanhe a escala e as solicitações da equipe.</p></div><button class="bell">🔔</button></header>
 <section class="cards">
@@ -302,6 +302,21 @@ header h1,header p{overflow-wrap:anywhere}
     </div>
   </section>
 </section></main></div>
+<div class="modal" id="errorModal" aria-hidden="true">
+<div class="modal-card">
+  <div class="modal-head"><div><h2 id="errorModalTitle">Registrar erro</h2><p>O erro será vinculado aos dois integrantes selecionados.</p></div><button class="close" id="closeErrorModal">×</button></div>
+  <form id="errorForm">
+    <input type="hidden" id="errorId">
+    <div class="form-grid">
+      <div class="field"><label>Data</label><input type="date" id="errorDate" required></div>
+      <div class="field"><label>Tipo do erro</label><input type="text" id="errorType" placeholder="Ex.: Instalação, acabamento..." required maxlength="120"></div>
+      <div class="field"><label>Técnico 1</label><select id="errorEmployee1" required></select></div>
+      <div class="field"><label>Técnico 2</label><select id="errorEmployee2" required></select></div>
+      <div class="field full"><label>Observação</label><textarea id="errorObservation" rows="4" placeholder="Descreva o que aconteceu..."></textarea></div>
+    </div>
+    <div class="form-actions"><button type="button" class="secondary" id="cancelError">Cancelar</button><button type="submit" class="primary" id="saveError">Salvar erro</button></div>
+  </form>
+</div></div>
 <div class="modal" id="editEmployeeModal" aria-hidden="true">
   <div class="modal-card">
     <div class="modal-head">
@@ -499,10 +514,10 @@ function showLogin(){
   setTimeout(()=>document.getElementById('loginEmail').focus(),50);
 }
 
-const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','relatorios'];
+const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','relatorios'];
 const NAV_PERMISSION={
   dashboardNav:'dashboard',agendaNav:'agenda',openRequestNav:'nova_solicitacao',
-  requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',reportsNav:'relatorios'
+  requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',errorsNav:'erros_equipe',reportsNav:'relatorios'
 };
 function currentRole(){return authSession?.user?.app_metadata?.role||'usuario'}
 function currentSector(){return authSession?.user?.app_metadata?.sector||null}
@@ -526,6 +541,7 @@ function showFirstAllowedView(){
   if(canAccess('historico'))return showHistory();
   if(canAccess('equipe'))return showTeam();
   if(canAccess('plantoes'))return showPlantoes();
+  if(canAccess('erros_equipe'))return showErrors();
   if(canAccess('relatorios'))return showReports();
   hideViews();
 }
@@ -776,7 +792,7 @@ function renderCalendar(requests,plantoes=[]){
 }
 
 function setActiveNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));const n=document.getElementById(id);if(n)n.classList.add('on')}
-function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','plantaoView','usersView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
+function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','plantaoView','errorsView','usersView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
 function showDashboard(){hideViews();document.getElementById('dashboardView').style.display='block';setActiveNav('dashboardNav')}
 function showAgenda(){hideViews();document.getElementById('agendaView').style.display='block';setActiveNav('agendaNav')}
 async function showRequests(){hideViews();document.getElementById('requestsView').style.display='block';setActiveNav('requestsNav');await loadAllRequests()}
@@ -988,6 +1004,60 @@ async function deletePlantao(id){
     showToast('Plantão excluído!');await loadPlantoes();await load();
   }catch(e){console.error(e);showToast('Não foi possível excluir o plantão.')}
 }
+
+let errorRows=[];
+function openErrorModal(row=null){
+  const modal=document.getElementById('errorModal');
+  document.getElementById('errorForm').reset();
+  document.getElementById('errorId').value=row?.id||'';
+  document.getElementById('errorModalTitle').textContent=row?'Editar erro':'Registrar erro';
+  const team=(teamCache||[]).filter(e=>e.ativo!==false && (currentRole()==='admin'||!currentSector()||e.setor===currentSector()));
+  const opts='<option value="">Selecione...</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  document.getElementById('errorEmployee1').innerHTML=opts;
+  document.getElementById('errorEmployee2').innerHTML=opts;
+  if(row){
+    document.getElementById('errorDate').value=row.data;
+    document.getElementById('errorType').value=row.tipo||'';
+    document.getElementById('errorObservation').value=row.observacao||'';
+    document.getElementById('errorEmployee1').value=row.funcionario1_id;
+    document.getElementById('errorEmployee2').value=row.funcionario2_id;
+  }else document.getElementById('errorDate').value=todayIsoLocal();
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+}
+function closeErrorModal(){const m=document.getElementById('errorModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
+async function showErrors(){
+  if(!canAccess('erros_equipe'))return;
+  hideViews();document.getElementById('errorsView').style.display='block';setActiveNav('errorsNav');
+  const mf=document.getElementById('errorMonthFilter');
+  if(!mf.value){const d=new Date();mf.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+  const ef=document.getElementById('errorEmployeeFilter');
+  const cur=ef.value;
+  ef.innerHTML='<option value="">Todos os funcionários</option>'+(teamCache||[]).map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  ef.value=cur;
+  await loadErrors();
+}
+async function loadErrors(){
+  const month=document.getElementById('errorMonthFilter').value;
+  if(!month)return;
+  const [y,m]=month.split('-').map(Number);
+  const from=`${month}-01`, to=iso(new Date(y,m,0));
+  const q=`erros_equipes?select=id,data,funcionario1_id,funcionario2_id,tipo,observacao,equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor)&data=gte.${from}&data=lte.${to}&order=data.desc,id.desc`;
+  try{errorRows=await sb(q);renderErrors()}catch(e){console.error(e);document.getElementById('errorsTableBody').innerHTML='<tr><td colspan="5">Erro ao carregar registros.</td></tr>'}
+}
+function renderErrors(){
+  const emp=document.getElementById('errorEmployeeFilter').value;
+  const rows=errorRows.filter(r=>!emp||String(r.funcionario1_id)===emp||String(r.funcionario2_id)===emp);
+  const counts={};
+  rows.forEach(r=>{const key=`${r.equipe1?.nome||'—'} + ${r.equipe2?.nome||'—'}`;counts[key]=(counts[key]||0)+1});
+  const summary=document.getElementById('errorSummary');
+  summary.innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([dupla,n])=>`<div class="card"><p>${safe(dupla)}</p><b>${n}</b><small>${n===1?'erro no mês':'erros no mês'}</small></div>`).join('')||'<div style="color:#7a8799">Nenhum erro registrado neste período.</div>';
+  document.getElementById('errorsTableBody').innerHTML=rows.map(r=>`<tr>
+    <td>${fmtDate(r.data)}</td><td><b>${safe(r.equipe1?.nome||'—')} + ${safe(r.equipe2?.nome||'—')}</b></td>
+    <td>${safe(r.tipo||'—')}</td><td>${safe(r.observacao||'—')}</td>
+    <td><button class="mini" data-error-edit="${r.id}">Editar</button>${currentRole()==='admin'?` <button class="mini danger" data-error-delete="${r.id}">Excluir</button>`:''}</td>
+  </tr>`).join('')||'<tr><td colspan="5">Nenhum erro registrado neste mês.</td></tr>';
+}
+
 async function showReports(){
   hideViews();
   document.getElementById('reportsView').style.display='block';
@@ -1296,6 +1366,35 @@ document.getElementById('autoPlantaoModal').onclick=e=>{if(e.target.id==='autoPl
 document.getElementById('autoPlantaoSector').onchange=loadAutoPlantaoEmployees;
 document.getElementById('previewAutoPlantao').onclick=buildAutoPlantaoPreview;
 document.getElementById('autoPlantaoForm').onsubmit=async e=>{e.preventDefault();await saveAutoPlantaoScale()};
+document.getElementById('errorsNav').onclick=()=>{if(canAccess('erros_equipe'))showErrors()};
+document.getElementById('newErrorBtn').onclick=()=>openErrorModal();
+document.getElementById('closeErrorModal').onclick=closeErrorModal;
+document.getElementById('cancelError').onclick=closeErrorModal;
+document.getElementById('errorModal').onclick=e=>{if(e.target.id==='errorModal')closeErrorModal()};
+document.getElementById('errorMonthFilter').onchange=loadErrors;
+document.getElementById('errorEmployeeFilter').onchange=renderErrors;
+document.getElementById('errorForm').onsubmit=async e=>{
+  e.preventDefault();
+  const id=document.getElementById('errorId').value;
+  const f1=Number(document.getElementById('errorEmployee1').value),f2=Number(document.getElementById('errorEmployee2').value);
+  if(!f1||!f2)return showToast('Selecione os dois técnicos.');
+  if(f1===f2)return showToast('Selecione dois técnicos diferentes.');
+  const payload={data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:document.getElementById('errorType').value.trim(),observacao:document.getElementById('errorObservation').value.trim()||null};
+  const btn=document.getElementById('saveError');btn.disabled=true;
+  try{
+    if(id)await sb(`erros_equipes?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
+    else await sb('erros_equipes',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
+    closeErrorModal();showToast(id?'Erro atualizado!':'Erro registrado para a dupla!');await loadErrors();
+  }catch(err){console.error(err);showToast('Não foi possível salvar o erro.')}finally{btn.disabled=false}
+};
+document.getElementById('errorsTableBody').onclick=async e=>{
+  const edit=e.target.closest('[data-error-edit]');
+  if(edit){const r=errorRows.find(x=>String(x.id)===edit.dataset.errorEdit);if(r)openErrorModal(r);return}
+  const del=e.target.closest('[data-error-delete]');
+  if(del&&currentRole()==='admin'&&confirm('Excluir este registro de erro?')){
+    try{await sb(`erros_equipes?id=eq.${del.dataset.errorDelete}`,{method:'DELETE'});showToast('Erro excluído.');await loadErrors()}catch(err){showToast('Não foi possível excluir.')}
+  }
+};
 document.getElementById('plantaoNav').onclick=()=>{if(canAccess('plantoes'))showPlantoes()};
 document.getElementById('newPlantaoBtn').onclick=openPlantao;
 document.getElementById('closePlantao').onclick=closePlantao;
