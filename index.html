@@ -326,14 +326,14 @@ header h1,header p{overflow-wrap:anywhere}
 </section></main></div>
 <div class="modal" id="errorModal" aria-hidden="true">
 <div class="modal-card">
-  <div class="modal-head"><div><h2 id="errorModalTitle">Registrar erro</h2><p>O erro será vinculado aos dois integrantes selecionados.</p></div><button class="close" id="closeErrorModal">×</button></div>
+  <div class="modal-head"><div><h2 id="errorModalTitle">Registrar erro</h2><p>O erro pode ser vinculado a uma dupla ou somente a um técnico.</p></div><button class="close" id="closeErrorModal">×</button></div>
   <form id="errorForm">
     <input type="hidden" id="errorId">
     <div class="form-grid">
       <div class="field"><label>Data</label><input type="date" id="errorDate" required></div>
       <div class="field"><label>Tipo do erro</label><input type="text" id="errorType" placeholder="Ex.: Instalação, acabamento..." required maxlength="120"></div><div class="field"><label>Gravidade</label><select id="errorSeverity" required></select></div>
       <div class="field"><label>Técnico 1</label><select id="errorEmployee1" required></select></div>
-      <div class="field"><label>Técnico 2</label><select id="errorEmployee2" required></select></div>
+      <div class="field"><label>Técnico 2 <small style="color:#8a96a8">(opcional)</small></label><select id="errorEmployee2"></select></div>
       <div class="field full"><label>Observação</label><textarea id="errorObservation" rows="4" placeholder="Descreva o que aconteceu..."></textarea></div>
     </div>
     <div class="form-actions"><button type="button" class="secondary" id="cancelError">Cancelar</button><button type="submit" class="primary" id="saveError">Salvar erro</button></div>
@@ -1036,7 +1036,7 @@ function openErrorModal(row=null){
   const team=(teamCache||[]).filter(e=>e.ativo!==false && (currentRole()==='admin'||!currentSector()||e.setor===currentSector()));
   const opts='<option value="">Selecione...</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
   document.getElementById('errorEmployee1').innerHTML=opts;
-  document.getElementById('errorEmployee2').innerHTML=opts;
+  document.getElementById('errorEmployee2').innerHTML='<option value="">Somente um técnico</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
   const sev=document.getElementById('errorSeverity');
   sev.innerHTML=(errorWeightConfig.length?errorWeightConfig:[{gravidade:'Leve',peso:1},{gravidade:'Moderado',peso:2},{gravidade:'Grave',peso:3},{gravidade:'Crítico',peso:5}]).map(x=>`<option value="${safe(x.gravidade)}">${safe(x.gravidade)} — peso ${x.peso}</option>`).join('');
   if(row){
@@ -1110,10 +1110,10 @@ function errorAuthorName(id){
 function scoreClass(note){return note>=9?'Excelente':note>=8?'Bom':note>=7?'Atenção':note>=5?'Ruim':'Crítico'}
 function renderErrors(){
   const emp=document.getElementById('errorEmployeeFilter').value;
-  const rows=errorRows.filter(r=>!emp||String(r.funcionario1_id)===emp||String(r.funcionario2_id)===emp);
+  const rows=errorRows.filter(r=>!emp||String(r.funcionario1_id)===emp||(r.funcionario2_id&&String(r.funcionario2_id)===emp));
   const teams={};
   rows.forEach(r=>{
-    const key=`${r.equipe1?.nome||'—'} + ${r.equipe2?.nome||'—'}`;
+    const key=r.funcionario2_id?`${r.equipe1?.nome||'—'} + ${r.equipe2?.nome||'—'}`:`${r.equipe1?.nome||'—'} (sozinho)`;
     if(!teams[key])teams[key]={errors:0,points:0};
     teams[key].errors++;teams[key].points+=Number(r.peso||1);
   });
@@ -1123,7 +1123,7 @@ function renderErrors(){
     return `<div class="card"><p>${safe(dupla)}</p><b>${note.toFixed(1)}</b><small>${scoreClass(note)} · ${v.errors} ${v.errors===1?'erro':'erros'} · ${v.points} pts</small></div>`;
   }).join('')||'<div style="color:#7a8799">Nenhum erro registrado neste período.</div>';
   document.getElementById('errorsTableBody').innerHTML=rows.map(r=>`<tr>
-    <td>${fmtDate(r.data)}</td><td><b>${safe(r.equipe1?.nome||'—')} + ${safe(r.equipe2?.nome||'—')}</b></td>
+    <td>${fmtDate(r.data)}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
     <td>${safe(r.tipo||'—')}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${Number(r.peso||1)}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
     <td><button class="mini" data-error-edit="${r.id}">Editar</button>${currentRole()==='admin'?` <button class="mini danger" data-error-delete="${r.id}">Excluir</button>`:''}</td>
@@ -1448,9 +1448,9 @@ document.getElementById('errorEmployeeFilter').onchange=renderErrors;
 document.getElementById('errorForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('errorId').value;
-  const f1=Number(document.getElementById('errorEmployee1').value),f2=Number(document.getElementById('errorEmployee2').value);
-  if(!f1||!f2)return showToast('Selecione os dois técnicos.');
-  if(f1===f2)return showToast('Selecione dois técnicos diferentes.');
+  const f1=Number(document.getElementById('errorEmployee1').value),f2Raw=document.getElementById('errorEmployee2').value,f2=f2Raw?Number(f2Raw):null;
+  if(!f1)return showToast('Selecione pelo menos um técnico.');
+  if(f2&&f1===f2)return showToast('Selecione dois técnicos diferentes.');
   const severity=document.getElementById('errorSeverity').value;
   const weight=Number((errorWeightConfig.find(x=>x.gravidade===severity)||{}).peso||1);
   const payload={data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:document.getElementById('errorType').value.trim(),gravidade:severity,peso:weight,observacao:document.getElementById('errorObservation').value.trim()||null};
