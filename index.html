@@ -240,11 +240,14 @@ header h1,header p{overflow-wrap:anywhere}
       <select id="errorEmployeeFilter"><option value="">Todos os funcionários</option></select>
     </div>
   </div>
-  <div id="errorSummary" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0"></div>
+  <div id="errorSummary" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0"></div><div class="box" id="errorWeightsBox" style="padding:16px;margin:0 0 18px;background:#fafbfc">
+<div class="boxhead"><div><h2>Pesos da avaliação</h2><p>Nota mensal = 10 − (pontos ÷ 2). O administrador pode alterar os pesos.</p></div></div>
+<div id="errorWeights" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"></div>
+</div>
   <div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;min-width:760px">
-      <thead><tr><th>DATA</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
-      <tbody id="errorsTableBody"><tr><td colspan="6">Carregando...</td></tr></tbody>
+      <thead><tr><th>DATA</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>GRAVIDADE</th><th>PESO</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
+      <tbody id="errorsTableBody"><tr><td colspan="8">Carregando...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -328,7 +331,7 @@ header h1,header p{overflow-wrap:anywhere}
     <input type="hidden" id="errorId">
     <div class="form-grid">
       <div class="field"><label>Data</label><input type="date" id="errorDate" required></div>
-      <div class="field"><label>Tipo do erro</label><input type="text" id="errorType" placeholder="Ex.: Instalação, acabamento..." required maxlength="120"></div>
+      <div class="field"><label>Tipo do erro</label><input type="text" id="errorType" placeholder="Ex.: Instalação, acabamento..." required maxlength="120"></div><div class="field"><label>Gravidade</label><select id="errorSeverity" required></select></div>
       <div class="field"><label>Técnico 1</label><select id="errorEmployee1" required></select></div>
       <div class="field"><label>Técnico 2</label><select id="errorEmployee2" required></select></div>
       <div class="field full"><label>Observação</label><textarea id="errorObservation" rows="4" placeholder="Descreva o que aconteceu..."></textarea></div>
@@ -1034,10 +1037,13 @@ function openErrorModal(row=null){
   const opts='<option value="">Selecione...</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
   document.getElementById('errorEmployee1').innerHTML=opts;
   document.getElementById('errorEmployee2').innerHTML=opts;
+  const sev=document.getElementById('errorSeverity');
+  sev.innerHTML=(errorWeightConfig.length?errorWeightConfig:[{gravidade:'Leve',peso:1},{gravidade:'Moderado',peso:2},{gravidade:'Grave',peso:3},{gravidade:'Crítico',peso:5}]).map(x=>`<option value="${safe(x.gravidade)}">${safe(x.gravidade)} — peso ${x.peso}</option>`).join('');
   if(row){
     document.getElementById('errorDate').value=row.data;
     document.getElementById('errorType').value=row.tipo||'';
     document.getElementById('errorObservation').value=row.observacao||'';
+    document.getElementById('errorSeverity').value=row.gravidade||'Leve';
     document.getElementById('errorEmployee1').value=row.funcionario1_id;
     document.getElementById('errorEmployee2').value=row.funcionario2_id;
   }else document.getElementById('errorDate').value=todayIsoLocal();
@@ -1053,15 +1059,29 @@ async function showErrors(){
   const cur=ef.value;
   ef.innerHTML='<option value="">Todos os funcionários</option>'+(teamCache||[]).map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
   ef.value=cur;
+  await loadErrorWeights();
   await loadErrors();
+}
+let errorWeightConfig=[];
+async function loadErrorWeights(){
+  try{errorWeightConfig=await sb("configuracao_erros?select=gravidade,peso,ordem&order=ordem.asc");renderErrorWeights()}catch(e){console.error(e);errorWeightConfig=[{gravidade:"Leve",peso:1},{gravidade:"Moderado",peso:2},{gravidade:"Grave",peso:3},{gravidade:"Crítico",peso:5}];renderErrorWeights()}
+}
+function renderErrorWeights(){
+  const el=document.getElementById("errorWeights");if(!el)return;
+  el.innerHTML=errorWeightConfig.map(x=>`<label style="background:white;border:1px solid #e2e7ed;border-radius:9px;padding:8px 10px;font-size:12px"><b>${safe(x.gravidade)}</b> <input data-weight="${safe(x.gravidade)}" type="number" min="1" max="20" value="${x.peso}" ${currentRole()==='admin'?'':'disabled'} style="width:55px;margin-left:6px"></label>`).join("")+(currentRole()==='admin'?'<button class="secondary" id="saveErrorWeights" type="button">Salvar pesos</button>':'');
+  const b=document.getElementById("saveErrorWeights");if(b)b.onclick=saveErrorWeights;
+}
+async function saveErrorWeights(){
+  const inputs=[...document.querySelectorAll("[data-weight]")];
+  try{for(const inp of inputs){await sb(`configuracao_erros?gravidade=eq.${encodeURIComponent(inp.dataset.weight)}`,{method:"PATCH",headers:{"Content-Type":"application/json","Prefer":"return=minimal"},body:JSON.stringify({peso:Number(inp.value)})})}showToast("Pesos atualizados!");await loadErrorWeights()}catch(e){console.error(e);showToast("Não foi possível salvar os pesos.")}
 }
 async function loadErrors(){
   const month=document.getElementById('errorMonthFilter').value;
   if(!month)return;
   const [y,m]=month.split('-').map(Number);
   const from=`${month}-01`, to=iso(new Date(y,m,0));
-  const q=`erros_equipes?select=id,data,funcionario1_id,funcionario2_id,tipo,observacao,criado_por,equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor)&data=gte.${from}&data=lte.${to}&order=data.desc,id.desc`;
-  try{errorRows=await sb(q);await loadErrorAuthors();renderErrors()}catch(e){console.error(e);document.getElementById('errorsTableBody').innerHTML='<tr><td colspan="6">Erro ao carregar registros.</td></tr>'}
+  const q=`erros_equipes?select=id,data,funcionario1_id,funcionario2_id,tipo,gravidade,peso,observacao,criado_por,equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor)&data=gte.${from}&data=lte.${to}&order=data.desc,id.desc`;
+  try{errorRows=await sb(q);await loadErrorAuthors();renderErrors()}catch(e){console.error(e);document.getElementById('errorsTableBody').innerHTML='<tr><td colspan="8">Erro ao carregar registros.</td></tr>'}
 }
 async function loadErrorAuthors(){
   window.errorAuthorMap=window.errorAuthorMap||{};
@@ -1087,19 +1107,27 @@ function errorAuthorName(id){
   if(id===authSession?.user?.id)return document.getElementById('profileName')?.textContent||'Usuário';
   return 'Usuário';
 }
+function scoreClass(note){return note>=9?'Excelente':note>=8?'Bom':note>=7?'Atenção':note>=5?'Ruim':'Crítico'}
 function renderErrors(){
   const emp=document.getElementById('errorEmployeeFilter').value;
   const rows=errorRows.filter(r=>!emp||String(r.funcionario1_id)===emp||String(r.funcionario2_id)===emp);
-  const counts={};
-  rows.forEach(r=>{const key=`${r.equipe1?.nome||'—'} + ${r.equipe2?.nome||'—'}`;counts[key]=(counts[key]||0)+1});
+  const teams={};
+  rows.forEach(r=>{
+    const key=`${r.equipe1?.nome||'—'} + ${r.equipe2?.nome||'—'}`;
+    if(!teams[key])teams[key]={errors:0,points:0};
+    teams[key].errors++;teams[key].points+=Number(r.peso||1);
+  });
   const summary=document.getElementById('errorSummary');
-  summary.innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([dupla,n])=>`<div class="card"><p>${safe(dupla)}</p><b>${n}</b><small>${n===1?'erro no mês':'erros no mês'}</small></div>`).join('')||'<div style="color:#7a8799">Nenhum erro registrado neste período.</div>';
+  summary.innerHTML=Object.entries(teams).sort((a,b)=>a[1].points-b[1].points).map(([dupla,v])=>{
+    const note=Math.max(0,10-(v.points/2));
+    return `<div class="card"><p>${safe(dupla)}</p><b>${note.toFixed(1)}</b><small>${scoreClass(note)} · ${v.errors} ${v.errors===1?'erro':'erros'} · ${v.points} pts</small></div>`;
+  }).join('')||'<div style="color:#7a8799">Nenhum erro registrado neste período.</div>';
   document.getElementById('errorsTableBody').innerHTML=rows.map(r=>`<tr>
     <td>${fmtDate(r.data)}</td><td><b>${safe(r.equipe1?.nome||'—')} + ${safe(r.equipe2?.nome||'—')}</b></td>
-    <td>${safe(r.tipo||'—')}</td><td>${safe(r.observacao||'—')}</td>
+    <td>${safe(r.tipo||'—')}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${Number(r.peso||1)}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
     <td><button class="mini" data-error-edit="${r.id}">Editar</button>${currentRole()==='admin'?` <button class="mini danger" data-error-delete="${r.id}">Excluir</button>`:''}</td>
-  </tr>`).join('')||'<tr><td colspan="6">Nenhum erro registrado neste mês.</td></tr>';
+  </tr>`).join('')||'<tr><td colspan="8">Nenhum erro registrado neste mês.</td></tr>';
 }
 
 async function showReports(){
@@ -1423,7 +1451,9 @@ document.getElementById('errorForm').onsubmit=async e=>{
   const f1=Number(document.getElementById('errorEmployee1').value),f2=Number(document.getElementById('errorEmployee2').value);
   if(!f1||!f2)return showToast('Selecione os dois técnicos.');
   if(f1===f2)return showToast('Selecione dois técnicos diferentes.');
-  const payload={data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:document.getElementById('errorType').value.trim(),observacao:document.getElementById('errorObservation').value.trim()||null};
+  const severity=document.getElementById('errorSeverity').value;
+  const weight=Number((errorWeightConfig.find(x=>x.gravidade===severity)||{}).peso||1);
+  const payload={data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:document.getElementById('errorType').value.trim(),gravidade:severity,peso:weight,observacao:document.getElementById('errorObservation').value.trim()||null};
   const btn=document.getElementById('saveError');btn.disabled=true;
   try{
     if(id)await sb(`erros_equipes?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
