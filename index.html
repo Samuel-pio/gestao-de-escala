@@ -333,7 +333,10 @@ header h1,header p{overflow-wrap:anywhere}
       <div class="field"><label>Data</label><input type="date" id="errorDate" required></div>
       <div class="field"><label>Tipo do erro</label><input type="text" id="errorType" placeholder="Ex.: Instalação, acabamento..." required maxlength="120"></div><div class="field"><label>Gravidade</label><select id="errorSeverity" required></select></div>
       <div class="field"><label>Técnico 1</label><select id="errorEmployee1" required></select></div>
-      <div class="field"><label>Técnico 2 <small style="color:#8a96a8">(opcional)</small></label><select id="errorEmployee2"></select></div>
+      <div class="field">
+<label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="useSecondErrorTech" style="width:auto"> Adicionar segundo técnico</label>
+<select id="errorEmployee2" disabled style="margin-top:8px"><option value="">Selecione...</option></select>
+</div>
       <div class="field full"><label>Observação</label><textarea id="errorObservation" rows="4" placeholder="Descreva o que aconteceu..."></textarea></div>
     </div>
     <div class="form-actions"><button type="button" class="secondary" id="cancelError">Cancelar</button><button type="submit" class="primary" id="saveError">Salvar erro</button></div>
@@ -1036,7 +1039,12 @@ function openErrorModal(row=null){
   const team=(teamCache||[]).filter(e=>e.ativo!==false && (currentRole()==='admin'||!currentSector()||e.setor===currentSector()));
   const opts='<option value="">Selecione...</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
   document.getElementById('errorEmployee1').innerHTML=opts;
-  document.getElementById('errorEmployee2').innerHTML='<option value="">Somente um técnico</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  document.getElementById('errorEmployee2').innerHTML='<option value="">Selecione...</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  const useSecond=document.getElementById('useSecondErrorTech');
+  const secondSelect=document.getElementById('errorEmployee2');
+  useSecond.checked=!!row?.funcionario2_id;
+  secondSelect.disabled=!useSecond.checked;
+  useSecond.onchange=()=>{secondSelect.disabled=!useSecond.checked;if(!useSecond.checked)secondSelect.value='';};
   const sev=document.getElementById('errorSeverity');
   sev.innerHTML=(errorWeightConfig.length?errorWeightConfig:[{gravidade:'Leve',peso:1},{gravidade:'Moderado',peso:2},{gravidade:'Grave',peso:3},{gravidade:'Crítico',peso:5}]).map(x=>`<option value="${safe(x.gravidade)}">${safe(x.gravidade)} — peso ${x.peso}</option>`).join('');
   if(row){
@@ -1045,7 +1053,7 @@ function openErrorModal(row=null){
     document.getElementById('errorObservation').value=row.observacao||'';
     document.getElementById('errorSeverity').value=row.gravidade||'Leve';
     document.getElementById('errorEmployee1').value=row.funcionario1_id;
-    document.getElementById('errorEmployee2').value=row.funcionario2_id;
+    document.getElementById('errorEmployee2').value=row.funcionario2_id||'';
   }else document.getElementById('errorDate').value=todayIsoLocal();
   modal.classList.add('open');modal.setAttribute('aria-hidden','false');
 }
@@ -1448,8 +1456,9 @@ document.getElementById('errorEmployeeFilter').onchange=renderErrors;
 document.getElementById('errorForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('errorId').value;
-  const f1=Number(document.getElementById('errorEmployee1').value),f2Raw=document.getElementById('errorEmployee2').value,f2=f2Raw?Number(f2Raw):null;
-  if(!f1)return showToast('Selecione pelo menos um técnico.');
+  const f1=Number(document.getElementById('errorEmployee1').value),useSecond=document.getElementById('useSecondErrorTech').checked,f2Raw=useSecond?document.getElementById('errorEmployee2').value:'',f2=f2Raw?Number(f2Raw):null;
+  if(!f1)return showToast('Selecione o técnico.');
+  if(useSecond&&!f2)return showToast('Selecione o segundo técnico ou desmarque a opção.');
   if(f2&&f1===f2)return showToast('Selecione dois técnicos diferentes.');
   const severity=document.getElementById('errorSeverity').value;
   const weight=Number((errorWeightConfig.find(x=>x.gravidade===severity)||{}).peso||1);
@@ -1458,7 +1467,7 @@ document.getElementById('errorForm').onsubmit=async e=>{
   try{
     if(id)await sb(`erros_equipes?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
     else await sb('erros_equipes',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
-    closeErrorModal();showToast(id?'Erro atualizado!':'Erro registrado para a dupla!');await loadErrors();
+    closeErrorModal();showToast(id?'Erro atualizado!':(f2?'Erro registrado para a dupla!':'Erro registrado para o técnico!'));await loadErrors();
   }catch(err){console.error(err);showToast('Não foi possível salvar o erro.')}finally{btn.disabled=false}
 };
 document.getElementById('errorsTableBody').onclick=async e=>{
