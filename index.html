@@ -243,8 +243,8 @@ header h1,header p{overflow-wrap:anywhere}
   <div id="errorSummary" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0"></div>
   <div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;min-width:760px">
-      <thead><tr><th>DATA</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>OBSERVAÇÃO</th><th>AÇÕES</th></tr></thead>
-      <tbody id="errorsTableBody"><tr><td colspan="5">Carregando...</td></tr></tbody>
+      <thead><tr><th>DATA</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
+      <tbody id="errorsTableBody"><tr><td colspan="6">Carregando...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -1060,8 +1060,32 @@ async function loadErrors(){
   if(!month)return;
   const [y,m]=month.split('-').map(Number);
   const from=`${month}-01`, to=iso(new Date(y,m,0));
-  const q=`erros_equipes?select=id,data,funcionario1_id,funcionario2_id,tipo,observacao,equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor)&data=gte.${from}&data=lte.${to}&order=data.desc,id.desc`;
-  try{errorRows=await sb(q);renderErrors()}catch(e){console.error(e);document.getElementById('errorsTableBody').innerHTML='<tr><td colspan="5">Erro ao carregar registros.</td></tr>'}
+  const q=`erros_equipes?select=id,data,funcionario1_id,funcionario2_id,tipo,observacao,criado_por,equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor)&data=gte.${from}&data=lte.${to}&order=data.desc,id.desc`;
+  try{errorRows=await sb(q);await loadErrorAuthors();renderErrors()}catch(e){console.error(e);document.getElementById('errorsTableBody').innerHTML='<tr><td colspan="6">Erro ao carregar registros.</td></tr>'}
+}
+async function loadErrorAuthors(){
+  window.errorAuthorMap=window.errorAuthorMap||{};
+  const me=authSession?.user;
+  if(me?.id){
+    const email=me.email||'';
+    const raw=(me.user_metadata?.name||email.split('@')[0]||'Usuário').replace(/[._-]+/g,' ').trim();
+    window.errorAuthorMap[me.id]=raw.replace(/\b\w/g,c=>c.toUpperCase());
+  }
+  if(currentRole()==='admin'){
+    try{
+      const data=await userAdminApi({action:'list'});
+      (data.users||[]).forEach(u=>{
+        const raw=(u.name||u.user_metadata?.name||u.email?.split('@')[0]||'Usuário').replace(/[._-]+/g,' ').trim();
+        window.errorAuthorMap[u.id]=raw.replace(/\b\w/g,c=>c.toUpperCase());
+      });
+    }catch(e){console.warn('Não foi possível carregar nomes dos autores',e)}
+  }
+}
+function errorAuthorName(id){
+  if(!id)return '—';
+  if(window.errorAuthorMap?.[id])return window.errorAuthorMap[id];
+  if(id===authSession?.user?.id)return document.getElementById('profileName')?.textContent||'Usuário';
+  return 'Usuário';
 }
 function renderErrors(){
   const emp=document.getElementById('errorEmployeeFilter').value;
@@ -1073,8 +1097,9 @@ function renderErrors(){
   document.getElementById('errorsTableBody').innerHTML=rows.map(r=>`<tr>
     <td>${fmtDate(r.data)}</td><td><b>${safe(r.equipe1?.nome||'—')} + ${safe(r.equipe2?.nome||'—')}</b></td>
     <td>${safe(r.tipo||'—')}</td><td>${safe(r.observacao||'—')}</td>
+    <td>${safe(errorAuthorName(r.criado_por))}</td>
     <td><button class="mini" data-error-edit="${r.id}">Editar</button>${currentRole()==='admin'?` <button class="mini danger" data-error-delete="${r.id}">Excluir</button>`:''}</td>
-  </tr>`).join('')||'<tr><td colspan="5">Nenhum erro registrado neste mês.</td></tr>';
+  </tr>`).join('')||'<tr><td colspan="6">Nenhum erro registrado neste mês.</td></tr>';
 }
 
 async function showReports(){
