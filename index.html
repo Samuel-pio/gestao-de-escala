@@ -129,7 +129,7 @@ header h1,header p{overflow-wrap:anywhere}
   </div>
 </div>
 <div class="app" id="appShell" style="display:none"><aside><button class="sidebar-toggle" id="sidebarToggle" title="Recolher menu" aria-label="Recolher menu">‹</button><div class="brand"><b>CONEX</b><span>INTERNET</span></div><nav>
-<div class="nav on" id="dashboardNav" data-label="Dashboard">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav" data-label="Agenda">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav" data-label="Nova Solicitação">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav" data-label="Solicitações">☷ <span>Solicitações</span></div><div class="nav" id="historyNav" data-label="Histórico">↺ <span>Histórico</span></div><div class="nav" id="teamNav" data-label="Equipe">👥 <span>Equipe</span></div><div class="nav" id="plantaoNav" data-label="Plantões">🟠 <span>Plantões</span></div><div class="nav" id="errorsNav" data-label="Erros da Equipe">⚠️ <span>Erros da Equipe</span></div><div class="nav" id="airNav" data-label="Manutenção de Ar">❄️ <span>Manutenção de Ar</span></div><div class="nav" id="usersNav" data-label="Usuários">👤 <span>Usuários</span></div><div class="nav" id="reportsNav" data-label="Relatórios">▤ <span>Relatórios</span></div>
+<div class="nav on" id="dashboardNav" data-label="Dashboard">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav" data-label="Agenda">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav" data-label="Nova Solicitação">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav" data-label="Solicitações">☷ <span>Solicitações</span></div><div class="nav" id="historyNav" data-label="Histórico">↺ <span>Histórico</span></div><div class="nav" id="teamNav" data-label="Equipe">👥 <span>Equipe</span></div><div class="nav" id="plantaoNav" data-label="Plantões">🟠 <span>Plantões</span></div><div class="nav" id="errorsNav" data-label="Erros da Equipe">⚠️ <span>Erros da Equipe</span></div><div class="nav" id="airNav" data-label="Manutenções Preventivas">🛠️ <span>Manutenções Preventivas</span></div><div class="nav" id="usersNav" data-label="Usuários">👤 <span>Usuários</span></div><div class="nav" id="reportsNav" data-label="Relatórios">▤ <span>Relatórios</span></div>
 </nav><div class="profile"><div class="avatar">SP</div><div><b id="profileName">Administrador</b><small id="profileEmail">Conectado</small></div><button class="logout-btn" id="logoutBtn">Sair</button></div></aside>
 <main><div id="dashboardView"><header><div><h1 id="dashboardGreeting">Olá 👋</h1><p>Acompanhe a escala e as solicitações da equipe.</p></div><button class="bell">🔔</button></header>
 <section class="cards">
@@ -143,7 +143,7 @@ header h1,header p{overflow-wrap:anywhere}
 <div id="weeklyPlantaoCard"><div class="req"><span><b>Carregando...</b><small></small></span></div></div>
 </section>
 <section class="box" id="airDashboardBox" style="margin-bottom:18px;display:none">
-<div class="boxhead"><div><h2>❄️ Manutenções de ar-condicionado</h2><p>Equipamentos próximos do vencimento da manutenção.</p></div><strong id="airDashboardBadge">0</strong></div>
+<div class="boxhead"><div><h2>🛠️ Manutenções preventivas</h2><p>Itens próximos do vencimento da próxima manutenção.</p></div><strong id="airDashboardBadge">0</strong></div>
 <div id="airDashboardList"></div>
 </section>
 <section class="dashboard-three">
@@ -257,24 +257,25 @@ header h1,header p{overflow-wrap:anywhere}
 </div>
 </section>
 <section id="airView" style="display:none">
-<header><div><h1>Manutenção de Ar-Condicionado</h1><p>Controle os aparelhos da empresa e acompanhe os próximos vencimentos de manutenção.</p></div><button class="primary" id="newAirBtn">+ Novo aparelho</button></header>
+<header><div><h1>Manutenções Preventivas</h1><p>Controle ar-condicionado, placas solares e outras manutenções periódicas da empresa.</p></div><button class="primary" id="newAirBtn">+ Nova manutenção</button></header>
 <div class="cards" style="margin-top:24px">
-  <div class="card"><p>Equipamentos ativos</p><b id="airActiveCount">0</b><small>cadastrados</small></div>
+  <div class="card"><p>Itens ativos</p><b id="airActiveCount">0</b><small>cadastrados</small></div>
   <div class="card"><p>Próximos do vencimento</p><b class="orange" id="airSoonCount">0</b><small>dentro do alerta</small></div>
   <div class="card"><p>Vencidos</p><b id="airExpiredCount">0</b><small>manutenção pendente</small></div>
   <div class="card"><p>Em dia</p><b id="airOkCount">0</b><small>fora do período de alerta</small></div>
 </div>
 <div class="box" style="margin-top:18px;padding:20px;overflow-x:auto">
   <div class="requests-toolbar">
-    <div><h2>Aparelhos cadastrados</h2><small>Cada aparelho pode ter seu próprio prazo de alerta.</small></div>
+    <div><h2>Manutenções cadastradas</h2><small>Use o tipo para separar ar-condicionado, placa solar e qualquer manutenção futura.</small></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <input id="airSearch" type="search" placeholder="Pesquisar local ou identificação...">
-      <select id="airStatusFilter"><option value="">Todos</option><option value="Em dia">Em dia</option><option value="Próximo">Próximos do vencimento</option><option value="Vencido">Vencidos</option><option value="Inativo">Inativos</option></select>
+      <input id="airSearch" type="search" placeholder="Pesquisar local, tipo ou identificação...">
+      <select id="maintenanceTypeFilter"><option value="">Todos os tipos</option></select>
+      <select id="airStatusFilter"><option value="">Todos os status</option><option value="Em dia">Em dia</option><option value="Próximo">Próximos do vencimento</option><option value="Vencido">Vencidos</option><option value="Inativo">Inativos</option></select>
     </div>
   </div>
-  <table style="width:100%;border-collapse:collapse;min-width:980px;margin-top:14px">
-    <thead><tr><th>LOCAL</th><th>IDENTIFICAÇÃO</th><th>ÚLTIMA MANUTENÇÃO</th><th>PRÓXIMA MANUTENÇÃO</th><th>ALERTA</th><th>STATUS</th><th>OBSERVAÇÃO</th><th>AÇÕES</th></tr></thead>
-    <tbody id="airTableBody"><tr><td colspan="8">Carregando...</td></tr></tbody>
+  <table style="width:100%;border-collapse:collapse;min-width:1080px;margin-top:14px">
+    <thead><tr><th>TIPO</th><th>LOCAL</th><th>IDENTIFICAÇÃO</th><th>ÚLTIMA MANUTENÇÃO</th><th>PRÓXIMA MANUTENÇÃO</th><th>ALERTA</th><th>STATUS</th><th>OBSERVAÇÃO</th><th>AÇÕES</th></tr></thead>
+    <tbody id="airTableBody"><tr><td colspan="9">Carregando...</td></tr></tbody>
   </table>
 </div>
 </section>
@@ -352,19 +353,30 @@ header h1,header p{overflow-wrap:anywhere}
 </section></main></div>
 <div class="modal" id="airModal" aria-hidden="true">
 <div class="modal-card">
-  <div class="modal-head"><div><h2 id="airModalTitle">Novo aparelho</h2><p>Cadastre o local e defina quando a próxima manutenção vence.</p></div><button class="close" id="closeAirModal">×</button></div>
+  <div class="modal-head"><div><h2 id="airModalTitle">Nova manutenção</h2><p>Cadastre o tipo, o local e a data do próximo vencimento.</p></div><button class="close" id="closeAirModal">×</button></div>
   <form id="airForm">
     <input type="hidden" id="airId">
     <div class="form-grid">
-      <div class="field full"><label>Local do ar instalado</label><input id="airLocation" type="text" required maxlength="180" placeholder="Ex.: Recepção, Sala Financeiro, Datacenter..."></div>
-      <div class="field full"><label>Identificação / Patrimônio <small style="color:#8a96a8">(opcional)</small></label><input id="airIdentification" type="text" maxlength="120" placeholder="Ex.: AR-023"></div>
+      <div class="field full">
+        <label>Tipo de manutenção</label>
+        <input id="maintenanceType" type="text" list="maintenanceTypeSuggestions" required maxlength="120" placeholder="Ex.: Ar-condicionado">
+        <datalist id="maintenanceTypeSuggestions">
+          <option value="Ar-condicionado"></option>
+          <option value="Limpeza de placa solar"></option>
+          <option value="Nobreak"></option>
+          <option value="Gerador"></option>
+          <option value="Extintor"></option>
+        </datalist>
+      </div>
+      <div class="field full"><label>Local / setor</label><input id="airLocation" type="text" required maxlength="180" placeholder="Ex.: Recepção, Financeiro, Telhado da sede..."></div>
+      <div class="field full"><label>Identificação / patrimônio <small style="color:#8a96a8">(opcional)</small></label><input id="airIdentification" type="text" maxlength="120" placeholder="Ex.: AR-023, Conjunto Solar 01..."></div>
       <div class="field"><label>Data da última manutenção</label><input id="airLastMaintenance" type="date"></div>
       <div class="field"><label>Próxima manutenção / vencimento</label><input id="airNextMaintenance" type="date" required></div>
       <div class="field"><label>Alertar com quantos dias de antecedência?</label><input id="airAlertDays" type="number" min="1" max="365" value="15" required></div>
-      <div class="field"><label>Status do aparelho</label><select id="airActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
-      <div class="field full"><label>Observação</label><textarea id="airObservation" rows="4" placeholder="Ex.: 18.000 BTUs, sala do financeiro, filtro substituído..."></textarea></div>
+      <div class="field"><label>Status</label><select id="airActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+      <div class="field full"><label>Observação</label><textarea id="airObservation" rows="4" placeholder="Ex.: limpeza completa, troca de filtro, equipe responsável..."></textarea></div>
     </div>
-    <div class="form-actions"><button type="button" class="secondary" id="cancelAir">Cancelar</button><button type="submit" class="primary" id="saveAir">Salvar aparelho</button></div>
+    <div class="form-actions"><button type="button" class="secondary" id="cancelAir">Cancelar</button><button type="submit" class="primary" id="saveAir">Salvar manutenção</button></div>
   </form>
 </div>
 </div>
@@ -583,10 +595,10 @@ function showLogin(){
   setTimeout(()=>document.getElementById('loginEmail').focus(),50);
 }
 
-const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','manutencao_ar','relatorios'];
+const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','manutencoes','relatorios'];
 const NAV_PERMISSION={
   dashboardNav:'dashboard',agendaNav:'agenda',openRequestNav:'nova_solicitacao',
-  requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',errorsNav:'erros_equipe',airNav:'manutencao_ar',reportsNav:'relatorios'
+  requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',errorsNav:'erros_equipe',airNav:'manutencoes',reportsNav:'relatorios'
 };
 function currentRole(){return authSession?.user?.app_metadata?.role||'usuario'}
 function currentSector(){return authSession?.user?.app_metadata?.sector||null}
@@ -611,7 +623,7 @@ function showFirstAllowedView(){
   if(canAccess('equipe'))return showTeam();
   if(canAccess('plantoes'))return showPlantoes();
   if(canAccess('erros_equipe'))return showErrors();
-  if(canAccess('manutencao_ar'))return showAir();
+  if(canAccess('manutencoes'))return showAir();
   if(canAccess('relatorios'))return showReports();
   hideViews();
 }
@@ -1186,6 +1198,15 @@ function renderErrors(){
 
 
 let airRows=[];
+function maintenanceIcon(tipo){
+  const t=(tipo||'').toLowerCase();
+  if(t.includes('solar'))return '☀️';
+  if(t.includes('ar-condicionado')||t.includes('ar condicionado'))return '❄️';
+  if(t.includes('gerador'))return '⚙️';
+  if(t.includes('nobreak'))return '🔋';
+  if(t.includes('extintor'))return '🧯';
+  return '🛠️';
+}
 function airDaysUntil(dateStr){
   const today=new Date(todayIsoLocal()+'T12:00:00');
   const due=new Date(dateStr+'T12:00:00');
@@ -1208,11 +1229,19 @@ function airStatusBadge(r){
   if(st==='Em dia')return '<span style="font-weight:700;color:#16794b">🟢 Em dia</span>';
   return '<span style="color:#64748b">⚪ Inativo</span>';
 }
+function refreshMaintenanceTypeFilter(){
+  const sel=document.getElementById('maintenanceTypeFilter');
+  const current=sel.value;
+  const types=[...new Set(airRows.map(r=>(r.tipo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  sel.innerHTML='<option value="">Todos os tipos</option>'+types.map(t=>`<option value="${safe(t)}">${maintenanceIcon(t)} ${safe(t)}</option>`).join('');
+  if(types.includes(current))sel.value=current;
+}
 function openAirModal(row=null){
   const m=document.getElementById('airModal');
   document.getElementById('airForm').reset();
   document.getElementById('airId').value=row?.id||'';
-  document.getElementById('airModalTitle').textContent=row?'Editar aparelho':'Novo aparelho';
+  document.getElementById('airModalTitle').textContent=row?'Editar manutenção':'Nova manutenção';
+  document.getElementById('maintenanceType').value=row?.tipo||'Ar-condicionado';
   document.getElementById('airLocation').value=row?.local_instalacao||'';
   document.getElementById('airIdentification').value=row?.identificacao||'';
   document.getElementById('airLastMaintenance').value=row?.data_manutencao||'';
@@ -1224,23 +1253,24 @@ function openAirModal(row=null){
 }
 function closeAirModal(){const m=document.getElementById('airModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
 async function showAir(){
-  if(!canAccess('manutencao_ar'))return;
+  if(!canAccess('manutencoes'))return;
   hideViews();document.getElementById('airView').style.display='block';setActiveNav('airNav');await loadAir();
 }
 async function loadAir(){
-  const body=document.getElementById('airTableBody');body.innerHTML='<tr><td colspan="8">Carregando...</td></tr>';
+  const body=document.getElementById('airTableBody');body.innerHTML='<tr><td colspan="9">Carregando...</td></tr>';
   try{
-    airRows=await sb('manutencoes_ar_condicionado?select=id,local_instalacao,identificacao,data_manutencao,proxima_manutencao,dias_alerta,observacao,ativo,criado_por,created_at&order=proxima_manutencao.asc,local_instalacao.asc');
-    renderAir();
-  }catch(e){console.error(e);body.innerHTML='<tr><td colspan="8">Não foi possível carregar os aparelhos.</td></tr>'}
+    airRows=await sb('manutencoes_preventivas?select=id,tipo,local_instalacao,identificacao,data_manutencao,proxima_manutencao,dias_alerta,observacao,ativo,criado_por,created_at&order=proxima_manutencao.asc,local_instalacao.asc');
+    refreshMaintenanceTypeFilter();renderAir();
+  }catch(e){console.error(e);body.innerHTML='<tr><td colspan="9">Não foi possível carregar as manutenções.</td></tr>'}
 }
 function renderAir(){
   const q=(document.getElementById('airSearch').value||'').trim().toLowerCase();
   const sf=document.getElementById('airStatusFilter').value;
+  const tf=document.getElementById('maintenanceTypeFilter').value;
   const rows=airRows.filter(r=>{
     const st=airEffectiveStatus(r);
-    const txt=`${r.local_instalacao||''} ${r.identificacao||''}`.toLowerCase();
-    return (!sf||st===sf)&&(!q||txt.includes(q));
+    const txt=`${r.tipo||''} ${r.local_instalacao||''} ${r.identificacao||''}`.toLowerCase();
+    return (!sf||st===sf)&&(!tf||r.tipo===tf)&&(!q||txt.includes(q));
   });
   let active=0,soon=0,expired=0,ok=0;
   airRows.forEach(r=>{const st=airEffectiveStatus(r);if(r.ativo!==false)active++;if(st==='Próximo')soon++;else if(st==='Vencido')expired++;else if(st==='Em dia')ok++});
@@ -1249,6 +1279,7 @@ function renderAir(){
   document.getElementById('airExpiredCount').textContent=expired;
   document.getElementById('airOkCount').textContent=ok;
   document.getElementById('airTableBody').innerHTML=rows.map(r=>`<tr>
+    <td><b>${maintenanceIcon(r.tipo)} ${safe(r.tipo||'Manutenção')}</b></td>
     <td><b>${safe(r.local_instalacao)}</b></td>
     <td>${safe(r.identificacao||'—')}</td>
     <td>${r.data_manutencao?fmtDate(r.data_manutencao):'—'}</td>
@@ -1257,29 +1288,28 @@ function renderAir(){
     <td>${airStatusBadge(r)}</td>
     <td>${safe(r.observacao||'—')}</td>
     <td><button class="mini" data-air-edit="${r.id}">Editar</button> <button class="mini" data-air-done="${r.id}">Registrar manutenção</button>${currentRole()==='admin'?` <button class="mini danger" data-air-delete="${r.id}">Excluir</button>`:''}</td>
-  </tr>`).join('')||'<tr><td colspan="8">Nenhum aparelho encontrado.</td></tr>';
+  </tr>`).join('')||'<tr><td colspan="9">Nenhuma manutenção encontrada.</td></tr>';
 }
 async function registerAirMaintenance(r){
   const today=todayIsoLocal();
-  const currentNext=r.proxima_manutencao||today;
   const suggested=new Date(today+'T12:00:00');suggested.setMonth(suggested.getMonth()+6);
-  const next=prompt(`Manutenção de ${r.local_instalacao} realizada hoje (${fmtDate(today)}).\nInforme a próxima data de manutenção:`,iso(suggested));
+  const next=prompt(`${maintenanceIcon(r.tipo)} ${r.tipo} — ${r.local_instalacao}\nManutenção realizada hoje (${fmtDate(today)}).\nInforme a próxima data de manutenção:`,iso(suggested));
   if(!next)return;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(next))return showToast('Informe a data no formato AAAA-MM-DD.');
   try{
-    await sb(`manutencoes_ar_condicionado?id=eq.${r.id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({data_manutencao:today,proxima_manutencao:next})});
+    await sb(`manutencoes_preventivas?id=eq.${r.id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({data_manutencao:today,proxima_manutencao:next})});
     showToast('Manutenção registrada e próximo vencimento atualizado!');await loadAir();loadAirDashboardAlert();
   }catch(e){console.error(e);showToast('Não foi possível registrar a manutenção.')}
 }
 async function loadAirDashboardAlert(){
   const box=document.getElementById('airDashboardBox');if(!box)return;
-  if(!canAccess('manutencao_ar')){box.style.display='none';return}
+  if(!canAccess('manutencoes')){box.style.display='none';return}
   try{
-    const rows=await sb('manutencoes_ar_condicionado?select=id,local_instalacao,identificacao,proxima_manutencao,dias_alerta,ativo&ativo=eq.true&order=proxima_manutencao.asc');
+    const rows=await sb('manutencoes_preventivas?select=id,tipo,local_instalacao,identificacao,proxima_manutencao,dias_alerta,ativo&ativo=eq.true&order=proxima_manutencao.asc');
     const alerts=rows.filter(r=>airEffectiveStatus(r)==='Vencido'||airEffectiveStatus(r)==='Próximo');
     box.style.display=alerts.length?'block':'none';
     document.getElementById('airDashboardBadge').textContent=alerts.length;
-    document.getElementById('airDashboardList').innerHTML=alerts.slice(0,8).map(r=>`<div class="req"><span><b>${safe(r.local_instalacao)}${r.identificacao?' • '+safe(r.identificacao):''}</b><small>Próxima manutenção: ${fmtDate(r.proxima_manutencao)}</small></span><em>${airEffectiveStatus(r)==='Vencido'?'🔴 Vencido':'🟡 '+airDaysUntil(r.proxima_manutencao)+'d'}</em></div>`).join('');
+    document.getElementById('airDashboardList').innerHTML=alerts.slice(0,8).map(r=>`<div class="req"><span><b>${maintenanceIcon(r.tipo)} ${safe(r.tipo)} • ${safe(r.local_instalacao)}${r.identificacao?' • '+safe(r.identificacao):''}</b><small>Próxima manutenção: ${fmtDate(r.proxima_manutencao)}</small></span><em>${airEffectiveStatus(r)==='Vencido'?'🔴 Vencido':'🟡 '+airDaysUntil(r.proxima_manutencao)+'d'}</em></div>`).join('');
   }catch(e){console.error(e);box.style.display='none'}
 }
 
@@ -1421,7 +1451,7 @@ async function userAdminApi(payload){
 }
 function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Nunca'}
 function permissionLabel(p){
-  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe',manutencao_ar:'Manutenção de Ar',relatorios:'Relatórios'}[p]||p;
+  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios'}[p]||p;
 }
 async function loadUsers(){
   const tbody=document.getElementById('usersTableBody');
@@ -1591,17 +1621,19 @@ document.getElementById('autoPlantaoModal').onclick=e=>{if(e.target.id==='autoPl
 document.getElementById('autoPlantaoSector').onchange=loadAutoPlantaoEmployees;
 document.getElementById('previewAutoPlantao').onclick=buildAutoPlantaoPreview;
 document.getElementById('autoPlantaoForm').onsubmit=async e=>{e.preventDefault();await saveAutoPlantaoScale()};
-document.getElementById('airNav').onclick=()=>{if(canAccess('manutencao_ar'))showAir()};
+document.getElementById('airNav').onclick=()=>{if(canAccess('manutencoes'))showAir()};
 document.getElementById('newAirBtn').onclick=()=>openAirModal();
 document.getElementById('closeAirModal').onclick=closeAirModal;
 document.getElementById('cancelAir').onclick=closeAirModal;
 document.getElementById('airModal').onclick=e=>{if(e.target.id==='airModal')closeAirModal()};
 document.getElementById('airSearch').oninput=renderAir;
+document.getElementById('maintenanceTypeFilter').onchange=renderAir;
 document.getElementById('airStatusFilter').onchange=renderAir;
 document.getElementById('airForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('airId').value;
   const payload={
+    tipo:document.getElementById('maintenanceType').value.trim(),
     local_instalacao:document.getElementById('airLocation').value.trim(),
     identificacao:document.getElementById('airIdentification').value.trim()||null,
     data_manutencao:document.getElementById('airLastMaintenance').value||null,
@@ -1610,12 +1642,13 @@ document.getElementById('airForm').onsubmit=async e=>{
     ativo:document.getElementById('airActive').value==='true',
     observacao:document.getElementById('airObservation').value.trim()||null
   };
+  if(!payload.tipo)return showToast('Informe o tipo de manutenção.');
   const btn=document.getElementById('saveAir');btn.disabled=true;
   try{
-    if(id)await sb(`manutencoes_ar_condicionado?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
-    else await sb('manutencoes_ar_condicionado',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
-    closeAirModal();showToast(id?'Aparelho atualizado!':'Aparelho cadastrado!');await loadAir();loadAirDashboardAlert();
-  }catch(err){console.error(err);showToast('Não foi possível salvar o aparelho.')}finally{btn.disabled=false}
+    if(id)await sb(`manutencoes_preventivas?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
+    else await sb('manutencoes_preventivas',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
+    closeAirModal();showToast(id?'Manutenção atualizada!':'Manutenção cadastrada!');await loadAir();loadAirDashboardAlert();
+  }catch(err){console.error(err);showToast('Não foi possível salvar a manutenção.')}finally{btn.disabled=false}
 };
 document.getElementById('airTableBody').onclick=async e=>{
   const edit=e.target.closest('[data-air-edit]');
@@ -1624,8 +1657,8 @@ document.getElementById('airTableBody').onclick=async e=>{
   if(done){const r=airRows.find(x=>String(x.id)===done.dataset.airDone);if(r)await registerAirMaintenance(r);return}
   const del=e.target.closest('[data-air-delete]');
   if(del&&currentRole()==='admin'){
-    const r=airRows.find(x=>String(x.id)===del.dataset.airDelete);if(!r||!confirm(`Excluir o aparelho de ${r.local_instalacao}?`))return;
-    try{await sb(`manutencoes_ar_condicionado?id=eq.${r.id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Aparelho excluído!');await loadAir();loadAirDashboardAlert()}catch(err){console.error(err);showToast('Não foi possível excluir.')}
+    const r=airRows.find(x=>String(x.id)===del.dataset.airDelete);if(!r||!confirm(`Excluir ${r.tipo} de ${r.local_instalacao}?`))return;
+    try{await sb(`manutencoes_preventivas?id=eq.${r.id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Manutenção excluída!');await loadAir();loadAirDashboardAlert()}catch(err){console.error(err);showToast('Não foi possível excluir.')}
   }
 };
 document.getElementById('errorsNav').onclick=()=>{if(canAccess('erros_equipe'))showErrors()};
