@@ -108,7 +108,24 @@ header h1,header p{overflow-wrap:anywhere}
   #requestsView table,#historyView table,#teamView table,#plantaoView table,#usersView table,#reportsView table{min-width:680px}
 }
 
-#errorsView th,#errorsView td{padding:12px 10px;border-bottom:1px solid #edf0f4;text-align:left;font-size:12px}#errorsView th{color:#6f7d91;font-size:10px}.mini{border:1px solid #dfe5ec;background:white;border-radius:6px;padding:5px 8px;cursor:pointer}.mini.danger{color:#d33;border-color:#e8b7b7}</style></head><body>
+#errorsView th,#errorsView td{padding:12px 10px;border-bottom:1px solid #edf0f4;text-align:left;font-size:12px}#errorsView th{color:#6f7d91;font-size:10px}.mini{border:1px solid #dfe5ec;background:white;border-radius:6px;padding:5px 8px;cursor:pointer}.mini.danger{color:#d33;border-color:#e8b7b7}
+.alert-wrap{position:relative}
+.bell{position:relative}
+.alert-badge{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#e53935;color:#fff;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;border:2px solid #fff;box-sizing:border-box}
+.alert-panel{position:absolute;right:0;top:48px;width:min(390px,calc(100vw - 36px));max-height:520px;overflow:hidden;background:#fff;border:1px solid #e5eaf0;border-radius:14px;box-shadow:0 14px 40px #10203a26;z-index:120;display:none}
+.alert-panel.open{display:block}
+.alert-panel-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #edf0f4}
+.alert-panel-head h3{margin:0;font-size:16px;color:#10203a}
+.alert-panel-head button{border:0;background:#f2f5f8;border-radius:8px;padding:7px 9px;cursor:pointer}
+.alert-panel-list{max-height:430px;overflow:auto;padding:8px}
+.alert-item{display:flex;gap:10px;align-items:flex-start;padding:11px 10px;border-radius:10px;cursor:pointer}
+.alert-item:hover{background:#f7f9fb}
+.alert-item-icon{font-size:20px;line-height:1.2}
+.alert-item-text{min-width:0;flex:1}
+.alert-item-text b{display:block;color:#10203a;font-size:13px;margin-bottom:3px}
+.alert-item-text small{display:block;color:#71809a;font-size:11px;line-height:1.35}
+.alert-empty{padding:28px 18px;text-align:center;color:#71809a;font-size:13px}
+</style></head><body>
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
     <div class="login-logo"><b>CONEX</b><span>INTERNET</span></div>
@@ -131,7 +148,13 @@ header h1,header p{overflow-wrap:anywhere}
 <div class="app" id="appShell" style="display:none"><aside><button class="sidebar-toggle" id="sidebarToggle" title="Recolher menu" aria-label="Recolher menu">‹</button><div class="brand"><b>CONEX</b><span>INTERNET</span></div><nav>
 <div class="nav on" id="dashboardNav" data-label="Dashboard">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav" data-label="Agenda">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav" data-label="Nova Solicitação">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav" data-label="Solicitações">☷ <span>Solicitações</span></div><div class="nav" id="historyNav" data-label="Histórico">↺ <span>Histórico</span></div><div class="nav" id="teamNav" data-label="Equipe">👥 <span>Equipe</span></div><div class="nav" id="plantaoNav" data-label="Plantões">🟠 <span>Plantões</span></div><div class="nav" id="errorsNav" data-label="Erros da Equipe">⚠️ <span>Erros da Equipe</span></div><div class="nav" id="airNav" data-label="Manutenções Preventivas">🛠️ <span>Manutenções Preventivas</span></div><div class="nav" id="usersNav" data-label="Usuários">👤 <span>Usuários</span></div><div class="nav" id="reportsNav" data-label="Relatórios">▤ <span>Relatórios</span></div>
 </nav><div class="profile"><div class="avatar">SP</div><div><b id="profileName">Administrador</b><small id="profileEmail">Conectado</small></div><button class="logout-btn" id="logoutBtn">Sair</button></div></aside>
-<main><div id="dashboardView"><header><div><h1 id="dashboardGreeting">Olá 👋</h1><p>Acompanhe a escala e as solicitações da equipe.</p></div><button class="bell">🔔</button></header>
+<main><div id="dashboardView"><header><div><h1 id="dashboardGreeting">Olá 👋</h1><p>Acompanhe a escala e as solicitações da equipe.</p></div><div class="alert-wrap">
+<button class="bell" id="alertBell" type="button" title="Alertas">🔔<span class="alert-badge" id="alertBellBadge">0</span></button>
+<div class="alert-panel" id="alertPanel">
+  <div class="alert-panel-head"><h3>Alertas</h3><button id="refreshAlerts" type="button" title="Atualizar">↻</button></div>
+  <div class="alert-panel-list" id="alertPanelList"><div class="alert-empty">Carregando alertas...</div></div>
+</div>
+</div></header>
 <section class="cards">
 <div class="card"><p>Funcionários ativos</p><b id="funcCount">—</b><small>na equipe</small></div>
 <div class="card"><p>Trabalhando hoje</p><b id="workingTodayCount">—</b><small>disponíveis</small></div>
@@ -643,6 +666,7 @@ function showApp(){
     avatar.textContent=initials||'U';
   }
   applyAccessControls();
+  loadSystemAlerts();
 }
 async function initAuth(){
   const saved=loadSavedSession();
@@ -765,6 +789,7 @@ async function load(){
     document.getElementById('pendingBadge').textContent=pending.length;
     renderDashboardOperational(team,dashboardRequests,dashboardPlantoes);
     loadAirDashboardAlert();
+    loadSystemAlerts();
     renderCalendar(requests,plantoes);
     renderPending(pending);
   }catch(e){
@@ -872,6 +897,64 @@ function renderCalendar(requests,plantoes=[]){
     for(const r of dayPlantao){const sm=document.createElement('small');const nomes=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ');sm.textContent=`🟠 ${nomes}`;cell.appendChild(sm)}
     m.appendChild(cell);
   }
+}
+
+
+let systemAlerts=[];
+function renderSystemAlerts(){
+  const badge=document.getElementById('alertBellBadge');
+  const list=document.getElementById('alertPanelList');
+  if(!badge||!list)return;
+  const count=systemAlerts.length;
+  badge.textContent=count>99?'99+':String(count);
+  badge.style.display=count?'flex':'none';
+  list.innerHTML=count?systemAlerts.map(a=>`<div class="alert-item" data-alert-target="${a.target||''}">
+    <div class="alert-item-icon">${a.icon}</div>
+    <div class="alert-item-text"><b>${safe(a.title)}</b><small>${safe(a.detail)}</small></div>
+  </div>`).join(''):'<div class="alert-empty">✅ Nenhum alerta pendente no momento.</div>';
+}
+async function loadSystemAlerts(){
+  const alerts=[];
+  try{
+    const jobs=[];
+    if(canAccess('solicitacoes'))jobs.push(sb('solicitacoes?select=id,data_inicial,data_final,status,equipe(nome)&status=eq.Pendente&order=data_inicial.asc').then(rows=>({kind:'requests',rows})).catch(()=>({kind:'requests',rows:[]})));
+    if(canAccess('manutencoes'))jobs.push(sb('manutencoes_preventivas?select=id,tipo,local_instalacao,identificacao,proxima_manutencao,dias_alerta,ativo&ativo=eq.true&order=proxima_manutencao.asc').then(rows=>({kind:'maintenance',rows})).catch(()=>({kind:'maintenance',rows:[]})));
+    const results=await Promise.all(jobs);
+    for(const result of results){
+      if(result.kind==='requests'){
+        result.rows.forEach(r=>alerts.push({
+          icon:'🟡',
+          title:`Solicitação pendente — ${r.equipe?.nome||'Funcionário'}`,
+          detail:r.data_inicial===r.data_final?`Data: ${fmtDate(r.data_inicial)}`:`Período: ${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`,
+          target:'requests'
+        }));
+      }else if(result.kind==='maintenance'){
+        result.rows.forEach(r=>{
+          const st=airEffectiveStatus(r);
+          if(st!=='Vencido'&&st!=='Próximo')return;
+          const days=airDaysUntil(r.proxima_manutencao);
+          alerts.push({
+            icon:st==='Vencido'?'🔴':maintenanceIcon(r.tipo),
+            title:`${r.tipo||'Manutenção'} — ${r.local_instalacao}`,
+            detail:st==='Vencido'?`Vencida há ${Math.abs(days)} dia${Math.abs(days)===1?'':'s'} • ${fmtDate(r.proxima_manutencao)}`:days===0?`Vence hoje • ${fmtDate(r.proxima_manutencao)}`:`Vence em ${days} dia${days===1?'':'s'} • ${fmtDate(r.proxima_manutencao)}`,
+            target:'maintenance'
+          });
+        });
+      }
+    }
+    systemAlerts=alerts;
+    renderSystemAlerts();
+  }catch(e){
+    console.error('Falha ao carregar alertas',e);
+    systemAlerts=[];
+    renderSystemAlerts();
+  }
+}
+function toggleAlertPanel(force){
+  const panel=document.getElementById('alertPanel');if(!panel)return;
+  const open=force===undefined?!panel.classList.contains('open'):!!force;
+  panel.classList.toggle('open',open);
+  if(open)loadSystemAlerts();
 }
 
 function setActiveNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));const n=document.getElementById(id);if(n)n.classList.add('on')}
@@ -1298,7 +1381,7 @@ async function registerAirMaintenance(r){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(next))return showToast('Informe a data no formato AAAA-MM-DD.');
   try{
     await sb(`manutencoes_preventivas?id=eq.${r.id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({data_manutencao:today,proxima_manutencao:next})});
-    showToast('Manutenção registrada e próximo vencimento atualizado!');await loadAir();loadAirDashboardAlert();
+    showToast('Manutenção registrada e próximo vencimento atualizado!');await loadAir();loadAirDashboardAlert();loadSystemAlerts();
   }catch(e){console.error(e);showToast('Não foi possível registrar a manutenção.')}
 }
 async function loadAirDashboardAlert(){
@@ -1647,7 +1730,7 @@ document.getElementById('airForm').onsubmit=async e=>{
   try{
     if(id)await sb(`manutencoes_preventivas?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
     else await sb('manutencoes_preventivas',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
-    closeAirModal();showToast(id?'Manutenção atualizada!':'Manutenção cadastrada!');await loadAir();loadAirDashboardAlert();
+    closeAirModal();showToast(id?'Manutenção atualizada!':'Manutenção cadastrada!');await loadAir();loadAirDashboardAlert();loadSystemAlerts();
   }catch(err){console.error(err);showToast('Não foi possível salvar a manutenção.')}finally{btn.disabled=false}
 };
 document.getElementById('airTableBody').onclick=async e=>{
@@ -1661,6 +1744,18 @@ document.getElementById('airTableBody').onclick=async e=>{
     try{await sb(`manutencoes_preventivas?id=eq.${r.id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Manutenção excluída!');await loadAir();loadAirDashboardAlert()}catch(err){console.error(err);showToast('Não foi possível excluir.')}
   }
 };
+document.getElementById('alertBell').onclick=e=>{e.stopPropagation();toggleAlertPanel()};
+document.getElementById('refreshAlerts').onclick=e=>{e.stopPropagation();loadSystemAlerts()};
+document.getElementById('alertPanel').onclick=e=>{
+  e.stopPropagation();
+  const item=e.target.closest('[data-alert-target]');
+  if(!item)return;
+  const target=item.dataset.alertTarget;
+  toggleAlertPanel(false);
+  if(target==='requests'&&canAccess('solicitacoes'))showRequests();
+  if(target==='maintenance'&&canAccess('manutencoes'))showAir();
+};
+document.addEventListener('click',()=>toggleAlertPanel(false));
 document.getElementById('errorsNav').onclick=()=>{if(canAccess('erros_equipe'))showErrors()};
 document.getElementById('newErrorBtn').onclick=()=>openErrorModal();
 document.getElementById('closeErrorModal').onclick=closeErrorModal;
