@@ -473,7 +473,13 @@ header h1,header p{overflow-wrap:anywhere}
         </label>
       </div>
       <div id="permissionsBox" style="margin-top:18px;border-top:1px solid #e5e7eb;padding-top:16px">
-        <div style="margin-bottom:10px"><b>Permissões de acesso</b><div id="permissionsHint" style="font-size:12px;color:#64748b;margin-top:3px">Marque apenas as áreas que esse usuário poderá acessar.</div></div>
+        <div style="margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div><b>Permissões de acesso</b><div id="permissionsHint" style="font-size:12px;color:#64748b;margin-top:3px">Marque apenas as áreas que esse usuário poderá acessar.</div></div>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="mini" id="selectAllPermissions">Marcar todas</button>
+            <button type="button" class="mini" id="clearAllPermissions">Limpar</button>
+          </div>
+        </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
           <label><input type="checkbox" class="userPerm" value="dashboard"> Dashboard</label>
           <label><input type="checkbox" class="userPerm" value="agenda"> Agenda</label>
@@ -482,6 +488,8 @@ header h1,header p{overflow-wrap:anywhere}
           <label><input type="checkbox" class="userPerm" value="historico"> Histórico</label>
           <label><input type="checkbox" class="userPerm" value="equipe"> Equipe</label>
           <label><input type="checkbox" class="userPerm" value="plantoes"> Plantões</label>
+          <label><input type="checkbox" class="userPerm" value="erros_equipe"> Erros da Equipe</label>
+          <label><input type="checkbox" class="userPerm" value="manutencoes"> Manutenções Preventivas</label>
           <label><input type="checkbox" class="userPerm" value="relatorios"> Relatórios</label>
         </div>
       </div>
@@ -1564,6 +1572,9 @@ async function showUsers(){
   hideViews();document.getElementById('usersView').style.display='block';setActiveNav('usersNav');await loadUsers()
 }
 function selectedUserPermissions(){return [...document.querySelectorAll('.userPerm:checked')].map(x=>x.value)}
+document.getElementById('selectAllPermissions').onclick=()=>{if(document.getElementById('userRole').value!=='admin')document.querySelectorAll('.userPerm').forEach(cb=>cb.checked=true)};
+document.getElementById('clearAllPermissions').onclick=()=>{if(document.getElementById('userRole').value!=='admin')document.querySelectorAll('.userPerm').forEach(cb=>cb.checked=false)};
+
 function updatePermissionUI(){
   const isAdmin=document.getElementById('userRole').value==='admin';
   document.querySelectorAll('.userPerm').forEach(cb=>{cb.disabled=isAdmin;if(isAdmin)cb.checked=true});
