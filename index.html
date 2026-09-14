@@ -70,8 +70,8 @@ header h1,header p{overflow-wrap:anywhere}
   .toolbar,.filters,.actions,.form-actions,.boxhead{flex-wrap:wrap}
   select,input,textarea,button{max-width:100%}
 }
-#requestsView table,#historyView table,#teamView table,#plantaoView table,#blocksView table,#usersView table,#reportsView table{min-width:760px}
-#requestsView .box,#historyView .box,#teamView .box,#plantaoView .box,#blocksView .box,#usersView .box,#reportsView .box{overflow-x:auto}
+#requestsView table,#historyView table,#teamView table,#plantaoView table,#airView table,#usersView table,#reportsView table{min-width:760px}
+#requestsView .box,#historyView .box,#teamView .box,#plantaoView .box,#airView .box,#usersView .box,#reportsView .box{overflow-x:auto}
 .calendar{overflow-x:auto}
 .week,.month{min-width:650px}
 
@@ -129,7 +129,7 @@ header h1,header p{overflow-wrap:anywhere}
   </div>
 </div>
 <div class="app" id="appShell" style="display:none"><aside><button class="sidebar-toggle" id="sidebarToggle" title="Recolher menu" aria-label="Recolher menu">‹</button><div class="brand"><b>CONEX</b><span>INTERNET</span></div><nav>
-<div class="nav on" id="dashboardNav" data-label="Dashboard">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav" data-label="Agenda">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav" data-label="Nova Solicitação">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav" data-label="Solicitações">☷ <span>Solicitações</span></div><div class="nav" id="historyNav" data-label="Histórico">↺ <span>Histórico</span></div><div class="nav" id="teamNav" data-label="Equipe">👥 <span>Equipe</span></div><div class="nav" id="plantaoNav" data-label="Plantões">🟠 <span>Plantões</span></div><div class="nav" id="errorsNav" data-label="Erros da Equipe">⚠️ <span>Erros da Equipe</span></div><div class="nav" id="blocksNav" data-label="Bloqueios Temporários">⏳ <span>Bloqueios Temporários</span></div><div class="nav" id="usersNav" data-label="Usuários">👤 <span>Usuários</span></div><div class="nav" id="reportsNav" data-label="Relatórios">▤ <span>Relatórios</span></div>
+<div class="nav on" id="dashboardNav" data-label="Dashboard">▦ <span>Dashboard</span></div><div class="nav" id="agendaNav" data-label="Agenda">▣ <span>Agenda</span></div><div class="nav" id="openRequestNav" data-label="Nova Solicitação">＋ <span>Nova Solicitação</span></div><div class="nav" id="requestsNav" data-label="Solicitações">☷ <span>Solicitações</span></div><div class="nav" id="historyNav" data-label="Histórico">↺ <span>Histórico</span></div><div class="nav" id="teamNav" data-label="Equipe">👥 <span>Equipe</span></div><div class="nav" id="plantaoNav" data-label="Plantões">🟠 <span>Plantões</span></div><div class="nav" id="errorsNav" data-label="Erros da Equipe">⚠️ <span>Erros da Equipe</span></div><div class="nav" id="airNav" data-label="Manutenção de Ar">❄️ <span>Manutenção de Ar</span></div><div class="nav" id="usersNav" data-label="Usuários">👤 <span>Usuários</span></div><div class="nav" id="reportsNav" data-label="Relatórios">▤ <span>Relatórios</span></div>
 </nav><div class="profile"><div class="avatar">SP</div><div><b id="profileName">Administrador</b><small id="profileEmail">Conectado</small></div><button class="logout-btn" id="logoutBtn">Sair</button></div></aside>
 <main><div id="dashboardView"><header><div><h1 id="dashboardGreeting">Olá 👋</h1><p>Acompanhe a escala e as solicitações da equipe.</p></div><button class="bell">🔔</button></header>
 <section class="cards">
@@ -142,9 +142,9 @@ header h1,header p{overflow-wrap:anywhere}
 <div class="boxhead"><div><h2>🟠 Plantão da semana</h2><p>Dupla responsável em Buritis.</p></div></div>
 <div id="weeklyPlantaoCard"><div class="req"><span><b>Carregando...</b><small></small></span></div></div>
 </section>
-<section class="box" id="blockDashboardBox" style="margin-bottom:18px;display:none">
-<div class="boxhead"><div><h2>⏳ Bloqueios temporários</h2><p>Clientes próximos da data de reativação.</p></div><strong id="blockDashboardBadge">0</strong></div>
-<div id="blockDashboardList"></div>
+<section class="box" id="airDashboardBox" style="margin-bottom:18px;display:none">
+<div class="boxhead"><div><h2>❄️ Manutenções de ar-condicionado</h2><p>Equipamentos próximos do vencimento da manutenção.</p></div><strong id="airDashboardBadge">0</strong></div>
+<div id="airDashboardList"></div>
 </section>
 <section class="dashboard-three">
 <div class="box pending"><div class="boxhead"><div><h2>Solicitações pendentes</h2><p>Pedidos que ainda precisam de análise.</p></div><strong id="pendingBadge">—</strong></div><div id="pendingList"><div class="req"><span><b>Carregando...</b><small></small></span></div></div></div>
@@ -256,25 +256,25 @@ header h1,header p{overflow-wrap:anywhere}
   </div>
 </div>
 </section>
-<section id="blocksView" style="display:none">
-<header><div><h1>Bloqueios Temporários</h1><p>Controle clientes com bloqueio por prazo e receba aviso quando chegar a data de reativação.</p></div><button class="primary" id="newBlockBtn">+ Novo bloqueio</button></header>
+<section id="airView" style="display:none">
+<header><div><h1>Manutenção de Ar-Condicionado</h1><p>Controle os aparelhos da empresa e acompanhe os próximos vencimentos de manutenção.</p></div><button class="primary" id="newAirBtn">+ Novo aparelho</button></header>
 <div class="cards" style="margin-top:24px">
-  <div class="card"><p>Ativos</p><b id="blockActiveCount">0</b><small>em andamento</small></div>
-  <div class="card"><p>Vencendo em 7 dias</p><b class="orange" id="blockSoonCount">0</b><small>atenção</small></div>
-  <div class="card"><p>Vencidos</p><b id="blockExpiredCount">0</b><small>precisam de ação</small></div>
-  <div class="card"><p>Reativados</p><b id="blockReactivatedCount">0</b><small>concluídos</small></div>
+  <div class="card"><p>Equipamentos ativos</p><b id="airActiveCount">0</b><small>cadastrados</small></div>
+  <div class="card"><p>Próximos do vencimento</p><b class="orange" id="airSoonCount">0</b><small>dentro do alerta</small></div>
+  <div class="card"><p>Vencidos</p><b id="airExpiredCount">0</b><small>manutenção pendente</small></div>
+  <div class="card"><p>Em dia</p><b id="airOkCount">0</b><small>fora do período de alerta</small></div>
 </div>
 <div class="box" style="margin-top:18px;padding:20px;overflow-x:auto">
   <div class="requests-toolbar">
-    <div><h2>Clientes bloqueados</h2><small>A data de reativação é calculada automaticamente.</small></div>
+    <div><h2>Aparelhos cadastrados</h2><small>Cada aparelho pode ter seu próprio prazo de alerta.</small></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <input id="blockSearch" type="search" placeholder="Pesquisar cliente...">
-      <select id="blockStatusFilter"><option value="">Todos os status</option><option value="Ativo">Ativos</option><option value="Vencendo">Vencendo</option><option value="Vencido">Vencidos</option><option value="Reativado">Reativados</option><option value="Cancelado">Cancelados</option></select>
+      <input id="airSearch" type="search" placeholder="Pesquisar local ou identificação...">
+      <select id="airStatusFilter"><option value="">Todos</option><option value="Em dia">Em dia</option><option value="Próximo">Próximos do vencimento</option><option value="Vencido">Vencidos</option><option value="Inativo">Inativos</option></select>
     </div>
   </div>
-  <table style="width:100%;border-collapse:collapse;min-width:900px;margin-top:14px">
-    <thead><tr><th>CLIENTE</th><th>INÍCIO</th><th>DIAS</th><th>REATIVAR EM</th><th>STATUS</th><th>MOTIVO</th><th>OBSERVAÇÃO</th><th>AÇÕES</th></tr></thead>
-    <tbody id="blocksTableBody"><tr><td colspan="8">Carregando...</td></tr></tbody>
+  <table style="width:100%;border-collapse:collapse;min-width:980px;margin-top:14px">
+    <thead><tr><th>LOCAL</th><th>IDENTIFICAÇÃO</th><th>ÚLTIMA MANUTENÇÃO</th><th>PRÓXIMA MANUTENÇÃO</th><th>ALERTA</th><th>STATUS</th><th>OBSERVAÇÃO</th><th>AÇÕES</th></tr></thead>
+    <tbody id="airTableBody"><tr><td colspan="8">Carregando...</td></tr></tbody>
   </table>
 </div>
 </section>
@@ -350,20 +350,21 @@ header h1,header p{overflow-wrap:anywhere}
     </div>
   </section>
 </section></main></div>
-<div class="modal" id="blockModal" aria-hidden="true">
+<div class="modal" id="airModal" aria-hidden="true">
 <div class="modal-card">
-  <div class="modal-head"><div><h2 id="blockModalTitle">Novo bloqueio temporário</h2><p>Informe o início e o prazo. A data final será calculada automaticamente.</p></div><button class="close" id="closeBlockModal">×</button></div>
-  <form id="blockForm">
-    <input type="hidden" id="blockId">
+  <div class="modal-head"><div><h2 id="airModalTitle">Novo aparelho</h2><p>Cadastre o local e defina quando a próxima manutenção vence.</p></div><button class="close" id="closeAirModal">×</button></div>
+  <form id="airForm">
+    <input type="hidden" id="airId">
     <div class="form-grid">
-      <div class="field full"><label>Cliente</label><input id="blockClient" type="text" required maxlength="160" placeholder="Ex.: Aline"></div>
-      <div class="field"><label>Data do bloqueio</label><input id="blockStart" type="date" required></div>
-      <div class="field"><label>Quantidade de dias</label><input id="blockDays" type="number" min="1" max="3650" value="90" required></div>
-      <div class="field full"><label>Data prevista para reativação</label><input id="blockEndPreview" type="text" readonly></div>
-      <div class="field full"><label>Motivo</label><input id="blockReason" type="text" maxlength="200" placeholder="Motivo do bloqueio temporário"></div>
-      <div class="field full"><label>Observação</label><textarea id="blockObservation" rows="4" placeholder="Informações adicionais..."></textarea></div>
+      <div class="field full"><label>Local do ar instalado</label><input id="airLocation" type="text" required maxlength="180" placeholder="Ex.: Recepção, Sala Financeiro, Datacenter..."></div>
+      <div class="field full"><label>Identificação / Patrimônio <small style="color:#8a96a8">(opcional)</small></label><input id="airIdentification" type="text" maxlength="120" placeholder="Ex.: AR-023"></div>
+      <div class="field"><label>Data da última manutenção</label><input id="airLastMaintenance" type="date"></div>
+      <div class="field"><label>Próxima manutenção / vencimento</label><input id="airNextMaintenance" type="date" required></div>
+      <div class="field"><label>Alertar com quantos dias de antecedência?</label><input id="airAlertDays" type="number" min="1" max="365" value="15" required></div>
+      <div class="field"><label>Status do aparelho</label><select id="airActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+      <div class="field full"><label>Observação</label><textarea id="airObservation" rows="4" placeholder="Ex.: 18.000 BTUs, sala do financeiro, filtro substituído..."></textarea></div>
     </div>
-    <div class="form-actions"><button type="button" class="secondary" id="cancelBlock">Cancelar</button><button type="submit" class="primary" id="saveBlock">Salvar bloqueio</button></div>
+    <div class="form-actions"><button type="button" class="secondary" id="cancelAir">Cancelar</button><button type="submit" class="primary" id="saveAir">Salvar aparelho</button></div>
   </form>
 </div>
 </div>
@@ -582,10 +583,10 @@ function showLogin(){
   setTimeout(()=>document.getElementById('loginEmail').focus(),50);
 }
 
-const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','bloqueios_temporarios','relatorios'];
+const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','manutencao_ar','relatorios'];
 const NAV_PERMISSION={
   dashboardNav:'dashboard',agendaNav:'agenda',openRequestNav:'nova_solicitacao',
-  requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',errorsNav:'erros_equipe',blocksNav:'bloqueios_temporarios',reportsNav:'relatorios'
+  requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',errorsNav:'erros_equipe',airNav:'manutencao_ar',reportsNav:'relatorios'
 };
 function currentRole(){return authSession?.user?.app_metadata?.role||'usuario'}
 function currentSector(){return authSession?.user?.app_metadata?.sector||null}
@@ -610,7 +611,7 @@ function showFirstAllowedView(){
   if(canAccess('equipe'))return showTeam();
   if(canAccess('plantoes'))return showPlantoes();
   if(canAccess('erros_equipe'))return showErrors();
-  if(canAccess('bloqueios_temporarios'))return showBlocks();
+  if(canAccess('manutencao_ar'))return showAir();
   if(canAccess('relatorios'))return showReports();
   hideViews();
 }
@@ -751,7 +752,7 @@ async function load(){
     document.getElementById('pendingCount').textContent=pending.length;
     document.getElementById('pendingBadge').textContent=pending.length;
     renderDashboardOperational(team,dashboardRequests,dashboardPlantoes);
-    loadBlockDashboardAlert();
+    loadAirDashboardAlert();
     renderCalendar(requests,plantoes);
     renderPending(pending);
   }catch(e){
@@ -862,8 +863,8 @@ function renderCalendar(requests,plantoes=[]){
 }
 
 function setActiveNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));const n=document.getElementById(id);if(n)n.classList.add('on')}
-function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','plantaoView','errorsView','blocksView','usersView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
-function showDashboard(){hideViews();document.getElementById('dashboardView').style.display='block';setActiveNav('dashboardNav');loadBlockDashboardAlert()}
+function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','plantaoView','errorsView','airView','usersView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
+function showDashboard(){hideViews();document.getElementById('dashboardView').style.display='block';setActiveNav('dashboardNav');loadAirDashboardAlert()}
 function showAgenda(){hideViews();document.getElementById('agendaView').style.display='block';setActiveNav('agendaNav')}
 async function showRequests(){hideViews();document.getElementById('requestsView').style.display='block';setActiveNav('requestsNav');await loadAllRequests()}
 async function showHistory(){hideViews();document.getElementById('historyView').style.display='block';setActiveNav('historyNav');await loadHistory()}
@@ -1184,89 +1185,101 @@ function renderErrors(){
 }
 
 
-let blockRows=[];
-function blockEffectiveStatus(r){
-  if(r.status==='Reativado'||r.status==='Cancelado')return r.status;
-  const today=todayIsoLocal();
-  const days=Math.ceil((new Date(r.data_fim+'T12:00:00')-new Date(today+'T12:00:00'))/86400000);
+let airRows=[];
+function airDaysUntil(dateStr){
+  const today=new Date(todayIsoLocal()+'T12:00:00');
+  const due=new Date(dateStr+'T12:00:00');
+  return Math.ceil((due-today)/86400000);
+}
+function airEffectiveStatus(r){
+  if(r.ativo===false)return 'Inativo';
+  const days=airDaysUntil(r.proxima_manutencao);
   if(days<0)return 'Vencido';
-  if(days===0)return 'Vence hoje';
-  if(days<=7)return 'Vencendo';
-  return 'Ativo';
+  if(days<=Number(r.dias_alerta||15))return 'Próximo';
+  return 'Em dia';
 }
-function blockStatusBadge(r){
-  const st=blockEffectiveStatus(r);
-  const today=todayIsoLocal();
-  const days=Math.ceil((new Date(r.data_fim+'T12:00:00')-new Date(today+'T12:00:00'))/86400000);
-  if(st==='Vencido')return `<span style="font-weight:700;color:#b42318">🔴 Vencido ${Math.abs(days)}d</span>`;
-  if(st==='Vence hoje')return '<span style="font-weight:700;color:#b42318">🔴 Vence hoje</span>';
-  if(st==='Vencendo')return `<span style="font-weight:700;color:#b7791f">🟡 ${days} dia${days===1?'':'s'}</span>`;
-  if(st==='Ativo')return `<span style="font-weight:700;color:#16794b">🟢 Ativo</span>`;
-  if(st==='Reativado')return '<span style="font-weight:700;color:#2563eb">🔵 Reativado</span>';
-  return '<span style="color:#64748b">⚪ Cancelado</span>';
+function airStatusBadge(r){
+  const st=airEffectiveStatus(r),days=airDaysUntil(r.proxima_manutencao);
+  if(st==='Vencido')return `<span style="font-weight:700;color:#b42318">🔴 Vencido há ${Math.abs(days)}d</span>`;
+  if(st==='Próximo'){
+    if(days===0)return '<span style="font-weight:700;color:#b42318">🔴 Vence hoje</span>';
+    return `<span style="font-weight:700;color:#b7791f">🟡 Faltam ${days} dia${days===1?'':'s'}</span>`;
+  }
+  if(st==='Em dia')return '<span style="font-weight:700;color:#16794b">🟢 Em dia</span>';
+  return '<span style="color:#64748b">⚪ Inativo</span>';
 }
-function updateBlockEndPreview(){
-  const start=document.getElementById('blockStart')?.value;
-  const days=Number(document.getElementById('blockDays')?.value||0);
-  const out=document.getElementById('blockEndPreview');if(!out)return;
-  if(!start||!days){out.value='';return}
-  const d=new Date(start+'T12:00:00');d.setDate(d.getDate()+days);out.value=fmtDate(iso(d));
+function openAirModal(row=null){
+  const m=document.getElementById('airModal');
+  document.getElementById('airForm').reset();
+  document.getElementById('airId').value=row?.id||'';
+  document.getElementById('airModalTitle').textContent=row?'Editar aparelho':'Novo aparelho';
+  document.getElementById('airLocation').value=row?.local_instalacao||'';
+  document.getElementById('airIdentification').value=row?.identificacao||'';
+  document.getElementById('airLastMaintenance').value=row?.data_manutencao||'';
+  document.getElementById('airNextMaintenance').value=row?.proxima_manutencao||'';
+  document.getElementById('airAlertDays').value=row?.dias_alerta||15;
+  document.getElementById('airActive').value=row?.ativo===false?'false':'true';
+  document.getElementById('airObservation').value=row?.observacao||'';
+  m.classList.add('open');m.setAttribute('aria-hidden','false');
 }
-function openBlockModal(row=null){
-  const m=document.getElementById('blockModal');document.getElementById('blockForm').reset();
-  document.getElementById('blockId').value=row?.id||'';
-  document.getElementById('blockModalTitle').textContent=row?'Editar bloqueio':'Novo bloqueio temporário';
-  document.getElementById('blockClient').value=row?.cliente||'';
-  document.getElementById('blockStart').value=row?.data_inicio||todayIsoLocal();
-  document.getElementById('blockDays').value=row?.dias||90;
-  document.getElementById('blockReason').value=row?.motivo||'';
-  document.getElementById('blockObservation').value=row?.observacao||'';
-  updateBlockEndPreview();m.classList.add('open');m.setAttribute('aria-hidden','false');
+function closeAirModal(){const m=document.getElementById('airModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
+async function showAir(){
+  if(!canAccess('manutencao_ar'))return;
+  hideViews();document.getElementById('airView').style.display='block';setActiveNav('airNav');await loadAir();
 }
-function closeBlockModal(){const m=document.getElementById('blockModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
-async function showBlocks(){
-  if(!canAccess('bloqueios_temporarios'))return;
-  hideViews();document.getElementById('blocksView').style.display='block';setActiveNav('blocksNav');await loadBlocks();
-}
-async function loadBlocks(){
-  const body=document.getElementById('blocksTableBody');body.innerHTML='<tr><td colspan="8">Carregando...</td></tr>';
+async function loadAir(){
+  const body=document.getElementById('airTableBody');body.innerHTML='<tr><td colspan="8">Carregando...</td></tr>';
   try{
-    blockRows=await sb('bloqueios_temporarios?select=id,cliente,data_inicio,dias,data_fim,motivo,observacao,status,criado_por,created_at&order=data_fim.asc,cliente.asc');
-    renderBlocks();
-  }catch(e){console.error(e);body.innerHTML='<tr><td colspan="8">Não foi possível carregar os bloqueios.</td></tr>'}
+    airRows=await sb('manutencoes_ar_condicionado?select=id,local_instalacao,identificacao,data_manutencao,proxima_manutencao,dias_alerta,observacao,ativo,criado_por,created_at&order=proxima_manutencao.asc,local_instalacao.asc');
+    renderAir();
+  }catch(e){console.error(e);body.innerHTML='<tr><td colspan="8">Não foi possível carregar os aparelhos.</td></tr>'}
 }
-function renderBlocks(){
-  const q=(document.getElementById('blockSearch').value||'').trim().toLowerCase();
-  const sf=document.getElementById('blockStatusFilter').value;
-  const rows=blockRows.filter(r=>{
-    const st=blockEffectiveStatus(r);
-    const matchStatus=!sf||(sf==='Ativo'?st==='Ativo':sf==='Vencendo'?(st==='Vencendo'||st==='Vence hoje'):st===sf);
-    return matchStatus&&(!q||(r.cliente||'').toLowerCase().includes(q));
+function renderAir(){
+  const q=(document.getElementById('airSearch').value||'').trim().toLowerCase();
+  const sf=document.getElementById('airStatusFilter').value;
+  const rows=airRows.filter(r=>{
+    const st=airEffectiveStatus(r);
+    const txt=`${r.local_instalacao||''} ${r.identificacao||''}`.toLowerCase();
+    return (!sf||st===sf)&&(!q||txt.includes(q));
   });
-  const stats={active:0,soon:0,expired:0,reactivated:0};
-  blockRows.forEach(r=>{const st=blockEffectiveStatus(r);if(st==='Ativo')stats.active++;else if(st==='Vencendo'||st==='Vence hoje')stats.soon++;else if(st==='Vencido')stats.expired++;else if(st==='Reativado')stats.reactivated++});
-  document.getElementById('blockActiveCount').textContent=stats.active;
-  document.getElementById('blockSoonCount').textContent=stats.soon;
-  document.getElementById('blockExpiredCount').textContent=stats.expired;
-  document.getElementById('blockReactivatedCount').textContent=stats.reactivated;
-  document.getElementById('blocksTableBody').innerHTML=rows.map(r=>`<tr>
-    <td><b>${safe(r.cliente)}</b></td><td>${fmtDate(r.data_inicio)}</td><td>${r.dias}</td><td><b>${fmtDate(r.data_fim)}</b></td>
-    <td>${blockStatusBadge(r)}</td><td>${safe(r.motivo||'—')}</td><td>${safe(r.observacao||'—')}</td>
-    <td><button class="mini" data-block-edit="${r.id}">Editar</button>${r.status==='Ativo'?` <button class="mini" data-block-reactivate="${r.id}">Reativar</button>`:''}${currentRole()==='admin'?` <button class="mini danger" data-block-delete="${r.id}">Excluir</button>`:''}</td>
-  </tr>`).join('')||'<tr><td colspan="8">Nenhum bloqueio encontrado.</td></tr>';
+  let active=0,soon=0,expired=0,ok=0;
+  airRows.forEach(r=>{const st=airEffectiveStatus(r);if(r.ativo!==false)active++;if(st==='Próximo')soon++;else if(st==='Vencido')expired++;else if(st==='Em dia')ok++});
+  document.getElementById('airActiveCount').textContent=active;
+  document.getElementById('airSoonCount').textContent=soon;
+  document.getElementById('airExpiredCount').textContent=expired;
+  document.getElementById('airOkCount').textContent=ok;
+  document.getElementById('airTableBody').innerHTML=rows.map(r=>`<tr>
+    <td><b>${safe(r.local_instalacao)}</b></td>
+    <td>${safe(r.identificacao||'—')}</td>
+    <td>${r.data_manutencao?fmtDate(r.data_manutencao):'—'}</td>
+    <td><b>${fmtDate(r.proxima_manutencao)}</b></td>
+    <td>${r.dias_alerta} dias antes</td>
+    <td>${airStatusBadge(r)}</td>
+    <td>${safe(r.observacao||'—')}</td>
+    <td><button class="mini" data-air-edit="${r.id}">Editar</button> <button class="mini" data-air-done="${r.id}">Registrar manutenção</button>${currentRole()==='admin'?` <button class="mini danger" data-air-delete="${r.id}">Excluir</button>`:''}</td>
+  </tr>`).join('')||'<tr><td colspan="8">Nenhum aparelho encontrado.</td></tr>';
 }
-async function loadBlockDashboardAlert(){
-  const box=document.getElementById('blockDashboardBox');if(!box)return;
-  if(!canAccess('bloqueios_temporarios')){box.style.display='none';return}
+async function registerAirMaintenance(r){
+  const today=todayIsoLocal();
+  const currentNext=r.proxima_manutencao||today;
+  const suggested=new Date(today+'T12:00:00');suggested.setMonth(suggested.getMonth()+6);
+  const next=prompt(`Manutenção de ${r.local_instalacao} realizada hoje (${fmtDate(today)}).\nInforme a próxima data de manutenção:`,iso(suggested));
+  if(!next)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(next))return showToast('Informe a data no formato AAAA-MM-DD.');
   try{
-    const today=todayIsoLocal(),limit=addDaysIso(today,7);
-    const rows=await sb(`bloqueios_temporarios?select=id,cliente,data_fim,status&status=eq.Ativo&data_fim=lte.${limit}&order=data_fim.asc`);
-    box.style.display=rows.length?'block':'none';
-    document.getElementById('blockDashboardBadge').textContent=rows.length;
-    document.getElementById('blockDashboardList').innerHTML=rows.slice(0,6).map(r=>{
-      const st=blockEffectiveStatus(r);
-      return `<div class="req"><span><b>${safe(r.cliente)}</b><small>Reativação prevista: ${fmtDate(r.data_fim)}</small></span><em>${st==='Vencido'||st==='Vence hoje'?'🔴 '+st:'🟡 '+st}</em></div>`;
-    }).join('');
+    await sb(`manutencoes_ar_condicionado?id=eq.${r.id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({data_manutencao:today,proxima_manutencao:next})});
+    showToast('Manutenção registrada e próximo vencimento atualizado!');await loadAir();loadAirDashboardAlert();
+  }catch(e){console.error(e);showToast('Não foi possível registrar a manutenção.')}
+}
+async function loadAirDashboardAlert(){
+  const box=document.getElementById('airDashboardBox');if(!box)return;
+  if(!canAccess('manutencao_ar')){box.style.display='none';return}
+  try{
+    const rows=await sb('manutencoes_ar_condicionado?select=id,local_instalacao,identificacao,proxima_manutencao,dias_alerta,ativo&ativo=eq.true&order=proxima_manutencao.asc');
+    const alerts=rows.filter(r=>airEffectiveStatus(r)==='Vencido'||airEffectiveStatus(r)==='Próximo');
+    box.style.display=alerts.length?'block':'none';
+    document.getElementById('airDashboardBadge').textContent=alerts.length;
+    document.getElementById('airDashboardList').innerHTML=alerts.slice(0,8).map(r=>`<div class="req"><span><b>${safe(r.local_instalacao)}${r.identificacao?' • '+safe(r.identificacao):''}</b><small>Próxima manutenção: ${fmtDate(r.proxima_manutencao)}</small></span><em>${airEffectiveStatus(r)==='Vencido'?'🔴 Vencido':'🟡 '+airDaysUntil(r.proxima_manutencao)+'d'}</em></div>`).join('');
   }catch(e){console.error(e);box.style.display='none'}
 }
 
@@ -1408,7 +1421,7 @@ async function userAdminApi(payload){
 }
 function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Nunca'}
 function permissionLabel(p){
-  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe',bloqueios_temporarios:'Bloqueios Temporários',relatorios:'Relatórios'}[p]||p;
+  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe',manutencao_ar:'Manutenção de Ar',relatorios:'Relatórios'}[p]||p;
 }
 async function loadUsers(){
   const tbody=document.getElementById('usersTableBody');
@@ -1578,39 +1591,41 @@ document.getElementById('autoPlantaoModal').onclick=e=>{if(e.target.id==='autoPl
 document.getElementById('autoPlantaoSector').onchange=loadAutoPlantaoEmployees;
 document.getElementById('previewAutoPlantao').onclick=buildAutoPlantaoPreview;
 document.getElementById('autoPlantaoForm').onsubmit=async e=>{e.preventDefault();await saveAutoPlantaoScale()};
-document.getElementById('blocksNav').onclick=()=>{if(canAccess('bloqueios_temporarios'))showBlocks()};
-document.getElementById('newBlockBtn').onclick=()=>openBlockModal();
-document.getElementById('closeBlockModal').onclick=closeBlockModal;
-document.getElementById('cancelBlock').onclick=closeBlockModal;
-document.getElementById('blockModal').onclick=e=>{if(e.target.id==='blockModal')closeBlockModal()};
-document.getElementById('blockStart').onchange=updateBlockEndPreview;
-document.getElementById('blockDays').oninput=updateBlockEndPreview;
-document.getElementById('blockSearch').oninput=renderBlocks;
-document.getElementById('blockStatusFilter').onchange=renderBlocks;
-document.getElementById('blockForm').onsubmit=async e=>{
+document.getElementById('airNav').onclick=()=>{if(canAccess('manutencao_ar'))showAir()};
+document.getElementById('newAirBtn').onclick=()=>openAirModal();
+document.getElementById('closeAirModal').onclick=closeAirModal;
+document.getElementById('cancelAir').onclick=closeAirModal;
+document.getElementById('airModal').onclick=e=>{if(e.target.id==='airModal')closeAirModal()};
+document.getElementById('airSearch').oninput=renderAir;
+document.getElementById('airStatusFilter').onchange=renderAir;
+document.getElementById('airForm').onsubmit=async e=>{
   e.preventDefault();
-  const id=document.getElementById('blockId').value;
-  const payload={cliente:document.getElementById('blockClient').value.trim(),data_inicio:document.getElementById('blockStart').value,dias:Number(document.getElementById('blockDays').value),motivo:document.getElementById('blockReason').value.trim()||null,observacao:document.getElementById('blockObservation').value.trim()||null,status:'Ativo'};
-  const btn=document.getElementById('saveBlock');btn.disabled=true;
+  const id=document.getElementById('airId').value;
+  const payload={
+    local_instalacao:document.getElementById('airLocation').value.trim(),
+    identificacao:document.getElementById('airIdentification').value.trim()||null,
+    data_manutencao:document.getElementById('airLastMaintenance').value||null,
+    proxima_manutencao:document.getElementById('airNextMaintenance').value,
+    dias_alerta:Number(document.getElementById('airAlertDays').value||15),
+    ativo:document.getElementById('airActive').value==='true',
+    observacao:document.getElementById('airObservation').value.trim()||null
+  };
+  const btn=document.getElementById('saveAir');btn.disabled=true;
   try{
-    if(id)await sb(`bloqueios_temporarios?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
-    else await sb('bloqueios_temporarios',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
-    closeBlockModal();showToast(id?'Bloqueio atualizado!':'Bloqueio temporário cadastrado!');await loadBlocks();loadBlockDashboardAlert();
-  }catch(err){console.error(err);showToast('Não foi possível salvar o bloqueio.')}finally{btn.disabled=false}
+    if(id)await sb(`manutencoes_ar_condicionado?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
+    else await sb('manutencoes_ar_condicionado',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
+    closeAirModal();showToast(id?'Aparelho atualizado!':'Aparelho cadastrado!');await loadAir();loadAirDashboardAlert();
+  }catch(err){console.error(err);showToast('Não foi possível salvar o aparelho.')}finally{btn.disabled=false}
 };
-document.getElementById('blocksTableBody').onclick=async e=>{
-  const edit=e.target.closest('[data-block-edit]');
-  if(edit){const r=blockRows.find(x=>String(x.id)===edit.dataset.blockEdit);if(r)openBlockModal(r);return}
-  const react=e.target.closest('[data-block-reactivate]');
-  if(react){
-    const r=blockRows.find(x=>String(x.id)===react.dataset.blockReactivate);if(!r)return;
-    if(!confirm(`Marcar ${r.cliente} como reativado?`))return;
-    try{await sb(`bloqueios_temporarios?id=eq.${r.id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({status:'Reativado'})});showToast('Cliente marcado como reativado!');await loadBlocks();loadBlockDashboardAlert()}catch(err){console.error(err);showToast('Não foi possível atualizar.')}return;
-  }
-  const del=e.target.closest('[data-block-delete]');
+document.getElementById('airTableBody').onclick=async e=>{
+  const edit=e.target.closest('[data-air-edit]');
+  if(edit){const r=airRows.find(x=>String(x.id)===edit.dataset.airEdit);if(r)openAirModal(r);return}
+  const done=e.target.closest('[data-air-done]');
+  if(done){const r=airRows.find(x=>String(x.id)===done.dataset.airDone);if(r)await registerAirMaintenance(r);return}
+  const del=e.target.closest('[data-air-delete]');
   if(del&&currentRole()==='admin'){
-    const r=blockRows.find(x=>String(x.id)===del.dataset.blockDelete);if(!r||!confirm(`Excluir o bloqueio de ${r.cliente}?`))return;
-    try{await sb(`bloqueios_temporarios?id=eq.${r.id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Bloqueio excluído!');await loadBlocks();loadBlockDashboardAlert()}catch(err){console.error(err);showToast('Não foi possível excluir.')}
+    const r=airRows.find(x=>String(x.id)===del.dataset.airDelete);if(!r||!confirm(`Excluir o aparelho de ${r.local_instalacao}?`))return;
+    try{await sb(`manutencoes_ar_condicionado?id=eq.${r.id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Aparelho excluído!');await loadAir();loadAirDashboardAlert()}catch(err){console.error(err);showToast('Não foi possível excluir.')}
   }
 };
 document.getElementById('errorsNav').onclick=()=>{if(canAccess('erros_equipe'))showErrors()};
