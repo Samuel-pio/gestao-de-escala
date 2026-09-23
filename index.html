@@ -217,7 +217,7 @@ header h1,header p{overflow-wrap:anywhere}
         </select>
         <input id="teamSearch" type="search" placeholder="Buscar funcionário..."
           style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a;min-width:240px;outline:none">
-        <button class="btn primary" id="openEmployee">+ Novo funcionário</button>
+        <button class="btn secondary" id="manageSectorsBtn" type="button">⚙ Gerenciar setores</button><button class="btn primary" id="openEmployee">+ Novo funcionário</button>
       </div>
     </div>
 
@@ -512,7 +512,31 @@ header h1,header p{overflow-wrap:anywhere}
       </div>
     </form>
   </div>
-</div><div class="modal" id="employeeModal" aria-hidden="true">
+</div>
+<div class="modal" id="sectorModal" aria-hidden="true">
+  <div class="modal-card" style="max-width:620px">
+    <div class="modal-head">
+      <div><h2>Gerenciar setores</h2><p>Cadastre, renomeie ou desative setores da equipe.</p></div>
+      <button class="close" id="closeSectorModal" aria-label="Fechar">×</button>
+    </div>
+    <form id="sectorForm">
+      <input type="hidden" id="sectorId">
+      <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:220px">
+          <label for="sectorName">Nome do setor</label>
+          <input id="sectorName" maxlength="80" required placeholder="Ex.: Comercial">
+        </div>
+        <button class="btn primary" id="saveSectorBtn" type="submit">Adicionar setor</button>
+        <button class="btn secondary" id="cancelSectorEdit" type="button" style="display:none">Cancelar edição</button>
+      </div>
+    </form>
+    <div id="sectorList" style="margin-top:18px;border-top:1px solid #edf0f4;padding-top:8px">
+      <div style="padding:12px;color:#64748b">Carregando...</div>
+    </div>
+    <small style="display:block;color:#64748b;margin-top:12px">Ao desativar um setor, ele deixa de aparecer para novos cadastros. Funcionários já vinculados não são apagados.</small>
+  </div>
+</div>
+<div class="modal" id="employeeModal" aria-hidden="true">
   <div class="modal-card">
     <div class="modal-head">
       <div>
@@ -645,8 +669,9 @@ const NAV_PERMISSION={
   requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',errorsNav:'erros_equipe',airNav:'manutencoes',reportsNav:'relatorios'
 };
 function currentRole(){return authSession?.user?.app_metadata?.role||'usuario'}
+let sectorCache=['Infraestrutura','Call Center','Operacional','Financeiro'];
 function currentSectors(){
-  if(currentRole()==='admin')return ['Infraestrutura','Call Center','Operacional','Financeiro'];
+  if(currentRole()==='admin')return sectorCache.slice();
   const multi=authSession?.user?.app_metadata?.sectors;
   if(Array.isArray(multi)&&multi.length)return multi;
   const legacy=authSession?.user?.app_metadata?.sector;
@@ -695,6 +720,7 @@ function showApp(){
     avatar.textContent=initials||'U';
   }
   applyAccessControls();
+  const msb=document.getElementById('manageSectorsBtn');if(msb)msb.style.display=currentRole()==='admin'?'':'none';
   loadSystemAlerts();
 }
 async function initAuth(){
@@ -709,6 +735,7 @@ async function initAuth(){
       }
       if(authSession){
         showApp();
+        await loadSectors();
         await load();
         showFirstAllowedView();
         return;
@@ -753,6 +780,91 @@ async function sb(path,options={}){
   const t=await r.text();
   return t?JSON.parse(t):null;
 }
+
+async function loadSectors(){
+  try{
+    const rows=await sb('setores?select=id,nome,ativo&order=nome.asc');
+    window.sectorRows=rows||[];
+    const active=(rows||[]).filter(x=>x.ativo).map(x=>x.nome);
+    if(active.length)sectorCache=active;
+    refreshSectorControls();
+    if(document.getElementById('sectorModal')?.classList.contains('open'))renderSectorList();
+    return rows||[];
+  }catch(err){
+    console.error('Erro ao carregar setores',err);
+    refreshSectorControls();
+    return [];
+  }
+}
+function sectorOptions(selected='',placeholder='Selecione o setor...',allowBlank=true){
+  const allowed=currentRole()==='admin'?sectorCache:currentSectors();
+  const values=[...allowed];
+  if(selected&&!values.includes(selected))values.push(selected);
+  return (allowBlank?`<option value="">${safe(placeholder)}</option>`:'')+
+    values.map(x=>`<option value="${safe(x)}"${x===selected?' selected':''}>${safe(x)}</option>`).join('');
+}
+function refreshSectorControls(){
+  const configs=[
+    ['employeeSector','Sem setor',true],
+    ['editEmployeeSector','Sem setor',true],
+    ['requestSector','Selecione o setor...',true],
+    ['plantaoSector','Selecione o setor...',true],
+    ['autoPlantaoSector','Selecione o setor...',true]
+  ];
+  configs.forEach(([id,placeholder])=>{
+    const el=document.getElementById(id);if(!el)return;
+    const selected=el.value;
+    el.innerHTML=sectorOptions(selected,placeholder,true);
+  });
+  const team=document.getElementById('teamSectorFilter');
+  if(team){
+    const selected=team.value;
+    team.innerHTML='<option value="">Todos os setores</option>'+sectorCache.map(x=>`<option>${safe(x)}</option>`).join('')+'<option value="__sem__">Sem setor</option>';
+    if([...team.options].some(o=>o.value===selected))team.value=selected;
+  }
+  const pf=document.getElementById('plantaoSectorFilter');
+  if(pf){
+    const selected=pf.value;
+    const allowed=currentRole()==='admin'?sectorCache:currentSectors();
+    pf.innerHTML='<option value="">Todos os setores</option>'+allowed.map(x=>`<option>${safe(x)}</option>`).join('');
+    if([...pf.options].some(o=>o.value===selected))pf.value=selected;
+  }
+  const box=document.getElementById('userSectorsBox');
+  if(box){
+    const checked=new Set([...box.querySelectorAll('.userSectorCheck:checked')].map(x=>x.value));
+    box.innerHTML=sectorCache.map(x=>`<label><input type="checkbox" class="userSectorCheck" value="${safe(x)}"${checked.has(x)?' checked':''}> ${safe(x)}</label>`).join('');
+  }
+}
+function openSectorModal(){
+  if(currentRole()!=='admin')return showToast('Apenas administradores podem gerenciar setores.');
+  document.getElementById('sectorModal').classList.add('open');
+  document.getElementById('sectorModal').setAttribute('aria-hidden','false');
+  resetSectorForm();loadSectors();
+}
+function closeSectorModal(){
+  document.getElementById('sectorModal').classList.remove('open');
+  document.getElementById('sectorModal').setAttribute('aria-hidden','true');
+  resetSectorForm();
+}
+function resetSectorForm(){
+  const id=document.getElementById('sectorId'),name=document.getElementById('sectorName');
+  if(id)id.value='';if(name)name.value='';
+  const save=document.getElementById('saveSectorBtn'),cancel=document.getElementById('cancelSectorEdit');
+  if(save)save.textContent='Adicionar setor';if(cancel)cancel.style.display='none';
+}
+function renderSectorList(){
+  const box=document.getElementById('sectorList');if(!box)return;
+  const rows=window.sectorRows||[];
+  if(!rows.length){box.innerHTML='<div style="padding:12px;color:#64748b">Nenhum setor cadastrado.</div>';return}
+  box.innerHTML=rows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 4px;border-bottom:1px solid #edf0f4">
+    <div><b>${safe(r.nome)}</b><small style="display:block;color:${r.ativo?'#227a43':'#8a96a8'};margin-top:3px">${r.ativo?'Ativo':'Inativo'}</small></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button type="button" class="mini" data-sector-edit="${r.id}">Editar</button>
+      <button type="button" class="mini ${r.ativo?'danger':''}" data-sector-toggle="${r.id}" data-active="${r.ativo}">${r.ativo?'Desativar':'Ativar'}</button>
+    </div>
+  </div>`).join('');
+}
+
 function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
 function editEmployee(id){
   const row=(window.teamViewRows||[]).find(r=>r.id===id);
@@ -781,8 +893,7 @@ function fillEmployees(){
 }
 function fillRequestSectors(){
   const sel=document.getElementById('requestSector');if(!sel)return;
-  const sectors=['Infraestrutura','Call Center','Operacional','Financeiro'];
-  const allowed=currentRole()==='admin'?sectors:currentSectors();
+  const allowed=currentRole()==='admin'?sectorCache:currentSectors();
   sel.disabled=false;
   sel.innerHTML='<option value="">Selecione o setor...</option>'+allowed.map(x=>`<option>${safe(x)}</option>`).join('');
   if(allowed.length===1)sel.value=allowed[0];
@@ -996,8 +1107,7 @@ function nextSaturdayAfter(dateStr){
 }
 function fillPlantaoSectors(){
   const sel=document.getElementById('plantaoSector');if(!sel)return;
-  const sectors=['Infraestrutura','Call Center','Operacional','Financeiro'];
-  const allowed=currentRole()==='admin'?sectors:currentSectors();
+  const allowed=currentRole()==='admin'?sectorCache:currentSectors();
   sel.disabled=false;
   sel.innerHTML='<option value="">Selecione o setor...</option>'+allowed.map(x=>`<option>${safe(x)}</option>`).join('');
   if(allowed.length===1)sel.value=allowed[0];
@@ -1015,8 +1125,7 @@ let autoPlantaoOrder=[];
 let autoPlantaoPreviewRows=[];
 function fillAutoPlantaoSectors(){
   const sel=document.getElementById('autoPlantaoSector');
-  const sectors=['Infraestrutura','Call Center','Operacional','Financeiro'];
-  const allowed=currentRole()==='admin'?sectors:currentSectors();
+  const allowed=currentRole()==='admin'?sectorCache:currentSectors();
   sel.disabled=false;
   sel.innerHTML='<option value="">Selecione o setor...</option>'+allowed.map(x=>`<option>${safe(x)}</option>`).join('');
   if(allowed.length===1)sel.value=allowed[0];
@@ -1906,6 +2015,7 @@ document.getElementById('loginForm').onsubmit=async e=>{
   try{
     await signIn(email,password);
     showApp();
+    await loadSectors();
     await load();
     showFirstAllowedView();
   }catch(err){
@@ -2030,5 +2140,51 @@ document.getElementById('closeRequest').onclick=closeRequest;
 document.getElementById('cancelRequest').onclick=closeRequest;
 document.getElementById('requestModal').onclick=e=>{if(e.target.id==='requestModal')closeRequest()};
 document.getElementById('requestForm').onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('saveRequest');const sector=document.getElementById('requestSector').value;const employee=Number(document.getElementById('employee').value);const start=document.getElementById('startDate').value;const end=document.getElementById('endDate').value||start;const status=document.getElementById('requestType').value;const motivo=document.getElementById('reason').value.trim()||null;const observacao=document.getElementById('notes').value.trim()||null;if(!sector||!employee||!start)return showToast('Preencha setor, funcionário e data inicial.');if(end<start)return showToast('A data final não pode ser anterior à inicial.');btn.disabled=true;btn.textContent='Salvando...';try{await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({funcionario_id:employee,data_inicial:start,data_final:end,status,motivo,observacao})});document.getElementById('requestForm').reset();document.getElementById('requestType').value='Pendente';closeRequest();showToast('Solicitação salva com sucesso.');viewDate=new Date(start+'T12:00:00');await load()}catch(err){console.error(err);showToast('Erro ao salvar a solicitação.')}finally{btn.disabled=false;btn.textContent='Salvar solicitação'}};
+
+document.getElementById('manageSectorsBtn').onclick=openSectorModal;
+document.getElementById('closeSectorModal').onclick=closeSectorModal;
+document.getElementById('cancelSectorEdit').onclick=resetSectorForm;
+document.getElementById('sectorModal').onclick=e=>{if(e.target.id==='sectorModal')closeSectorModal()};
+document.getElementById('sectorForm').onsubmit=async e=>{
+  e.preventDefault();
+  if(currentRole()!=='admin')return showToast('Apenas administradores podem gerenciar setores.');
+  const id=document.getElementById('sectorId').value;
+  const nome=document.getElementById('sectorName').value.trim().replace(/\s+/g,' ');
+  if(!nome)return showToast('Informe o nome do setor.');
+  const btn=document.getElementById('saveSectorBtn');btn.disabled=true;
+  try{
+    if(id){
+      await sb(`setores?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({nome})});
+      showToast('Setor atualizado.');
+    }else{
+      await sb('setores',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({nome,ativo:true})});
+      showToast('Setor adicionado.');
+    }
+    resetSectorForm();await loadSectors();await loadTeamView();
+  }catch(err){
+    console.error(err);
+    const msg=String(err.message||'');
+    showToast((msg.includes('duplicate')||msg.includes('unique'))?'Já existe um setor com esse nome.':'Não foi possível salvar o setor.');
+  }finally{btn.disabled=false}
+};
+document.getElementById('sectorList').onclick=async e=>{
+  const edit=e.target.closest('[data-sector-edit]');
+  if(edit){
+    const row=(window.sectorRows||[]).find(x=>String(x.id)===String(edit.dataset.sectorEdit));if(!row)return;
+    document.getElementById('sectorId').value=row.id;
+    document.getElementById('sectorName').value=row.nome;
+    document.getElementById('saveSectorBtn').textContent='Salvar alteração';
+    document.getElementById('cancelSectorEdit').style.display='';
+    document.getElementById('sectorName').focus();return;
+  }
+  const toggle=e.target.closest('[data-sector-toggle]');if(!toggle)return;
+  const ativo=toggle.dataset.active!=='true';toggle.disabled=true;
+  try{
+    await sb(`setores?id=eq.${toggle.dataset.sectorToggle}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({ativo})});
+    showToast(ativo?'Setor ativado.':'Setor desativado.');
+    await loadSectors();await loadTeamView();
+  }catch(err){console.error(err);showToast('Não foi possível alterar o setor.');toggle.disabled=false}
+};
+
 initAuth();
 </script></body></html>
