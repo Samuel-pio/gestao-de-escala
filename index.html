@@ -1340,7 +1340,7 @@ async function showErrors(){
   if(!mf.value){const d=new Date();mf.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
   const sf=document.getElementById('errorSectorFilter');
   const sfCur=sf.value;
-  const sectors=(typeof sectorCache!=='undefined' && sectorCache.length)?sectorCache.filter(s=>s.ativo!==false).map(s=>s.nome):[...new Set((teamCache||[]).map(e=>e.setor).filter(Boolean))];
+  const sectors=(typeof sectorCache!=='undefined' && sectorCache.length)?sectorCache.slice():[...new Set((teamCache||[]).map(e=>e.setor).filter(Boolean))];
   sf.innerHTML='<option value="">Todos os setores</option>'+sectors.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('');
   sf.value=sectors.includes(sfCur)?sfCur:'';
   const ef=document.getElementById('errorEmployeeFilter');
