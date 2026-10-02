@@ -264,6 +264,7 @@ header h1,header p{overflow-wrap:anywhere}
     <div><h2>Resumo mensal</h2><small>O lançamento conta para os dois integrantes da dupla.</small></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <input id="errorMonthFilter" type="month">
+      <select id="errorSectorFilter"><option value="">Todos os setores</option></select>
       <select id="errorEmployeeFilter"><option value="">Todos os funcionários</option></select>
     </div>
   </div>
@@ -273,8 +274,8 @@ header h1,header p{overflow-wrap:anywhere}
 </div>
   <div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;min-width:760px">
-      <thead><tr><th>DATA</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>GRAVIDADE</th><th>PESO</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
-      <tbody id="errorsTableBody"><tr><td colspan="8">Carregando...</td></tr></tbody>
+      <thead><tr><th>DATA</th><th>SETOR</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>GRAVIDADE</th><th>PESO</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
+      <tbody id="errorsTableBody"><tr><td colspan="9">Carregando...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -1337,10 +1338,17 @@ async function showErrors(){
   hideViews();document.getElementById('errorsView').style.display='block';setActiveNav('errorsNav');
   const mf=document.getElementById('errorMonthFilter');
   if(!mf.value){const d=new Date();mf.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+  const sf=document.getElementById('errorSectorFilter');
+  const sfCur=sf.value;
+  const sectors=(typeof sectorCache!=='undefined' && sectorCache.length)?sectorCache.filter(s=>s.ativo!==false).map(s=>s.nome):[...new Set((teamCache||[]).map(e=>e.setor).filter(Boolean))];
+  sf.innerHTML='<option value="">Todos os setores</option>'+sectors.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('');
+  sf.value=sectors.includes(sfCur)?sfCur:'';
   const ef=document.getElementById('errorEmployeeFilter');
   const cur=ef.value;
-  ef.innerHTML='<option value="">Todos os funcionários</option>'+(teamCache||[]).map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
-  ef.value=cur;
+  const sector=sf.value;
+  const employees=(teamCache||[]).filter(e=>!sector||e.setor===sector);
+  ef.innerHTML='<option value="">Todos os funcionários</option>'+employees.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  ef.value=employees.some(e=>String(e.id)===cur)?cur:'';
   await loadErrorWeights();
   await loadErrors();
 }
@@ -1391,25 +1399,34 @@ function errorAuthorName(id){
 }
 function scoreClass(note){return note>=9?'Excelente':note>=8?'Bom':note>=7?'Atenção':note>=5?'Ruim':'Crítico'}
 function renderErrors(){
+  const sector=document.getElementById('errorSectorFilter')?.value||'';
   const emp=document.getElementById('errorEmployeeFilter').value;
-  const rows=errorRows.filter(r=>!emp||String(r.funcionario1_id)===emp||(r.funcionario2_id&&String(r.funcionario2_id)===emp));
+  const rows=errorRows.filter(r=>{
+    const s1=r.equipe1?.setor||'';
+    const s2=r.equipe2?.setor||'';
+    const sectorMatch=!sector||s1===sector||s2===sector;
+    const empMatch=!emp||String(r.funcionario1_id)===emp||(r.funcionario2_id&&String(r.funcionario2_id)===emp);
+    return sectorMatch&&empMatch;
+  });
   const teams={};
   rows.forEach(r=>{
+    const sectorName=r.equipe1?.setor||r.equipe2?.setor||'Sem setor';
     const key=r.funcionario2_id?`${r.equipe1?.nome||'—'} + ${r.equipe2?.nome||'—'}`:`${r.equipe1?.nome||'—'} (sozinho)`;
-    if(!teams[key])teams[key]={errors:0,points:0};
+    const teamKey=`${sectorName}|||${key}`;
+    if(!teams[teamKey])teams[teamKey]={errors:0,points:0,sector:sectorName,label:key};
     teams[key].errors++;teams[key].points+=Number(r.peso||1);
   });
   const summary=document.getElementById('errorSummary');
-  summary.innerHTML=Object.entries(teams).sort((a,b)=>a[1].points-b[1].points).map(([dupla,v])=>{
+  summary.innerHTML=Object.entries(teams).sort((a,b)=>a[1].points-b[1].points).map(([_,v])=>{
     const note=Math.max(0,10-(v.points/2));
-    return `<div class="card"><p>${safe(dupla)}</p><b>${note.toFixed(1)}</b><small>${scoreClass(note)} · ${v.errors} ${v.errors===1?'erro':'erros'} · ${v.points} pts</small></div>`;
+    return `<div class="card"><p><span style="display:inline-block;padding:3px 7px;border-radius:999px;background:#f1f5f9;color:#526176;font-size:10px;margin-bottom:5px">${safe(v.sector)}</span><br>${safe(v.label)}</p><b>${note.toFixed(1)}</b><small>${scoreClass(note)} · ${v.errors} ${v.errors===1?'erro':'erros'} · ${v.points} pts</small></div>`;
   }).join('')||'<div style="color:#7a8799">Nenhum erro registrado neste período.</div>';
   document.getElementById('errorsTableBody').innerHTML=rows.map(r=>`<tr>
-    <td>${fmtDate(r.data)}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
+    <td>${fmtDate(r.data)}</td><td>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
     <td>${safe(r.tipo||'—')}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${Number(r.peso||1)}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
     <td><button class="mini" data-error-edit="${r.id}">Editar</button>${currentRole()==='admin'?` <button class="mini danger" data-error-delete="${r.id}">Excluir</button>`:''}</td>
-  </tr>`).join('')||'<tr><td colspan="8">Nenhum erro registrado neste mês.</td></tr>';
+  </tr>`).join('')||'<tr><td colspan="9">Nenhum erro registrado neste mês.</td></tr>';
 }
 
 
@@ -1901,6 +1918,16 @@ document.getElementById('closeErrorModal').onclick=closeErrorModal;
 document.getElementById('cancelError').onclick=closeErrorModal;
 document.getElementById('errorModal').onclick=e=>{if(e.target.id==='errorModal')closeErrorModal()};
 document.getElementById('errorMonthFilter').onchange=loadErrors;
+document.getElementById('errorSectorFilter').onchange=()=>{
+  const sf=document.getElementById('errorSectorFilter');
+  const ef=document.getElementById('errorEmployeeFilter');
+  const sector=sf.value;
+  const cur=ef.value;
+  const employees=(teamCache||[]).filter(e=>!sector||e.setor===sector);
+  ef.innerHTML='<option value="">Todos os funcionários</option>'+employees.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  ef.value=employees.some(e=>String(e.id)===cur)?cur:'';
+  renderErrors();
+};
 document.getElementById('errorEmployeeFilter').onchange=renderErrors;
 document.getElementById('errorForm').onsubmit=async e=>{
   e.preventDefault();
