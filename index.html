@@ -1414,7 +1414,7 @@ function renderErrors(){
     const key=r.funcionario2_id?`${r.equipe1?.nome||'—'} + ${r.equipe2?.nome||'—'}`:`${r.equipe1?.nome||'—'} (sozinho)`;
     const teamKey=`${sectorName}|||${key}`;
     if(!teams[teamKey])teams[teamKey]={errors:0,points:0,sector:sectorName,label:key};
-    teams[key].errors++;teams[key].points+=Number(r.peso||1);
+    teams[teamKey].errors++;teams[teamKey].points+=Number(r.peso||1);
   });
   const summary=document.getElementById('errorSummary');
   summary.innerHTML=Object.entries(teams).sort((a,b)=>a[1].points-b[1].points).map(([_,v])=>{
