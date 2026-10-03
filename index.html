@@ -162,7 +162,7 @@ header h1,header p{overflow-wrap:anywhere}
 <div class="card"><p>Pendentes</p><b class="orange" id="pendingCount">—</b><small>no mês</small></div>
 </section>
 <section class="box pending" style="margin-bottom:18px">
-<div class="boxhead"><div><h2>🟠 Plantão da semana</h2><p>Dupla responsável em Buritis.</p></div></div>
+<div class="boxhead"><div><h2>🟠 Plantão da semana</h2><p>Duplas responsáveis em cada cidade.</p></div></div>
 <div id="weeklyPlantaoCard"><div class="req"><span><b>Carregando...</b><small></small></span></div></div>
 </section>
 <section class="box" id="airDashboardBox" style="margin-bottom:18px;display:none">
@@ -174,7 +174,7 @@ header h1,header p{overflow-wrap:anywhere}
 <div class="box pending"><div class="boxhead"><div><h2>🔵 Férias hoje</h2><p>Quem está de férias neste momento.</p></div></div><div id="vacationTodayList"><div class="req"><span><b>Carregando...</b><small></small></span></div></div></div>
 <div class="box pending"><div class="boxhead"><div><h2>📅 Próximas ausências</h2><p>Folgas e férias dos próximos 7 dias.</p></div></div><div id="upcomingAbsences"><div class="req"><span><b>Carregando...</b><small></small></span></div></div></div>
 </section></div>
-<section id="agendaView" style="display:none"><header><div><h1>Agenda</h1><p>Visualize a escala, folgas, férias e solicitações da equipe.</p></div></header><section class="grid" style="margin-top:28px"><div class="calendar box"><div class="boxhead"><div><h2>Calendário</h2><p id="monthTitle">Carregando...</p></div><div class="arrows"><button id="prevMonth">‹</button><button id="nextMonth">›</button></div></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="month" id="month"></div></div><div class="side"><div class="box legend"><h2>Legenda</h2><p>🔴 Folga</p><p>🟡 Pendente</p><p>🔵 Férias</p><p>🟣 Folga do Plantão</p><p>🟠 Plantão</p></div>
+<section id="agendaView" style="display:none"><header><div><h1>Agenda</h1><p>Visualize a escala, folgas, férias e solicitações da equipe.</p></div><select id="agendaSectorFilter" title="Filtrar agenda por setor" style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a;min-width:200px"><option value="">Todos os setores</option></select></header><section class="grid" style="margin-top:28px"><div class="calendar box"><div class="boxhead"><div><h2>Calendário</h2><p id="monthTitle">Carregando...</p></div><div class="arrows"><button id="prevMonth">‹</button><button id="nextMonth">›</button></div></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="month" id="month"></div></div><div class="side"><div class="box legend"><h2>Legenda</h2><p>🔴 Folga</p><p>🟡 Pendente</p><p>🔵 Férias</p><p>🟣 Folga do Plantão</p><p>🟠 Plantão</p></div>
 <div class="box" id="agendaNotesBox" style="margin-top:18px">
 <h2 style="margin-bottom:6px">Anotações da Agenda</h2>
 <p style="color:#71809a;margin:0 0 14px;font-size:13px">Clique em um dia do calendário para adicionar uma anotação.</p>
@@ -240,7 +240,7 @@ header h1,header p{overflow-wrap:anywhere}
   </div>
 </section>
 <section id="plantaoView" style="display:none">
-<header><div><h1>Plantões</h1><p>Controle os períodos de plantão de Buritis e gere a folga do sábado seguinte.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn secondary" id="autoPlantaoBtn">⚙ Gerar escala automática</button><button class="btn primary" id="newPlantaoBtn">+ Novo plantão</button></div></header>
+<header><div><h1>Plantões</h1><p>Controle os plantões de cada cidade e gere a folga do sábado seguinte.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn secondary" id="autoPlantaoBtn">⚙ Gerar escala automática</button><button class="btn primary" id="newPlantaoBtn">+ Novo plantão</button></div></header>
 <div class="box requests-box">
   <div class="requests-toolbar">
     <div><h2>Escala de plantão</h2><small id="plantaoTotal">Carregando...</small></div>
@@ -248,12 +248,13 @@ header h1,header p{overflow-wrap:anywhere}
       <select id="plantaoSectorFilter" style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a">
         <option value="">Todos os setores</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option>
       </select>
+      <select id="plantaoCityFilter" style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a"><option value="">Todas as cidades</option></select>
       <input id="plantaoMonthFilter" type="month" style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a">
     </div>
   </div>
   <div class="requests-table"><table>
-    <thead><tr><th>Dupla</th><th>Setor</th><th>Período</th><th>Observação</th><th>Folga seguinte</th><th>Ações</th></tr></thead>
-    <tbody id="plantaoTableBody"><tr><td colspan="6">Carregando...</td></tr></tbody>
+    <thead><tr><th>Dupla</th><th>Cidade</th><th>Setor</th><th>Período</th><th>Observação</th><th>Folga seguinte</th><th>Ações</th></tr></thead>
+    <tbody id="plantaoTableBody"><tr><td colspan="7">Carregando...</td></tr></tbody>
   </table></div>
 </div>
 </section>
@@ -574,9 +575,10 @@ header h1,header p{overflow-wrap:anywhere}
   <form id="autoPlantaoForm">
     <div class="form-grid">
       <div class="field"><label for="autoPlantaoSector">Setor</label><select id="autoPlantaoSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div>
+      <div class="field"><label for="autoPlantaoCity">Cidade</label><select id="autoPlantaoCity" required><option value="">Selecione a cidade...</option></select></div>
       <div class="field"><label for="autoPlantaoStart">Início da primeira semana</label><input id="autoPlantaoStart" type="date" required></div>
       <div class="field"><label for="autoPlantaoUntil">Gerar até</label><input id="autoPlantaoUntil" type="date" required></div>
-      <div class="field"><label style="display:flex;align-items:center;gap:8px;margin-top:28px"><input id="autoPlantaoGenerateLeave" type="checkbox" checked style="width:auto"> Gerar folga no sábado seguinte</label></div>
+      <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input id="autoPlantaoGenerateLeave" type="checkbox" checked style="width:auto"> Gerar folga no sábado seguinte</label></div>
       <div class="field full">
         <label>Ordem do rodízio</label>
         <p style="font-size:12px;color:#64748b;margin:4px 0 8px">Use ↑ e ↓ para definir quem vem primeiro. A cada semana o sistema seleciona 2 técnicos. Quem estiver de férias será pulado automaticamente.</p>
@@ -606,10 +608,11 @@ header h1,header p{overflow-wrap:anywhere}
 </div>
 <div class="modal" id="plantaoModal" aria-hidden="true">
 <div class="modal-card">
-  <div class="modal-head"><div><h2>Novo plantão</h2><p>Cadastre a dupla de Buritis para o período completo do plantão.</p></div><button class="close" id="closePlantao" aria-label="Fechar">×</button></div>
+  <div class="modal-head"><div><h2>Novo plantão</h2><p>Cadastre a dupla da cidade para o período completo do plantão.</p></div><button class="close" id="closePlantao" aria-label="Fechar">×</button></div>
   <form id="plantaoForm">
     <div class="form-grid">
-      <div class="field full"><label for="plantaoSector">Setor</label><select id="plantaoSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div>
+      <div class="field"><label for="plantaoSector">Setor</label><select id="plantaoSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div>
+      <div class="field"><label for="plantaoCity">Cidade</label><select id="plantaoCity" required><option value="">Selecione a cidade...</option></select></div>
       <div class="field"><label for="plantaoEmployee">Técnico 1</label><select id="plantaoEmployee" required><option value="">Selecione o setor primeiro...</option></select></div><div class="field"><label for="plantaoEmployee2">Técnico 2</label><select id="plantaoEmployee2" required><option value="">Selecione o setor primeiro...</option></select></div>
       <div class="field"><label for="plantaoStart">Data inicial</label><input id="plantaoStart" type="date" required></div>
       <div class="field"><label for="plantaoEnd">Data final</label><input id="plantaoEnd" type="date" required></div>
@@ -925,21 +928,21 @@ async function load(){
     const today=todayIsoLocal(), dashTo=addDaysIso(today,7);
     const [team,requests,notes,plantoes,dashboardRequests,dashboardPlantoes]=await Promise.all([
       sb('equipe?select=id,nome,setor,cidade,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc'),
-      sb(`solicitacoes?select=id,funcionario_id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
-      sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`),
+      sb(`solicitacoes?select=id,funcionario_id,data_inicial,data_final,status,motivo,observacao,equipe(nome,setor)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
+      sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome,setor)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`),
       sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`,[]),
       sb(`solicitacoes?select=id,funcionario_id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${dashTo}&data_final=gte.${today}&order=data_inicial.asc`),
-      sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_final=gte.${today}&order=data_inicial.asc&limit=12`,[])
+      sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_final=gte.${today}&order=data_inicial.asc&limit=100`,[])
     ]);
     teamCache=team;fillEmployees();fillAgendaNoteEmployees();document.getElementById('funcCount').textContent=team.length;
-    agendaNotes=notes;renderAgendaNotes();
+    agendaNotes=notes;
     const pending=requests.filter(r=>r.status==='Pendente');
     document.getElementById('pendingCount').textContent=pending.length;
     document.getElementById('pendingBadge').textContent=pending.length;
     renderDashboardOperational(team,dashboardRequests,dashboardPlantoes);
     loadAirDashboardAlert();
     loadSystemAlerts();
-    renderCalendar(requests,plantoes);
+    agendaRequests=requests;agendaPlantoes=plantoes;renderAgenda();
     renderPending(pending);
   }catch(e){
     console.error(e);
@@ -963,17 +966,24 @@ function renderDashboardOperational(team,requests,plantoes){
     ? vacations.map(r=>`<div class="req"><span><b>${safe(r.equipe?.nome||'Funcionário')}</b><small>até ${fmtDate(r.data_final)}</small></span><em>Férias</em></div>`).join('')
     : '<div class="req"><span><b>Ninguém de férias hoje</b><small>Sem férias ativas hoje.</small></span></div>';
 
-  const current=plantoes.find(p=>p.data_inicial<=today&&p.data_final>=today);
   const box=document.getElementById('weeklyPlantaoCard');
-  if(current){
-    const dupla=[current.equipe?.nome,current.equipe2?.nome].filter(Boolean).join(' + ');
-    box.innerHTML=`<div class="req"><span><b>${safe(dupla||'Dupla não definida')}</b><small>${fmtDate(current.data_inicial)} a ${fmtDate(current.data_final)} • Folga: ${fmtDate(nextSaturdayAfter(current.data_final))}</small></span><em>Buritis</em></div>`;
-  }else{
-    const next=plantoes.find(p=>p.data_inicial>today);
-    box.innerHTML=next
-      ? `<div class="req"><span><b>Próximo: ${safe([next.equipe?.nome,next.equipe2?.nome].filter(Boolean).join(' + '))}</b><small>${fmtDate(next.data_inicial)} a ${fmtDate(next.data_final)}</small></span><em>Em breve</em></div>`
-      : '<div class="req"><span><b>Nenhum plantão cadastrado</b><small>Gere a escala de Buritis.</small></span></div>';
-  }
+  const duplaOf=p=>[p.equipe?.nome,p.equipe2?.nome].filter(Boolean).map(safe).join(' + ')||'Dupla não definida';
+  const cityOf=p=>p.equipe?.cidade||p.equipe2?.cidade||'Sem cidade';
+  const sectorOf=p=>p.equipe?.setor||p.equipe2?.setor||'';
+  const groups={};
+  plantoes.forEach(p=>{const k=cityOf(p)+'||'+sectorOf(p);(groups[k]=groups[k]||[]).push(p)});
+  const plantaoHtml=[];
+  Object.keys(groups).sort((a,b)=>a.localeCompare(b,'pt-BR')).forEach(k=>{
+    const [city,sector]=k.split('||');
+    const list=groups[k].slice().sort((a,b)=>a.data_inicial.localeCompare(b.data_inicial));
+    const current=list.filter(p=>p.data_inicial<=today&&p.data_final>=today);
+    const shown=current.length?current:list.filter(p=>p.data_inicial>today).slice(0,1);
+    shown.forEach(p=>{
+      const isCurrent=current.length>0;
+      plantaoHtml.push(`<div class="req"><span><b>${isCurrent?'':'Próximo: '}${duplaOf(p)}</b><small>${sector?safe(sector)+' • ':''}${fmtDate(p.data_inicial)} a ${fmtDate(p.data_final)}${isCurrent?' • Folga: '+fmtDate(nextSaturdayAfter(p.data_final)):''}</small></span><em>${safe(city)}</em></div>`);
+    });
+  });
+  box.innerHTML=plantaoHtml.length?plantaoHtml.join(''):'<div class="req"><span><b>Nenhum plantão cadastrado</b><small>Gere a escala das cidades.</small></span></div>';
 
   const until=addDaysIso(today,7);
   const upcoming=requests.filter(r=>absentStatuses.includes(r.status)&&r.data_final>=today&&r.data_inicial<=until)
@@ -987,10 +997,29 @@ function renderPending(list){
   if(!list.length){el.innerHTML='<div class="req"><span><b>Nenhuma pendência</b><small>Mês selecionado</small></span></div>';return}
   el.innerHTML=list.slice(0,6).map(r=>`<div class="req"><span><b>${r.equipe?.nome||'Funcionário'}</b><small>${r.data_inicial.split('-').reverse().slice(0,2).join('/')}</small></span><em>Pendente</em></div>`).join('');
 }
-let agendaNotes=[],selectedAgendaDate=null;
+let agendaNotes=[],selectedAgendaDate=null,agendaRequests=[],agendaPlantoes=[];
+function agendaSector(){return document.getElementById('agendaSectorFilter')?.value||''}
+function refreshAgendaSectorFilter(){
+  const sel=document.getElementById('agendaSectorFilter');if(!sel)return;
+  const allowed=currentRole()==='admin'?sectorCache:currentSectors();
+  let cur=sel.value;
+  if(!cur){try{cur=localStorage.getItem('escala_agenda_setor')||''}catch(e){}}
+  sel.innerHTML='<option value="">Todos os setores</option>'+allowed.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('');
+  sel.value=allowed.includes(cur)?cur:'';
+}
+function visibleAgendaNotes(){const s=agendaSector();return s?agendaNotes.filter(n=>!n.funcionario_id||n.equipe?.setor===s):agendaNotes}
+function renderAgenda(){
+  refreshAgendaSectorFilter();
+  const s=agendaSector();
+  const reqs=s?agendaRequests.filter(r=>r.equipe?.setor===s):agendaRequests;
+  const pl=s?agendaPlantoes.filter(p=>(p.equipe?.setor||p.equipe2?.setor)===s):agendaPlantoes;
+  const t=document.getElementById('monthTitle');
+  if(t)t.textContent=`${monthNames[viewDate.getMonth()]} de ${viewDate.getFullYear()}${s?' • '+s:''}`;
+  renderCalendar(reqs,pl);renderAgendaNotes();
+}
 function fillAgendaNoteEmployees(){
   const sel=document.getElementById('agendaNoteEmployee');if(!sel)return;
-  const val=sel.value;sel.innerHTML='<option value="">Sem funcionário</option>'+teamCache.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');sel.value=val;
+  const val=sel.value;sel.innerHTML='<option value="">Sem funcionário</option>'+teamCache.filter(e=>!agendaSector()||e.setor===agendaSector()).map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');sel.value=val;
 }
 function selectAgendaDay(date,cell){
   selectedAgendaDate=date;
@@ -1002,8 +1031,9 @@ function selectAgendaDay(date,cell){
 }
 function renderAgendaNotes(){
   const box=document.getElementById('agendaNotesList');if(!box)return;
-  if(!agendaNotes.length){box.innerHTML='<p style="color:#71809a;font-size:13px">Nenhuma anotação neste mês.</p>';return}
-  box.innerHTML=agendaNotes.map(n=>`<div class="agenda-note"><b>${fmtDate(n.data)}${n.equipe?.nome?' — '+safe(n.equipe.nome):''}</b><p>${safe(n.anotacao)}</p><div class="agenda-note-actions"><button class="mini-btn mutebtn" onclick="editAgendaNote(${n.id})">Editar</button><button class="mini-btn deny" onclick="deleteAgendaNote(${n.id})">Excluir</button></div></div>`).join('');
+  const notes=visibleAgendaNotes();
+  if(!notes.length){box.innerHTML='<p style="color:#71809a;font-size:13px">Nenhuma anotação neste mês.</p>';return}
+  box.innerHTML=notes.map(n=>`<div class="agenda-note"><b>${fmtDate(n.data)}${n.equipe?.nome?' — '+safe(n.equipe.nome):''}</b><p>${safe(n.anotacao)}</p><div class="agenda-note-actions"><button class="mini-btn mutebtn" onclick="editAgendaNote(${n.id})">Editar</button><button class="mini-btn deny" onclick="deleteAgendaNote(${n.id})">Excluir</button></div></div>`).join('');
 }
 async function saveAgendaNote(){
   if(!selectedAgendaDate)return;
@@ -1043,7 +1073,7 @@ function renderCalendar(requests,plantoes=[]){
     const dayReq=requests.filter(r=>r.data_inicial<=key&&r.data_final>=key&&r.status!=='Negada');
     for(const r of dayReq){const [dot]=statusMeta(r.status);const sm=document.createElement('small');sm.textContent=`${dot} ${r.equipe?.nome||''}`;cell.appendChild(sm)}
     const dayPlantao=plantoes.filter(r=>r.data_inicial<=key&&r.data_final>=key);
-    for(const r of dayPlantao){const sm=document.createElement('small');const nomes=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ');sm.textContent=`🟠 ${nomes}`;cell.appendChild(sm)}
+    for(const r of dayPlantao){const sm=document.createElement('small');const nomes=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ');const cid=r.equipe?.cidade||r.equipe2?.cidade||'';sm.textContent=`🟠 ${cid?'['+cid.slice(0,3).toUpperCase()+'] ':''}${nomes}`;if(cid)sm.title=cid;cell.appendChild(sm)}
     m.appendChild(cell);
   }
 }
@@ -1127,10 +1157,18 @@ function fillPlantaoSectors(){
   if(allowed.length===1)sel.value=allowed[0];
   fillPlantaoEmployees();
 }
+function cityList(){return [...new Set((teamCache||[]).map(e=>e.cidade).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'))}
+function fillCitySelect(id,placeholder){
+  const el=document.getElementById(id);if(!el)return;
+  const cur=el.value,cities=cityList();
+  el.innerHTML=`<option value="">${safe(placeholder)}</option>`+cities.map(c=>`<option>${safe(c)}</option>`).join('');
+  if(cities.includes(cur))el.value=cur;
+}
 function fillPlantaoEmployees(){
   const sector=document.getElementById('plantaoSector').value;
-  const list=sector?teamCache.filter(e=>e.setor===sector&&e.cidade==='Buritis'):[];
-  const html='<option value="">'+(sector?'Selecione técnico de Buritis...':'Selecione o setor primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  const city=document.getElementById('plantaoCity').value;
+  const list=(sector&&city)?teamCache.filter(e=>e.setor===sector&&e.cidade===city):[];
+  const html='<option value="">'+((sector&&city)?'Selecione o técnico...':'Selecione setor e cidade primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
   document.getElementById('plantaoEmployee').innerHTML=html;
   document.getElementById('plantaoEmployee2').innerHTML=html;
 }
@@ -1151,6 +1189,7 @@ function openAutoPlantao(){
   document.getElementById('autoPlantaoPreview').style.display='none';
   document.getElementById('saveAutoPlantao').disabled=true;
   autoPlantaoPreviewRows=[];
+  fillCitySelect('autoPlantaoCity','Selecione a cidade...');
   fillAutoPlantaoSectors();
   document.getElementById('autoPlantaoModal').classList.add('open');
   document.getElementById('autoPlantaoModal').setAttribute('aria-hidden','false');
@@ -1161,14 +1200,15 @@ function closeAutoPlantao(){
 }
 function loadAutoPlantaoEmployees(){
   const sector=document.getElementById('autoPlantaoSector').value;
-  autoPlantaoOrder=sector?teamCache.filter(e=>e.setor===sector&&e.cidade==='Buritis').map(e=>({id:e.id,nome:e.nome})):[];
+  const city=document.getElementById('autoPlantaoCity').value;
+  autoPlantaoOrder=(sector&&city)?teamCache.filter(e=>e.setor===sector&&e.cidade===city).map(e=>({id:e.id,nome:e.nome})):[];
   renderAutoPlantaoOrder();
   document.getElementById('autoPlantaoPreview').style.display='none';
   document.getElementById('saveAutoPlantao').disabled=true;
 }
 function renderAutoPlantaoOrder(){
   const box=document.getElementById('autoPlantaoOrder');
-  if(!autoPlantaoOrder.length){box.innerHTML='<div style="padding:12px;color:#64748b">Nenhum técnico ativo de Buritis neste setor.</div>';return}
+  if(!autoPlantaoOrder.length){box.innerHTML='<div style="padding:12px;color:#64748b">Selecione setor e cidade (ou não há técnicos ativos nessa combinação).</div>';return}
   box.innerHTML=autoPlantaoOrder.map((e,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:${i?'1px solid #edf1f5':'0'}">
     <b style="width:28px">${i+1}.</b><span style="flex:1">${safe(e.nome)}</span>
     <button type="button" class="mini-btn mutebtn" onclick="moveAutoPlantao(${i},-1)" ${i===0?'disabled':''}>↑</button>
@@ -1189,12 +1229,13 @@ async function buildAutoPlantaoPreview(){
   const sector=document.getElementById('autoPlantaoSector').value;
   const start=document.getElementById('autoPlantaoStart').value;
   const until=document.getElementById('autoPlantaoUntil').value;
-  if(!sector||!start||!until)return showToast('Preencha setor e período.');
+  const city=document.getElementById('autoPlantaoCity').value;
+  if(!sector||!city||!start||!until)return showToast('Preencha setor, cidade e período.');
   if(until<start)return showToast('A data final não pode ser anterior à inicial.');
   if(!autoPlantaoOrder.length)return showToast('Não há funcionários no rodízio.');
   try{
     const vacations=await sb(`solicitacoes?select=funcionario_id,data_inicial,data_final,status,equipe(nome)&status=eq.Férias&data_inicial=lte.${until}&data_final=gte.${start}&order=data_inicial.asc`);
-    const existing=await sb(`plantoes?select=id,funcionario_id,data_inicial,data_final,equipe:equipe!plantoes_funcionario_id_fkey(nome)&data_inicial=lte.${until}&data_final=gte.${start}`);
+    const existing=((await sb(`plantoes?select=id,funcionario_id,data_inicial,data_final,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade)&data_inicial=lte.${until}&data_final=gte.${start}`))||[]).filter(p=>p.equipe?.cidade===city&&p.equipe?.setor===sector);
     const rows=[];let weekStart=start;let cursor=0;let guard=0;
     while(weekStart<=until&&guard<200){
       guard++;
@@ -1256,6 +1297,7 @@ async function saveAutoPlantaoScale(){
 function openPlantao(){
   document.getElementById('plantaoForm').reset();
   document.getElementById('plantaoGenerateLeave').checked=true;
+  fillCitySelect('plantaoCity','Selecione a cidade...');
   fillPlantaoSectors();
   document.getElementById('plantaoModal').classList.add('open');
   document.getElementById('plantaoModal').setAttribute('aria-hidden','false');
@@ -1281,16 +1323,26 @@ async function showPlantoes(){
   await loadPlantoes();
 }
 async function loadPlantoes(){
-  const body=document.getElementById('plantaoTableBody');body.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';
+  const body=document.getElementById('plantaoTableBody');body.innerHTML='<tr><td colspan="7">Carregando...</td></tr>';
   try{
-    plantaoRows=await sb('plantoes?select=id,funcionario_id,funcionario2_id,data_inicial,data_final,observacao,folga_gerada,folga_solicitacao_id,folga2_solicitacao_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor)&order=data_inicial.desc');
+    plantaoRows=await sb('plantoes?select=id,funcionario_id,funcionario2_id,data_inicial,data_final,observacao,folga_gerada,folga_solicitacao_id,folga2_solicitacao_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&order=data_inicial.desc');
+    refreshPlantaoCityFilter();
     renderPlantoes();
-  }catch(e){console.error(e);body.innerHTML='<tr><td colspan="6">Erro ao carregar plantões.</td></tr>'}
+  }catch(e){console.error(e);body.innerHTML='<tr><td colspan="7">Erro ao carregar plantões.</td></tr>'}
+}
+function plantaoCity(r){return r.equipe?.cidade||r.equipe2?.cidade||''}
+function refreshPlantaoCityFilter(){
+  const sel=document.getElementById('plantaoCityFilter');if(!sel)return;
+  const cur=sel.value;
+  const cities=[...new Set([...cityList(),...plantaoRows.map(plantaoCity).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  sel.innerHTML='<option value="">Todas as cidades</option>'+cities.map(c=>`<option>${safe(c)}</option>`).join('');
+  if(cities.includes(cur))sel.value=cur;
 }
 function renderPlantoes(){
   const sector=document.getElementById('plantaoSectorFilter').value;
+  const city=document.getElementById('plantaoCityFilter').value;
   const month=document.getElementById('plantaoMonthFilter').value;
-  let rows=plantaoRows.filter(r=>!sector||r.equipe?.setor===sector);
+  let rows=plantaoRows.filter(r=>(!sector||r.equipe?.setor===sector)&&(!city||plantaoCity(r)===city));
   if(month){
     const [y,m]=month.split('-').map(Number),from=`${y}-${String(m).padStart(2,'0')}-01`;
     const last=new Date(y,m,0),to=iso(last);
@@ -1298,14 +1350,16 @@ function renderPlantoes(){
   }
   document.getElementById('plantaoTotal').textContent=`${rows.length} plantão${rows.length===1?'':'ões'}`;
   const body=document.getElementById('plantaoTableBody');
-  if(!rows.length){body.innerHTML='<tr><td colspan="6">Nenhum plantão encontrado.</td></tr>';return}
+  if(!rows.length){body.innerHTML='<tr><td colspan="7">Nenhum plantão encontrado.</td></tr>';return}
   body.innerHTML=rows.map(r=>{
     const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
     const folga=r.folga_gerada?`🟣 ${fmtDate(nextSaturdayAfter(r.data_final))} (dupla)`:'—';
     const edit=`<button class="mini-btn approve" onclick="openEditPlantao(${r.id})">Editar</button>`;
     const del=currentRole()==='admin'?`<button class="mini-btn deny" onclick="deletePlantao(${r.id})">Excluir</button>`:'';
     const dupla=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).map(safe).join(' + ');
-    return `<tr><td><b>${dupla||'Funcionário'}</b></td><td>${safe(r.equipe?.setor||'—')}</td><td>${period}</td><td>${safe(r.observacao||'—')}</td><td>${folga}</td><td><div class="actions">${edit}${del}</div></td></tr>`;
+    const city=plantaoCity(r);
+    const cityHtml=city?`<span class="status-pill" style="background:#f6f3ff;color:#5b3fa3">${safe(city)}</span>`:'—';
+    return `<tr><td><b>${dupla||'Funcionário'}</b></td><td>${cityHtml}</td><td>${safe(r.equipe?.setor||'—')}</td><td>${period}</td><td>${safe(r.observacao||'—')}</td><td>${folga}</td><td><div class="actions">${edit}${del}</div></td></tr>`;
   }).join('');
 }
 let editingPlantao=null;
@@ -1313,7 +1367,8 @@ function openEditPlantao(id){
   const r=plantaoRows.find(x=>x.id===id);if(!r)return;
   editingPlantao=r;
   const sector=r.equipe?.setor||r.equipe2?.setor||'';
-  const list=(teamCache||[]).filter(e=>e.cidade==='Buritis'&&(!sector||e.setor===sector)).map(e=>({id:e.id,nome:e.nome}));
+  const city=plantaoCity(r);
+  const list=(teamCache||[]).filter(e=>(!city||e.cidade===city)&&(!sector||e.setor===sector)).map(e=>({id:e.id,nome:e.nome}));
   [[r.funcionario_id,r.equipe],[r.funcionario2_id,r.equipe2]].forEach(([fid,eq])=>{
     if(fid&&!list.some(e=>e.id===fid))list.push({id:fid,nome:eq?.nome||'Funcionário'});
   });
@@ -1323,7 +1378,7 @@ function openEditPlantao(id){
   s1.innerHTML=html;s2.innerHTML=html;
   s1.value=r.funcionario_id?String(r.funcionario_id):'';
   s2.value=r.funcionario2_id?String(r.funcionario2_id):'';
-  document.getElementById('editPlantaoInfo').textContent=`${sector?sector+' • ':''}${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
+  document.getElementById('editPlantaoInfo').textContent=`${city?city+' • ':''}${sector?sector+' • ':''}${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
   const m=document.getElementById('editPlantaoModal');m.classList.add('open');m.setAttribute('aria-hidden','false');
 }
 function closeEditPlantao(){
@@ -1958,6 +2013,7 @@ document.getElementById('closeAutoPlantao').onclick=closeAutoPlantao;
 document.getElementById('cancelAutoPlantao').onclick=closeAutoPlantao;
 document.getElementById('autoPlantaoModal').onclick=e=>{if(e.target.id==='autoPlantaoModal')closeAutoPlantao()};
 document.getElementById('autoPlantaoSector').onchange=loadAutoPlantaoEmployees;
+document.getElementById('autoPlantaoCity').onchange=loadAutoPlantaoEmployees;
 document.getElementById('previewAutoPlantao').onclick=buildAutoPlantaoPreview;
 document.getElementById('autoPlantaoForm').onsubmit=async e=>{e.preventDefault();await saveAutoPlantaoScale()};
 document.getElementById('airNav').onclick=()=>{if(canAccess('manutencoes'))showAir()};
@@ -2060,6 +2116,8 @@ document.getElementById('closePlantao').onclick=closePlantao;
 document.getElementById('cancelPlantao').onclick=closePlantao;
 document.getElementById('plantaoModal').onclick=e=>{if(e.target.id==='plantaoModal')closePlantao()};
 document.getElementById('plantaoSector').onchange=fillPlantaoEmployees;
+document.getElementById('plantaoCity').onchange=fillPlantaoEmployees;
+document.getElementById('plantaoCityFilter').onchange=renderPlantoes;
 document.getElementById('plantaoSectorFilter').onchange=renderPlantoes;
 document.getElementById('plantaoMonthFilter').onchange=renderPlantoes;
 document.getElementById('plantaoForm').onsubmit=async e=>{
@@ -2313,6 +2371,11 @@ document.getElementById('sectorList').onclick=async e=>{
   }catch(err){console.error(err);showToast('Não foi possível alterar o setor.');toggle.disabled=false}
 };
 
+document.getElementById('agendaSectorFilter').onchange=()=>{
+  try{localStorage.setItem('escala_agenda_setor',agendaSector())}catch(e){}
+  document.getElementById('agendaNoteForm').style.display='none';
+  fillAgendaNoteEmployees();renderAgenda();
+};
 document.getElementById('closeEditPlantao').onclick=closeEditPlantao;
 document.getElementById('cancelEditPlantao').onclick=closeEditPlantao;
 document.getElementById('editPlantaoModal').onclick=e=>{if(e.target.id==='editPlantaoModal')closeEditPlantao()};
