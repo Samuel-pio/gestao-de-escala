@@ -591,7 +591,20 @@ header h1,header p{overflow-wrap:anywhere}
     </div>
   </form>
 </div>
-</div><div class="modal" id="plantaoModal" aria-hidden="true">
+</div><div class="modal" id="editPlantaoModal" aria-hidden="true">
+<div class="modal-card">
+  <div class="modal-head"><div><h2>Editar dupla do plantão</h2><p id="editPlantaoInfo"></p></div><button class="close" id="closeEditPlantao" aria-label="Fechar">×</button></div>
+  <form id="editPlantaoForm">
+    <div class="form-grid">
+      <div class="field"><label for="editPlantaoEmp1">Técnico 1</label><select id="editPlantaoEmp1" required></select></div>
+      <div class="field"><label for="editPlantaoEmp2">Técnico 2</label><select id="editPlantaoEmp2" required></select></div>
+      <div class="field full"><p style="margin:0;font-size:12px;color:#64748b">O período do plantão não muda. Se a folga do sábado seguinte já foi gerada, ela passa automaticamente para quem entrou na dupla.</p></div>
+    </div>
+    <div class="form-actions"><button type="button" class="btn secondary" id="cancelEditPlantao">Cancelar</button><button type="submit" class="btn primary" id="saveEditPlantao">Salvar alteração</button></div>
+  </form>
+</div>
+</div>
+<div class="modal" id="plantaoModal" aria-hidden="true">
 <div class="modal-card">
   <div class="modal-head"><div><h2>Novo plantão</h2><p>Cadastre a dupla de Buritis para o período completo do plantão.</p></div><button class="close" id="closePlantao" aria-label="Fechar">×</button></div>
   <form id="plantaoForm">
@@ -1289,10 +1302,97 @@ function renderPlantoes(){
   body.innerHTML=rows.map(r=>{
     const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
     const folga=r.folga_gerada?`🟣 ${fmtDate(nextSaturdayAfter(r.data_final))} (dupla)`:'—';
-    const del=currentRole()==='admin'?`<button class="action-btn deny" onclick="deletePlantao(${r.id})">Excluir</button>`:'';
+    const edit=`<button class="mini-btn approve" onclick="openEditPlantao(${r.id})">Editar</button>`;
+    const del=currentRole()==='admin'?`<button class="mini-btn deny" onclick="deletePlantao(${r.id})">Excluir</button>`:'';
     const dupla=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).map(safe).join(' + ');
-    return `<tr><td><b>${dupla||'Funcionário'}</b></td><td>${safe(r.equipe?.setor||'—')}</td><td>${period}</td><td>${safe(r.observacao||'—')}</td><td>${folga}</td><td>${del||'—'}</td></tr>`;
+    return `<tr><td><b>${dupla||'Funcionário'}</b></td><td>${safe(r.equipe?.setor||'—')}</td><td>${period}</td><td>${safe(r.observacao||'—')}</td><td>${folga}</td><td><div class="actions">${edit}${del}</div></td></tr>`;
   }).join('');
+}
+let editingPlantao=null;
+function openEditPlantao(id){
+  const r=plantaoRows.find(x=>x.id===id);if(!r)return;
+  editingPlantao=r;
+  const sector=r.equipe?.setor||r.equipe2?.setor||'';
+  const list=(teamCache||[]).filter(e=>e.cidade==='Buritis'&&(!sector||e.setor===sector)).map(e=>({id:e.id,nome:e.nome}));
+  [[r.funcionario_id,r.equipe],[r.funcionario2_id,r.equipe2]].forEach(([fid,eq])=>{
+    if(fid&&!list.some(e=>e.id===fid))list.push({id:fid,nome:eq?.nome||'Funcionário'});
+  });
+  list.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  const html='<option value="">Selecione...</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  const s1=document.getElementById('editPlantaoEmp1'),s2=document.getElementById('editPlantaoEmp2');
+  s1.innerHTML=html;s2.innerHTML=html;
+  s1.value=r.funcionario_id?String(r.funcionario_id):'';
+  s2.value=r.funcionario2_id?String(r.funcionario2_id):'';
+  document.getElementById('editPlantaoInfo').textContent=`${sector?sector+' • ':''}${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
+  const m=document.getElementById('editPlantaoModal');m.classList.add('open');m.setAttribute('aria-hidden','false');
+}
+function closeEditPlantao(){
+  const m=document.getElementById('editPlantaoModal');m.classList.remove('open');m.setAttribute('aria-hidden','true');editingPlantao=null;
+}
+async function saveEditPlantao(e){
+  e.preventDefault();
+  const r=editingPlantao;if(!r)return;
+  const n1=Number(document.getElementById('editPlantaoEmp1').value);
+  const n2=Number(document.getElementById('editPlantaoEmp2').value);
+  if(!n1||!n2)return showToast('Selecione os dois técnicos.');
+  if(n1===n2)return showToast('Selecione dois técnicos diferentes.');
+  if(n1===r.funcionario_id&&n2===r.funcionario2_id)return showToast('Nenhuma alteração feita.');
+  const nameOf=id=>((teamCache||[]).find(x=>x.id===id)||{}).nome||'Funcionário';
+  const newcomers=[n1,n2].filter(id=>id!==r.funcionario_id&&id!==r.funcionario2_id);
+  const overlapsPeriod=p=>p.data_inicial<=r.data_final&&p.data_final>=r.data_inicial;
+  const hasPerson=(p,id)=>p.funcionario_id===id||p.funcionario2_id===id;
+
+  // Bloqueia: novo técnico já escalado em outro plantão no mesmo período
+  const clash=[];
+  plantaoRows.forEach(p=>{
+    if(p.id===r.id||!overlapsPeriod(p))return;
+    newcomers.forEach(id=>{if(hasPerson(p,id))clash.push(`${nameOf(id)} já está no plantão de ${fmtDate(p.data_inicial)} a ${fmtDate(p.data_final)}.`)});
+  });
+  if(clash.length){window.alert(clash.join('\n'));return}
+
+  const btn=document.getElementById('saveEditPlantao');btn.disabled=true;btn.textContent='Salvando...';
+  try{
+    // Avisos: férias/folgas no período e folga caindo dentro de outro plantão
+    const warnings=[];
+    const folga=r.folga_gerada?nextSaturdayAfter(r.data_final):null;
+    if(newcomers.length){
+      const abs=await sb(`solicitacoes?select=funcionario_id,data_inicial,data_final,status&funcionario_id=in.(${newcomers.join(',')})&data_inicial=lte.${r.data_final}&data_final=gte.${r.data_inicial}`);
+      (abs||[]).filter(a=>['Aprovada','Férias','Folga do Plantão'].includes(a.status)).forEach(a=>{
+        warnings.push(`${nameOf(a.funcionario_id)} tem "${a.status}" de ${fmtDate(a.data_inicial)} a ${fmtDate(a.data_final)}.`);
+      });
+      if(folga){
+        plantaoRows.forEach(p=>{
+          if(p.id===r.id||!(p.data_inicial<=folga&&p.data_final>=folga))return;
+          newcomers.forEach(id=>{if(hasPerson(p,id))warnings.push(`A folga de ${nameOf(id)} (${fmtDate(folga)}) cairia dentro do plantão de ${fmtDate(p.data_inicial)} a ${fmtDate(p.data_final)}.`)});
+        });
+      }
+    }
+    if(warnings.length&&!window.confirm(warnings.join('\n')+'\n\nSalvar a troca mesmo assim?'))return;
+
+    // 1) Folga do sábado seguinte: passa para quem entrou (feito antes, é idempotente)
+    const plantaoPatch={funcionario_id:n1,funcionario2_id:n2};
+    if(r.folga_gerada){
+      const slots=[[r.funcionario_id,n1,r.folga_solicitacao_id,'folga_solicitacao_id'],[r.funcionario2_id,n2,r.folga2_solicitacao_id,'folga2_solicitacao_id']];
+      for(const [oldId,newId,reqId,col] of slots){
+        if(oldId===newId)continue;
+        let updated=null;
+        if(reqId)updated=await sb(`solicitacoes?id=eq.${reqId}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({funcionario_id:newId})});
+        if(!updated||!updated.length){
+          const created=await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
+            funcionario_id:newId,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
+            observacao:`Gerada automaticamente pelo plantão de ${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`
+          })});
+          plantaoPatch[col]=created?.[0]?.id||null;
+        }
+      }
+    }
+    // 2) Dupla do plantão (período não muda)
+    await sb(`plantoes?id=eq.${r.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(plantaoPatch)});
+    closeEditPlantao();
+    showToast(r.folga_gerada?'Dupla e folga atualizadas!':'Dupla atualizada!');
+    await loadPlantoes();await loadAllRequests();await load();
+  }catch(err){console.error(err);showToast('Não foi possível atualizar o plantão.')}
+  finally{btn.disabled=false;btn.textContent='Salvar alteração'}
 }
 async function deletePlantao(id){
   if(currentRole()!=='admin')return;
@@ -2212,6 +2312,11 @@ document.getElementById('sectorList').onclick=async e=>{
     await loadSectors();await loadTeamView();
   }catch(err){console.error(err);showToast('Não foi possível alterar o setor.');toggle.disabled=false}
 };
+
+document.getElementById('closeEditPlantao').onclick=closeEditPlantao;
+document.getElementById('cancelEditPlantao').onclick=closeEditPlantao;
+document.getElementById('editPlantaoModal').onclick=e=>{if(e.target.id==='editPlantaoModal')closeEditPlantao()};
+document.getElementById('editPlantaoForm').onsubmit=saveEditPlantao;
 
 initAuth();
 </script></body></html>
