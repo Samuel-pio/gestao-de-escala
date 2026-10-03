@@ -125,6 +125,7 @@ header h1,header p{overflow-wrap:anywhere}
 .alert-item-text b{display:block;color:#10203a;font-size:13px;margin-bottom:3px}
 .alert-item-text small{display:block;color:#71809a;font-size:11px;line-height:1.35}
 .alert-empty{padding:28px 18px;text-align:center;color:#71809a;font-size:13px}
+.day.holiday{background:#fff6e0}.day.holiday.muted{background:#fffaf0}
 </style></head><body>
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
@@ -174,12 +175,21 @@ header h1,header p{overflow-wrap:anywhere}
 <div class="box pending"><div class="boxhead"><div><h2>🔵 Férias hoje</h2><p>Quem está de férias neste momento.</p></div></div><div id="vacationTodayList"><div class="req"><span><b>Carregando...</b><small></small></span></div></div></div>
 <div class="box pending"><div class="boxhead"><div><h2>📅 Próximas ausências</h2><p>Folgas e férias dos próximos 7 dias.</p></div></div><div id="upcomingAbsences"><div class="req"><span><b>Carregando...</b><small></small></span></div></div></div>
 </section></div>
-<section id="agendaView" style="display:none"><header><div><h1>Agenda</h1><p>Visualize a escala, folgas, férias e solicitações da equipe.</p></div><select id="agendaSectorFilter" title="Filtrar agenda por setor" style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a;min-width:200px"><option value="">Todos os setores</option></select></header><section class="grid" style="margin-top:28px"><div class="calendar box"><div class="boxhead"><div><h2>Calendário</h2><p id="monthTitle">Carregando...</p></div><div class="arrows"><button id="prevMonth">‹</button><button id="nextMonth">›</button></div></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="month" id="month"></div></div><div class="side"><div class="box legend"><h2>Legenda</h2><p>🔴 Folga</p><p>🟡 Pendente</p><p>🔵 Férias</p><p>🟣 Folga do Plantão</p><p>🟠 Plantão</p></div>
+<section id="agendaView" style="display:none"><header><div><h1>Agenda</h1><p>Visualize a escala, folgas, férias e solicitações da equipe.</p></div><select id="agendaSectorFilter" title="Filtrar agenda por setor" style="border:1px solid #dfe5ec;border-radius:10px;padding:10px 12px;background:white;color:#10203a;min-width:200px"><option value="">Todos os setores</option></select></header><section class="grid" style="margin-top:28px"><div class="calendar box"><div class="boxhead"><div><h2>Calendário</h2><p id="monthTitle">Carregando...</p></div><div class="arrows"><button id="prevMonth">‹</button><button id="nextMonth">›</button></div></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="month" id="month"></div></div><div class="side"><div class="box legend"><h2>Legenda</h2><p>🔴 Folga</p><p>🟡 Pendente</p><p>🔵 Férias</p><p>🟣 Folga do Plantão</p><p>🟠 Plantão</p><p>🎌 Feriado</p></div>
 <div class="box" id="agendaNotesBox" style="margin-top:18px">
 <h2 style="margin-bottom:6px">Anotações da Agenda</h2>
-<p style="color:#71809a;margin:0 0 14px;font-size:13px">Clique em um dia do calendário para adicionar uma anotação.</p>
+<p style="color:#71809a;margin:0 0 14px;font-size:13px">Clique em um dia do calendário para adicionar uma anotação ou marcar feriado.</p>
 <div id="agendaNoteForm" style="display:none">
 <div style="font-weight:700;margin-bottom:10px" id="agendaNoteDate"></div>
+<div id="agendaHolidayBox" style="margin-bottom:12px;padding:10px 12px;border:1px dashed #f0c36d;border-radius:10px;background:#fffaf0">
+  <div style="font-size:12px;font-weight:700;color:#8a5a00;margin-bottom:6px">🎌 Feriado</div>
+  <div id="agendaHolidayList"></div>
+  <div id="agendaHolidayAdd" style="display:none">
+    <input id="holidayName" maxlength="80" placeholder="Nome do feriado (ex.: Tiradentes)" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #dfe5ec;border-radius:9px;margin-bottom:8px;font-family:inherit">
+    <select id="holidayCity" style="width:100%;padding:9px;border:1px solid #dfe5ec;border-radius:9px;margin-bottom:8px"><option value="">Todas as cidades</option></select>
+    <button class="btn secondary" id="addHolidayBtn" type="button">Marcar como feriado</button>
+  </div>
+</div>
 <select id="agendaNoteEmployee" style="width:100%;padding:10px;border:1px solid #dfe5ec;border-radius:9px;margin-bottom:9px"><option value="">Sem funcionário</option></select>
 <textarea id="agendaNoteText" rows="3" placeholder="Ex.: Folga somente no período da tarde" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #dfe5ec;border-radius:9px;resize:vertical;font-family:inherit"></textarea>
 <div style="display:flex;gap:8px;margin-top:9px"><button class="btn primary" id="saveAgendaNote" type="button">Salvar anotação</button><button class="mini-btn mutebtn" id="cancelAgendaNote" type="button">Cancelar</button></div>
@@ -926,13 +936,14 @@ async function load(){
   document.getElementById('monthTitle').textContent=`${monthNames[mo]} de ${y}`;
   try{
     const today=todayIsoLocal(), dashTo=addDaysIso(today,7);
-    const [team,requests,notes,plantoes,dashboardRequests,dashboardPlantoes]=await Promise.all([
+    const [team,requests,notes,plantoes,dashboardRequests,dashboardPlantoes,feriados]=await Promise.all([
       sb('equipe?select=id,nome,setor,cidade,ativo&ativo=eq.true&order=setor.asc.nullslast,nome.asc'),
       sb(`solicitacoes?select=id,funcionario_id,data_inicial,data_final,status,motivo,observacao,equipe(nome,setor)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
       sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome,setor)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`),
       sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`,[]),
       sb(`solicitacoes?select=id,funcionario_id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${dashTo}&data_final=gte.${today}&order=data_inicial.asc`),
-      sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_final=gte.${today}&order=data_inicial.asc&limit=100`,[])
+      sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_final=gte.${today}&order=data_inicial.asc&limit=100`,[]),
+      sbSafe(`feriados?select=id,data,nome,cidade&data=gte.${from}&data=lte.${to}&order=data.asc`,[])
     ]);
     teamCache=team;fillEmployees();fillAgendaNoteEmployees();document.getElementById('funcCount').textContent=team.length;
     agendaNotes=notes;
@@ -942,7 +953,7 @@ async function load(){
     renderDashboardOperational(team,dashboardRequests,dashboardPlantoes);
     loadAirDashboardAlert();
     loadSystemAlerts();
-    agendaRequests=requests;agendaPlantoes=plantoes;renderAgenda();
+    agendaRequests=requests;agendaPlantoes=plantoes;agendaHolidays=feriados||[];renderAgenda();
     renderPending(pending);
   }catch(e){
     console.error(e);
@@ -997,7 +1008,47 @@ function renderPending(list){
   if(!list.length){el.innerHTML='<div class="req"><span><b>Nenhuma pendência</b><small>Mês selecionado</small></span></div>';return}
   el.innerHTML=list.slice(0,6).map(r=>`<div class="req"><span><b>${r.equipe?.nome||'Funcionário'}</b><small>${r.data_inicial.split('-').reverse().slice(0,2).join('/')}</small></span><em>Pendente</em></div>`).join('');
 }
-let agendaNotes=[],selectedAgendaDate=null,agendaRequests=[],agendaPlantoes=[];
+let agendaNotes=[],selectedAgendaDate=null,agendaRequests=[],agendaPlantoes=[],agendaHolidays=[];
+function renderAgendaHolidayBox(){
+  const box=document.getElementById('agendaHolidayBox');if(!box)return;
+  const isAdmin=currentRole()==='admin',canPl=canAccess('plantoes');
+  const list=selectedAgendaDate?agendaHolidays.filter(h=>h.data===selectedAgendaDate):[];
+  box.style.display=(isAdmin||list.length)?'block':'none';
+  document.getElementById('agendaHolidayList').innerHTML=list.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:5px 0"><span>🎌 <b>${safe(h.nome)}</b> <small style="color:#8a96a8">(${h.cidade?safe(h.cidade):'todas as cidades'})</small></span><span style="display:flex;gap:6px">${canPl?`<button type="button" class="mini-btn approve" onclick="scheduleHolidayPlantao(${h.id})">Escalar plantão</button>`:''}${isAdmin?`<button type="button" class="mini-btn deny" onclick="deleteHoliday(${h.id})">Remover</button>`:''}</span></div>`).join('');
+  document.getElementById('agendaHolidayAdd').style.display=isAdmin?'block':'none';
+  fillCitySelect('holidayCity','Todas as cidades');
+}
+async function addHoliday(){
+  if(currentRole()!=='admin')return showToast('Apenas administradores podem cadastrar feriados.');
+  if(!selectedAgendaDate)return;
+  const nome=document.getElementById('holidayName').value.trim().replace(/\s+/g,' ');
+  const cidade=document.getElementById('holidayCity').value||null;
+  if(!nome)return showToast('Informe o nome do feriado.');
+  try{
+    await sb('feriados',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({data:selectedAgendaDate,nome,cidade})});
+    document.getElementById('holidayName').value='';
+    showToast('Feriado cadastrado!');await load();
+  }catch(e){
+    console.error(e);const msg=String(e.message||'');
+    showToast(msg.includes('duplicate')||msg.includes('unique')?'Esse feriado já está cadastrado neste dia.':(msg.includes('PGRST205')||msg.includes('schema cache'))?'A tabela de feriados ainda não foi criada no Supabase.':'Não foi possível cadastrar o feriado.');
+  }
+}
+async function deleteHoliday(id){
+  if(currentRole()!=='admin')return;
+  const h=agendaHolidays.find(x=>x.id===id);if(!h)return;
+  if(!window.confirm(`Remover o feriado "${h.nome}" de ${fmtDate(h.data)}?\n\nPlantões já escalados nesse dia não serão apagados.`))return;
+  try{await sb(`feriados?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Feriado removido.');await load()}
+  catch(e){console.error(e);showToast('Não foi possível remover o feriado.')}
+}
+function scheduleHolidayPlantao(id){
+  const h=agendaHolidays.find(x=>x.id===id);if(!h)return;
+  openPlantao();
+  document.getElementById('plantaoStart').value=h.data;
+  document.getElementById('plantaoEnd').value=h.data;
+  document.getElementById('plantaoObs').value=`Plantão de feriado: ${h.nome}`;
+  document.getElementById('plantaoGenerateLeave').checked=false;
+  if(h.cidade){document.getElementById('plantaoCity').value=h.cidade;fillPlantaoEmployees()}
+}
 function agendaSector(){return document.getElementById('agendaSectorFilter')?.value||''}
 function refreshAgendaSectorFilter(){
   const sel=document.getElementById('agendaSectorFilter');if(!sel)return;
@@ -1015,7 +1066,7 @@ function renderAgenda(){
   const pl=s?agendaPlantoes.filter(p=>(p.equipe?.setor||p.equipe2?.setor)===s):agendaPlantoes;
   const t=document.getElementById('monthTitle');
   if(t)t.textContent=`${monthNames[viewDate.getMonth()]} de ${viewDate.getFullYear()}${s?' • '+s:''}`;
-  renderCalendar(reqs,pl);renderAgendaNotes();
+  renderCalendar(reqs,pl);renderAgendaNotes();renderAgendaHolidayBox();
 }
 function fillAgendaNoteEmployees(){
   const sel=document.getElementById('agendaNoteEmployee');if(!sel)return;
@@ -1024,10 +1075,10 @@ function fillAgendaNoteEmployees(){
 function selectAgendaDay(date,cell){
   selectedAgendaDate=date;
   document.querySelectorAll('#month .day').forEach(x=>x.classList.remove('note-selected'));if(cell)cell.classList.add('note-selected');
-  const [y,m,d]=date.split('-');document.getElementById('agendaNoteDate').textContent=`Anotação para ${d}/${m}/${y}`;
+  const [y,m,d]=date.split('-');document.getElementById('agendaNoteDate').textContent=`Dia ${d}/${m}/${y}`;
   document.getElementById('agendaNoteEmployee').value='';
   document.getElementById('agendaNoteText').value='';
-  document.getElementById('agendaNoteForm').style.display='block';
+  document.getElementById('agendaNoteForm').style.display='block';renderAgendaHolidayBox();
 }
 function renderAgendaNotes(){
   const box=document.getElementById('agendaNotesList');if(!box)return;
@@ -1070,6 +1121,9 @@ function renderCalendar(requests,plantoes=[]){
     const cell=document.createElement('div');cell.className='day'+(d.getMonth()!==mo?' muted':'');
     cell.innerHTML=`<span>${d.getDate()}</span>`;
     const key=iso(d);cell.dataset.date=key;cell.onclick=()=>selectAgendaDay(key,cell);
+    const dayHol=agendaHolidays.filter(h=>h.data===key);
+    if(dayHol.length)cell.classList.add('holiday');
+    for(const h of dayHol){const sm=document.createElement('small');sm.style.fontWeight='700';sm.textContent=`🎌 ${h.nome}${h.cidade?' ('+h.cidade+')':''}`;cell.appendChild(sm)}
     const dayReq=requests.filter(r=>r.data_inicial<=key&&r.data_final>=key&&r.status!=='Negada');
     for(const r of dayReq){const [dot]=statusMeta(r.status);const sm=document.createElement('small');sm.textContent=`${dot} ${r.equipe?.nome||''}`;cell.appendChild(sm)}
     const dayPlantao=plantoes.filter(r=>r.data_inicial<=key&&r.data_final>=key);
@@ -1235,7 +1289,7 @@ async function buildAutoPlantaoPreview(){
   if(!autoPlantaoOrder.length)return showToast('Não há funcionários no rodízio.');
   try{
     const vacations=await sb(`solicitacoes?select=funcionario_id,data_inicial,data_final,status,equipe(nome)&status=eq.Férias&data_inicial=lte.${until}&data_final=gte.${start}&order=data_inicial.asc`);
-    const existing=((await sb(`plantoes?select=id,funcionario_id,data_inicial,data_final,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade)&data_inicial=lte.${until}&data_final=gte.${start}`))||[]).filter(p=>p.equipe?.cidade===city&&p.equipe?.setor===sector);
+    const existing=((await sb(`plantoes?select=id,funcionario_id,data_inicial,data_final,observacao,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade)&data_inicial=lte.${until}&data_final=gte.${start}`))||[]).filter(p=>p.equipe?.cidade===city&&p.equipe?.setor===sector&&p.data_inicial!==p.data_final&&!(p.observacao||'').startsWith('Plantão de feriado'));
     const rows=[];let weekStart=start;let cursor=0;let guard=0;
     while(weekStart<=until&&guard<200){
       guard++;
@@ -2376,6 +2430,7 @@ document.getElementById('agendaSectorFilter').onchange=()=>{
   document.getElementById('agendaNoteForm').style.display='none';
   fillAgendaNoteEmployees();renderAgenda();
 };
+document.getElementById('addHolidayBtn').onclick=addHoliday;
 document.getElementById('closeEditPlantao').onclick=closeEditPlantao;
 document.getElementById('cancelEditPlantao').onclick=closeEditPlantao;
 document.getElementById('editPlantaoModal').onclick=e=>{if(e.target.id==='editPlantaoModal')closeEditPlantao()};
