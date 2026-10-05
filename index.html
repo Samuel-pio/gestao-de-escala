@@ -258,7 +258,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
 <div class="card"><p>Pendentes</p><b class="orange" id="pendingCount">—</b><small>no mês</small></div>
 </section>
 <section class="box pending" style="margin-bottom:18px">
-<div class="boxhead"><div><h2>🟠 Plantão da semana</h2><p>Duplas responsáveis em cada cidade.</p></div></div>
+<div class="boxhead"><div><h2>🟠 Plantão da semana</h2><p>Responsáveis em cada cidade.</p></div></div>
 <div id="weeklyPlantaoCard"><div class="req"><span><b>Carregando...</b><small></small></span></div></div>
 </section>
 <section class="box" id="airDashboardBox" style="margin-bottom:18px;display:none">
@@ -359,7 +359,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
     </div>
   </div>
   <div class="requests-table"><table>
-    <thead><tr><th>Dupla</th><th>Cidade</th><th>Setor</th><th>Período</th><th>Observação</th><th>Folga seguinte</th><th>Ações</th></tr></thead>
+    <thead><tr><th>Plantonista(s)</th><th>Cidade</th><th>Setor</th><th>Período</th><th>Observação</th><th>Folga seguinte</th><th>Ações</th></tr></thead>
     <tbody id="plantaoTableBody"><tr><td colspan="7">Carregando...</td></tr></tbody>
   </table></div>
 </div>
@@ -684,10 +684,12 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
       <div class="field"><label for="autoPlantaoCity">Cidade</label><select id="autoPlantaoCity" required><option value="">Selecione a cidade...</option></select></div>
       <div class="field"><label for="autoPlantaoStart">Início da primeira semana</label><input id="autoPlantaoStart" type="date" required></div>
       <div class="field"><label for="autoPlantaoUntil">Gerar até</label><input id="autoPlantaoUntil" type="date" required></div>
+      <div class="field"><label for="autoPlantaoSize">Formato do plantão</label><select id="autoPlantaoSize"><option value="2">Dupla (2 técnicos)</option><option value="1">Individual (1 técnico)</option></select></div>
+      <div class="field full" id="autoPlantaoSoloHint" style="display:none"><p style="margin:0;font-size:14px;color:#8a5a00;background:#fffaf0;border:1px dashed #ffb840;border-radius:10px;padding:9px 12px">Cidade com um único técnico: o plantão é individual. A folga automática do sábado seguinte vem desmarcada, porque ele pode estar de plantão de novo nessa data.</p></div>
       <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input id="autoPlantaoGenerateLeave" type="checkbox" checked style="width:auto"> Gerar folga no sábado seguinte</label></div>
       <div class="field full">
         <label>Ordem do rodízio</label>
-        <p style="font-size:13px;color:#6f6e63;margin:4px 0 8px">Use ↑ e ↓ para definir quem vem primeiro. A cada semana o sistema seleciona 2 técnicos. Quem estiver de férias será pulado automaticamente.</p>
+        <p style="font-size:13px;color:#6f6e63;margin:4px 0 8px">Use ↑ e ↓ para definir quem vem primeiro. A cada semana o sistema seleciona 1 ou 2 técnicos, conforme o formato. Quem estiver de férias será pulado automaticamente.</p>
         <div id="autoPlantaoOrder" style="border:1px solid #dcdacb;border-radius:10px;overflow:hidden"><div style="padding:12px;color:#6f6e63">Selecione um setor.</div></div>
       </div>
     </div>
@@ -705,8 +707,8 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
   <form id="editPlantaoForm">
     <div class="form-grid">
       <div class="field"><label for="editPlantaoEmp1">Técnico 1</label><select id="editPlantaoEmp1" required></select></div>
-      <div class="field"><label for="editPlantaoEmp2">Técnico 2</label><select id="editPlantaoEmp2" required></select></div>
-      <div class="field full"><p style="margin:0;font-size:13px;color:#6f6e63">O período do plantão não muda. Se a folga do sábado seguinte já foi gerada, ela passa automaticamente para quem entrou na dupla.</p></div>
+      <div class="field"><label for="editPlantaoEmp2">Técnico 2 (opcional)</label><select id="editPlantaoEmp2"></select></div>
+      <div class="field full"><p style="margin:0;font-size:13px;color:#6f6e63">O período do plantão não muda. Se a folga do sábado seguinte já foi gerada, ela passa automaticamente para quem entrou. Deixe o Técnico 2 vazio para plantão individual.</p></div>
     </div>
     <div class="form-actions"><button type="button" class="btn secondary" id="cancelEditPlantao">Cancelar</button><button type="submit" class="btn primary" id="saveEditPlantao">Salvar alteração</button></div>
   </form>
@@ -714,15 +716,16 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
 </div>
 <div class="modal" id="plantaoModal" aria-hidden="true">
 <div class="modal-card">
-  <div class="modal-head"><div><h2>Novo plantão</h2><p>Cadastre a dupla da cidade para o período completo do plantão.</p></div><button class="close" id="closePlantao" aria-label="Fechar">×</button></div>
+  <div class="modal-head"><div><h2>Novo plantão</h2><p>Cadastre a dupla (ou o técnico, se for individual) para o período completo do plantão.</p></div><button class="close" id="closePlantao" aria-label="Fechar">×</button></div>
   <form id="plantaoForm">
     <div class="form-grid">
       <div class="field"><label for="plantaoSector">Setor</label><select id="plantaoSector" required><option value="">Selecione o setor...</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option></select></div>
       <div class="field"><label for="plantaoCity">Cidade</label><select id="plantaoCity" required><option value="">Selecione a cidade...</option></select></div>
-      <div class="field"><label for="plantaoEmployee">Técnico 1</label><select id="plantaoEmployee" required><option value="">Selecione o setor primeiro...</option></select></div><div class="field"><label for="plantaoEmployee2">Técnico 2</label><select id="plantaoEmployee2" required><option value="">Selecione o setor primeiro...</option></select></div>
+      <div class="field"><label for="plantaoEmployee">Técnico 1</label><select id="plantaoEmployee" required><option value="">Selecione o setor primeiro...</option></select></div><div class="field"><label for="plantaoEmployee2">Técnico 2 (opcional)</label><select id="plantaoEmployee2"><option value="">Selecione o setor primeiro...</option></select></div>
       <div class="field"><label for="plantaoStart">Data inicial</label><input id="plantaoStart" type="date" required></div>
       <div class="field"><label for="plantaoEnd">Data final</label><input id="plantaoEnd" type="date" required></div>
       <div class="field full"><label for="plantaoObs">Observação</label><textarea id="plantaoObs" placeholder="Opcional"></textarea></div>
+      <div class="field full" id="plantaoSoloHint" style="display:none"><p style="margin:0;font-size:14px;color:#8a5a00;background:#fffaf0;border:1px dashed #ffb840;border-radius:10px;padding:9px 12px">Cidade com um único técnico: o plantão é individual. A folga automática do sábado seguinte vem desmarcada, porque ele pode estar de plantão de novo nessa data.</p></div>
       <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input id="plantaoGenerateLeave" type="checkbox" checked style="width:auto"> Gerar automaticamente a Folga do Plantão no sábado seguinte</label></div>
     </div>
     <div class="form-actions"><button type="button" class="btn secondary" id="cancelPlantao">Cancelar</button><button type="submit" class="btn primary" id="savePlantao">Salvar plantão</button></div>
@@ -1074,7 +1077,7 @@ function renderDashboardOperational(team,requests,plantoes){
     : '<div class="req"><span><b>Ninguém de férias hoje</b><small>Sem férias ativas hoje.</small></span></div>';
 
   const box=document.getElementById('weeklyPlantaoCard');
-  const duplaOf=p=>[p.equipe?.nome,p.equipe2?.nome].filter(Boolean).map(safe).join(' + ')||'Dupla não definida';
+  const duplaOf=p=>[p.equipe?.nome,p.equipe2?.nome].filter(Boolean).map(safe).join(' + ')||'Responsável não definido';
   const cityOf=p=>p.equipe?.cidade||p.equipe2?.cidade||'Sem cidade';
   const sectorOf=p=>p.equipe?.setor||p.equipe2?.setor||'';
   const groups={};
@@ -1168,7 +1171,7 @@ function renderDayDetails(){
   lastAgendaPl.filter(r=>r.data_inicial<=key&&r.data_final>=key).forEach(r=>{
     const nomes=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ');
     const cid=r.equipe?.cidade||r.equipe2?.cidade||'';
-    items.push({dot:'🟠',title:nomes||'Dupla não definida',sub:['Plantão',cid,r.equipe?.setor||r.equipe2?.setor].filter(Boolean).join(' • ')});
+    items.push({dot:'🟠',title:nomes||'Responsável não definido',sub:['Plantão',cid,r.equipe?.setor||r.equipe2?.setor].filter(Boolean).join(' • ')});
   });
   box.innerHTML=items.length
     ?items.map(i=>`<div class="dd-item"><span class="dd-dot">${i.dot}</span><span><b>${safe(i.title)}</b><small>${safe(i.sub)}</small></span></div>`).join('')
@@ -1363,11 +1366,20 @@ function fillPlantaoEmployees(){
   const city=document.getElementById('plantaoCity').value;
   const list=(sector&&city)?teamCache.filter(e=>e.setor===sector&&e.cidade===city):[];
   const html='<option value="">'+((sector&&city)?'Selecione o técnico...':'Selecione setor e cidade primeiro...')+'</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
-  document.getElementById('plantaoEmployee').innerHTML=html;
-  document.getElementById('plantaoEmployee2').innerHTML=html;
+  const e1=document.getElementById('plantaoEmployee'),e2=document.getElementById('plantaoEmployee2');
+  e1.innerHTML=html;
+  e2.innerHTML=((sector&&city)?'<option value="">Nenhum — plantão individual</option>':'<option value="">Selecione setor e cidade primeiro...</option>')+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  const solo=list.length===1;
+  if(solo){
+    e1.value=String(list[0].id);e2.value='';
+    if(!plantaoSoloApplied){document.getElementById('plantaoGenerateLeave').checked=false;plantaoSoloApplied=true}
+  }else if(plantaoSoloApplied){document.getElementById('plantaoGenerateLeave').checked=true;plantaoSoloApplied=false}
+  document.getElementById('plantaoSoloHint').style.display=solo?'block':'none';
 }
+let plantaoSoloApplied=false;
 
 let autoPlantaoOrder=[];
+let autoSoloApplied=false;
 let autoPlantaoPreviewRows=[];
 function fillAutoPlantaoSectors(){
   const sel=document.getElementById('autoPlantaoSector');
@@ -1379,7 +1391,7 @@ function fillAutoPlantaoSectors(){
 }
 function openAutoPlantao(){
   document.getElementById('autoPlantaoForm').reset();
-  document.getElementById('autoPlantaoGenerateLeave').checked=true;
+  document.getElementById('autoPlantaoGenerateLeave').checked=true;autoSoloApplied=false;
   document.getElementById('autoPlantaoPreview').style.display='none';
   document.getElementById('saveAutoPlantao').disabled=true;
   autoPlantaoPreviewRows=[];
@@ -1396,6 +1408,11 @@ function loadAutoPlantaoEmployees(){
   const sector=document.getElementById('autoPlantaoSector').value;
   const city=document.getElementById('autoPlantaoCity').value;
   autoPlantaoOrder=(sector&&city)?teamCache.filter(e=>e.setor===sector&&e.cidade===city).map(e=>({id:e.id,nome:e.nome})):[];
+  const sizeSel=document.getElementById('autoPlantaoSize'),leave=document.getElementById('autoPlantaoGenerateLeave');
+  const solo=autoPlantaoOrder.length===1;
+  if(solo){if(!autoSoloApplied){sizeSel.value='1';leave.checked=false;autoSoloApplied=true}}
+  else if(autoSoloApplied){sizeSel.value='2';leave.checked=true;autoSoloApplied=false}
+  document.getElementById('autoPlantaoSoloHint').style.display=solo?'block':'none';
   renderAutoPlantaoOrder();
   document.getElementById('autoPlantaoPreview').style.display='none';
   document.getElementById('saveAutoPlantao').disabled=true;
@@ -1430,30 +1447,31 @@ async function buildAutoPlantaoPreview(){
   try{
     const vacations=await sb(`solicitacoes?select=funcionario_id,data_inicial,data_final,status,equipe(nome)&status=eq.Férias&data_inicial=lte.${until}&data_final=gte.${start}&order=data_inicial.asc`);
     const existing=((await sb(`plantoes?select=id,funcionario_id,data_inicial,data_final,observacao,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade)&data_inicial=lte.${until}&data_final=gte.${start}`))||[]).filter(p=>p.equipe?.cidade===city&&p.equipe?.setor===sector&&p.data_inicial!==p.data_final&&!(p.observacao||'').startsWith('Plantão de feriado'));
+    const size=Number(document.getElementById('autoPlantaoSize').value)||2;
     const rows=[];let weekStart=start;let cursor=0;let guard=0;
     while(weekStart<=until&&guard<200){
       guard++;
       let weekEnd=addDaysIso(weekStart,6);if(weekEnd>until)weekEnd=until;
       const chosen=[],skipped=[];let tries=0;
-      while(chosen.length<2&&tries<autoPlantaoOrder.length*2){
+      while(chosen.length<size&&tries<autoPlantaoOrder.length*2){
         const cand=autoPlantaoOrder[cursor%autoPlantaoOrder.length];cursor++;tries++;
         if(chosen.some(x=>x.id===cand.id))continue;
         const vac=vacations.find(v=>v.funcionario_id===cand.id&&v.data_inicial<=weekEnd&&v.data_final>=weekStart);
-        if(vac){skipped.push(`${cand.nome} (férias)`);continue}
+        if(vac){const t=`${cand.nome} (férias)`;if(!skipped.includes(t))skipped.push(t);continue}
         chosen.push(cand);
       }
       const conflict=existing.find(p=>p.data_inicial<=weekEnd&&p.data_final>=weekStart);
-      rows.push({data_inicial:weekStart,data_final:weekEnd,funcionarios:chosen,skipped,conflict});
+      rows.push({data_inicial:weekStart,data_final:weekEnd,funcionarios:chosen,skipped,conflict,size});
       weekStart=addDaysIso(weekStart,7);
     }
     autoPlantaoPreviewRows=rows;
     const box=document.getElementById('autoPlantaoPreview');box.style.display='block';
     box.innerHTML=`<h3 style="margin:0 0 10px">Prévia da escala</h3>`+rows.map(r=>{
-      const nome=r.funcionarios?.length===2?r.funcionarios.map(x=>safe(x.nome)).join(' + '):'<b style="color:#b91c1c">Dupla incompleta</b>';
+      const nome=r.funcionarios?.length===r.size?r.funcionarios.map(x=>safe(x.nome)).join(' + '):`<b style="color:#b91c1c">${r.size===1?'Sem técnico disponível':'Dupla incompleta'}</b>`;
       const avisos=[r.skipped.length?`Pulados: ${safe(r.skipped.join(', '))}`:'',r.conflict?`Já existe plantão no período (${safe(r.conflict.equipe?.nome||'funcionário')})`:'' ].filter(Boolean).join(' • ');
       return `<div style="padding:9px 0;border-top:1px solid #eceadf"><b>${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)} — ${nome}</b>${avisos?`<div style="font-size:13px;color:#b45309;margin-top:3px">${avisos}</div>`:''}</div>`;
     }).join('');
-    const invalid=rows.some(r=>!r.funcionarios||r.funcionarios.length<2||r.conflict);
+    const invalid=rows.some(r=>!r.funcionarios||r.funcionarios.length<r.size||r.conflict);
     document.getElementById('saveAutoPlantao').disabled=invalid;
     if(invalid)showToast('Revise a prévia: há semana sem funcionário ou conflito com plantão existente.');
   }catch(e){console.error(e);showToast('Não foi possível montar a prévia da escala.')}
@@ -1465,7 +1483,7 @@ async function saveAutoPlantaoScale(){
   try{
     for(const row of autoPlantaoPreviewRows){
       const created=await sb('plantoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
-        funcionario_id:row.funcionarios[0].id,funcionario2_id:row.funcionarios[1].id,data_inicial:row.data_inicial,data_final:row.data_final,
+        funcionario_id:row.funcionarios[0].id,funcionario2_id:row.funcionarios[1]?.id??null,data_inicial:row.data_inicial,data_final:row.data_final,
         observacao:'Gerado automaticamente pelo rodízio de plantão'
       })});
       const plantao=created?.[0];
@@ -1475,10 +1493,10 @@ async function saveAutoPlantaoScale(){
           funcionario_id:row.funcionarios[0].id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
           observacao:`Gerada automaticamente pelo plantão de ${fmtDate(row.data_inicial)} a ${fmtDate(row.data_final)}`
         })});
-        const req2=await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
+        const req2=row.funcionarios[1]?await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
           funcionario_id:row.funcionarios[1].id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
           observacao:`Gerada automaticamente pelo plantão de ${fmtDate(row.data_inicial)} a ${fmtDate(row.data_final)}`
-        })});
+        })}):null;
         const reqId=req?.[0]?.id, reqId2=req2?.[0]?.id;
         if(reqId||reqId2)await sb(`plantoes?id=eq.${plantao.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({folga_gerada:true,folga_solicitacao_id:reqId||null,folga2_solicitacao_id:reqId2||null})});
       }
@@ -1490,7 +1508,7 @@ async function saveAutoPlantaoScale(){
 }
 function openPlantao(){
   document.getElementById('plantaoForm').reset();
-  document.getElementById('plantaoGenerateLeave').checked=true;
+  document.getElementById('plantaoGenerateLeave').checked=true;plantaoSoloApplied=false;
   fillCitySelect('plantaoCity','Selecione a cidade...');
   fillPlantaoSectors();
   document.getElementById('plantaoModal').classList.add('open');
@@ -1547,7 +1565,7 @@ function renderPlantoes(){
   if(!rows.length){body.innerHTML='<tr><td colspan="7">Nenhum plantão encontrado.</td></tr>';return}
   body.innerHTML=rows.map(r=>{
     const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
-    const folga=r.folga_gerada?`🟣 ${fmtDate(nextSaturdayAfter(r.data_final))} (dupla)`:'—';
+    const folga=r.folga_gerada?`🟣 ${fmtDate(nextSaturdayAfter(r.data_final))} (${r.funcionario2_id?'dupla':'individual'})`:'—';
     const edit=`<button class="mini-btn approve" onclick="openEditPlantao(${r.id})">Editar</button>`;
     const del=currentRole()==='admin'?`<button class="mini-btn deny" onclick="deletePlantao(${r.id})">Excluir</button>`:'';
     const dupla=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).map(safe).join(' + ');
@@ -1569,7 +1587,7 @@ function openEditPlantao(id){
   list.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
   const html='<option value="">Selecione...</option>'+list.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
   const s1=document.getElementById('editPlantaoEmp1'),s2=document.getElementById('editPlantaoEmp2');
-  s1.innerHTML=html;s2.innerHTML=html;
+  s1.innerHTML=html;s2.innerHTML=html.replace('<option value="">Selecione...</option>','<option value="">Nenhum — plantão individual</option>');
   s1.value=r.funcionario_id?String(r.funcionario_id):'';
   s2.value=r.funcionario2_id?String(r.funcionario2_id):'';
   document.getElementById('editPlantaoInfo').textContent=`${city?city+' • ':''}${sector?sector+' • ':''}${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
@@ -1582,12 +1600,12 @@ async function saveEditPlantao(e){
   e.preventDefault();
   const r=editingPlantao;if(!r)return;
   const n1=Number(document.getElementById('editPlantaoEmp1').value);
-  const n2=Number(document.getElementById('editPlantaoEmp2').value);
-  if(!n1||!n2)return showToast('Selecione os dois técnicos.');
-  if(n1===n2)return showToast('Selecione dois técnicos diferentes.');
-  if(n1===r.funcionario_id&&n2===r.funcionario2_id)return showToast('Nenhuma alteração feita.');
+  const n2=Number(document.getElementById('editPlantaoEmp2').value)||null;
+  if(!n1)return showToast('Selecione o técnico 1.');
+  if(n2&&n1===n2)return showToast('Selecione dois técnicos diferentes.');
+  if(n1===r.funcionario_id&&n2===(r.funcionario2_id||null))return showToast('Nenhuma alteração feita.');
   const nameOf=id=>((teamCache||[]).find(x=>x.id===id)||{}).nome||'Funcionário';
-  const newcomers=[n1,n2].filter(id=>id!==r.funcionario_id&&id!==r.funcionario2_id);
+  const newcomers=[n1,n2].filter(Boolean).filter(id=>id!==r.funcionario_id&&id!==r.funcionario2_id);
   const overlapsPeriod=p=>p.data_inicial<=r.data_final&&p.data_final>=r.data_inicial;
   const hasPerson=(p,id)=>p.funcionario_id===id||p.funcionario2_id===id;
 
@@ -1621,9 +1639,13 @@ async function saveEditPlantao(e){
     // 1) Folga do sábado seguinte: passa para quem entrou (feito antes, é idempotente)
     const plantaoPatch={funcionario_id:n1,funcionario2_id:n2};
     if(r.folga_gerada){
-      const slots=[[r.funcionario_id,n1,r.folga_solicitacao_id,'folga_solicitacao_id'],[r.funcionario2_id,n2,r.folga2_solicitacao_id,'folga2_solicitacao_id']];
+      const slots=[[r.funcionario_id||null,n1,r.folga_solicitacao_id,'folga_solicitacao_id'],[r.funcionario2_id||null,n2,r.folga2_solicitacao_id,'folga2_solicitacao_id']];
       for(const [oldId,newId,reqId,col] of slots){
         if(oldId===newId)continue;
+        if(!newId){
+          if(reqId)await sb(`solicitacoes?id=eq.${reqId}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+          plantaoPatch[col]=null;continue;
+        }
         let updated=null;
         if(reqId)updated=await sb(`solicitacoes?id=eq.${reqId}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({funcionario_id:newId})});
         if(!updated||!updated.length){
@@ -1638,7 +1660,7 @@ async function saveEditPlantao(e){
     // 2) Dupla do plantão (período não muda)
     await sb(`plantoes?id=eq.${r.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(plantaoPatch)});
     closeEditPlantao();
-    showToast(r.folga_gerada?'Dupla e folga atualizadas!':'Dupla atualizada!');
+    showToast(r.folga_gerada?'Plantão e folga atualizados!':'Plantão atualizado!');
     await loadPlantoes();await loadAllRequests();await load();
   }catch(err){console.error(err);showToast('Não foi possível atualizar o plantão.')}
   finally{btn.disabled=false;btn.textContent='Salvar alteração'}
@@ -2321,13 +2343,13 @@ document.getElementById('plantaoForm').onsubmit=async e=>{
   e.preventDefault();
   const btn=document.getElementById('savePlantao');
   const funcionario_id=Number(document.getElementById('plantaoEmployee').value);
-  const funcionario2_id=Number(document.getElementById('plantaoEmployee2').value);
+  const funcionario2_id=Number(document.getElementById('plantaoEmployee2').value)||null;
   const data_inicial=document.getElementById('plantaoStart').value;
   const data_final=document.getElementById('plantaoEnd').value;
   const observacao=document.getElementById('plantaoObs').value.trim()||null;
   const gerarFolga=document.getElementById('plantaoGenerateLeave').checked;
-  if(!funcionario_id||!funcionario2_id||!data_inicial||!data_final)return showToast('Selecione os dois técnicos e o período.');
-  if(funcionario_id===funcionario2_id)return showToast('Selecione dois técnicos diferentes.');
+  if(!funcionario_id||!data_inicial||!data_final)return showToast('Selecione o técnico e o período.');
+  if(funcionario2_id&&funcionario_id===funcionario2_id)return showToast('Selecione dois técnicos diferentes.');
   if(data_final<data_inicial)return showToast('A data final não pode ser anterior à inicial.');
   btn.disabled=true;btn.textContent='Salvando...';
   try{
@@ -2339,10 +2361,10 @@ document.getElementById('plantaoForm').onsubmit=async e=>{
         funcionario_id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
         observacao:`Gerada automaticamente pelo plantão de ${fmtDate(data_inicial)} a ${fmtDate(data_final)}`
       })});
-      const req2=await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
+      const req2=funcionario2_id?await sb('solicitacoes',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({
         funcionario_id:funcionario2_id,data_inicial:folga,data_final:folga,status:'Folga do Plantão',motivo:'Folga após plantão',
         observacao:`Gerada automaticamente pelo plantão de ${fmtDate(data_inicial)} a ${fmtDate(data_final)}`
-      })});
+      })}):null;
       const reqId=req?.[0]?.id, reqId2=req2?.[0]?.id;
       if(reqId||reqId2)await sb(`plantoes?id=eq.${plantao.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({folga_gerada:true,folga_solicitacao_id:reqId||null,folga2_solicitacao_id:reqId2||null})});
     }
@@ -2574,6 +2596,7 @@ document.getElementById('agendaSectorFilter').onchange=()=>{
   fillAgendaNoteEmployees();renderAgenda();
 };
 document.getElementById('addHolidayBtn').onclick=addHoliday;
+document.getElementById('autoPlantaoSize').onchange=()=>{document.getElementById('autoPlantaoPreview').style.display='none';document.getElementById('saveAutoPlantao').disabled=true};
 document.getElementById('closeEditPlantao').onclick=closeEditPlantao;
 document.getElementById('cancelEditPlantao').onclick=closeEditPlantao;
 document.getElementById('editPlantaoModal').onclick=e=>{if(e.target.id==='editPlantaoModal')closeEditPlantao()};
