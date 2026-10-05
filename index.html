@@ -685,6 +685,8 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
       <div class="field"><label for="autoPlantaoStart">Início da primeira semana</label><input id="autoPlantaoStart" type="date" required></div>
       <div class="field"><label for="autoPlantaoUntil">Gerar até</label><input id="autoPlantaoUntil" type="date" required></div>
       <div class="field"><label for="autoPlantaoSize">Formato do plantão</label><select id="autoPlantaoSize"><option value="2">Dupla (2 técnicos)</option><option value="1">Individual (1 técnico)</option></select></div>
+      <div class="field"><label for="autoPlantaoPeriod">Período do plantão</label><select id="autoPlantaoPeriod"><option value="semana">Semana inteira (7 dias)</option><option value="fim_semana">Somente sábado e domingo</option></select></div>
+      <div class="field full" id="autoPlantaoWeekendHint" style="display:none"><p style="margin:0;font-size:14px;color:#8a5a00;background:#fffaf0;border:1px dashed #ffb840;border-radius:10px;padding:9px 12px">Para plantão de fim de semana, a data inicial deve ser um sábado. A escala será gerada de sábado a domingo e repetida a cada fim de semana.</p></div>
       <div class="field full" id="autoPlantaoSoloHint" style="display:none"><p style="margin:0;font-size:14px;color:#8a5a00;background:#fffaf0;border:1px dashed #ffb840;border-radius:10px;padding:9px 12px">Cidade com um único técnico: o plantão é individual. A folga automática do sábado seguinte vem desmarcada, porque ele pode estar de plantão de novo nessa data.</p></div>
       <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input id="autoPlantaoGenerateLeave" type="checkbox" checked style="width:auto"> Gerar folga no sábado seguinte</label></div>
       <div class="field full">
@@ -1441,40 +1443,67 @@ async function buildAutoPlantaoPreview(){
   const start=document.getElementById('autoPlantaoStart').value;
   const until=document.getElementById('autoPlantaoUntil').value;
   const city=document.getElementById('autoPlantaoCity').value;
+  const period=document.getElementById('autoPlantaoPeriod').value||'semana';
   if(!sector||!city||!start||!until)return showToast('Preencha setor, cidade e período.');
   if(until<start)return showToast('A data final não pode ser anterior à inicial.');
+
+  const startDay=new Date(start+'T12:00:00').getDay();
+  if(period==='fim_semana' && startDay!==6){
+    return showToast('Para plantão de fim de semana, a data inicial deve ser um sábado.');
+  }
   if(!autoPlantaoOrder.length)return showToast('Não há funcionários no rodízio.');
+
   try{
     const vacations=await sb(`solicitacoes?select=funcionario_id,data_inicial,data_final,status,equipe(nome)&status=eq.Férias&data_inicial=lte.${until}&data_final=gte.${start}&order=data_inicial.asc`);
     const existing=((await sb(`plantoes?select=id,funcionario_id,data_inicial,data_final,observacao,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade)&data_inicial=lte.${until}&data_final=gte.${start}`))||[]).filter(p=>p.equipe?.cidade===city&&p.equipe?.setor===sector&&p.data_inicial!==p.data_final&&!(p.observacao||'').startsWith('Plantão de feriado'));
+
     const size=Number(document.getElementById('autoPlantaoSize').value)||2;
     const rows=[];let weekStart=start;let cursor=0;let guard=0;
+
     while(weekStart<=until&&guard<200){
       guard++;
-      let weekEnd=addDaysIso(weekStart,6);if(weekEnd>until)weekEnd=until;
+
+      // Semana inteira: 7 dias. Fim de semana: sábado + domingo.
+      let durationDays=period==='fim_semana'?1:6;
+      let weekEnd=addDaysIso(weekStart,durationDays);
+      if(weekEnd>until)weekEnd=until;
+
       const chosen=[],skipped=[];let tries=0;
       while(chosen.length<size&&tries<autoPlantaoOrder.length*2){
         const cand=autoPlantaoOrder[cursor%autoPlantaoOrder.length];cursor++;tries++;
         if(chosen.some(x=>x.id===cand.id))continue;
         const vac=vacations.find(v=>v.funcionario_id===cand.id&&v.data_inicial<=weekEnd&&v.data_final>=weekStart);
-        if(vac){const t=`${cand.nome} (férias)`;if(!skipped.includes(t))skipped.push(t);continue}
+        if(vac){
+          const t=`${cand.nome} (férias)`;
+          if(!skipped.includes(t))skipped.push(t);
+          continue;
+        }
         chosen.push(cand);
       }
+
       const conflict=existing.find(p=>p.data_inicial<=weekEnd&&p.data_final>=weekStart);
-      rows.push({data_inicial:weekStart,data_final:weekEnd,funcionarios:chosen,skipped,conflict,size});
+      rows.push({data_inicial:weekStart,data_final:weekEnd,funcionarios:chosen,skipped,conflict,size,period});
+
+      // Próximo bloco: 7 dias depois, independentemente do tipo.
       weekStart=addDaysIso(weekStart,7);
     }
+
     autoPlantaoPreviewRows=rows;
     const box=document.getElementById('autoPlantaoPreview');box.style.display='block';
+
     box.innerHTML=`<h3 style="margin:0 0 10px">Prévia da escala</h3>`+rows.map(r=>{
       const nome=r.funcionarios?.length===r.size?r.funcionarios.map(x=>safe(x.nome)).join(' + '):`<b style="color:#b91c1c">${r.size===1?'Sem técnico disponível':'Dupla incompleta'}</b>`;
       const avisos=[r.skipped.length?`Pulados: ${safe(r.skipped.join(', '))}`:'',r.conflict?`Já existe plantão no período (${safe(r.conflict.equipe?.nome||'funcionário')})`:'' ].filter(Boolean).join(' • ');
       return `<div style="padding:9px 0;border-top:1px solid #eceadf"><b>${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)} — ${nome}</b>${avisos?`<div style="font-size:13px;color:#b45309;margin-top:3px">${avisos}</div>`:''}</div>`;
     }).join('');
+
     const invalid=rows.some(r=>!r.funcionarios||r.funcionarios.length<r.size||r.conflict);
     document.getElementById('saveAutoPlantao').disabled=invalid;
     if(invalid)showToast('Revise a prévia: há semana sem funcionário ou conflito com plantão existente.');
-  }catch(e){console.error(e);showToast('Não foi possível montar a prévia da escala.')}
+  }catch(e){
+    console.error(e);
+    showToast('Não foi possível montar a prévia da escala.');
+  }
 }
 async function saveAutoPlantaoScale(){
   if(!autoPlantaoPreviewRows.length)return;
@@ -2231,7 +2260,16 @@ document.getElementById('autoPlantaoBtn').onclick=openAutoPlantao;
 document.getElementById('closeAutoPlantao').onclick=closeAutoPlantao;
 document.getElementById('cancelAutoPlantao').onclick=closeAutoPlantao;
 document.getElementById('autoPlantaoModal').onclick=e=>{if(e.target.id==='autoPlantaoModal')closeAutoPlantao()};
-document.getElementById('autoPlantaoSector').onchange=loadAutoPlantaoEmployees;
+document.getElementById('autoPlantaoSector').onchange=()=>{
+  const sector=document.getElementById('autoPlantaoSector').value;
+  const period=document.getElementById('autoPlantaoPeriod');
+  if(sector==='Call Center')period.value='fim_semana';
+  else if(!period.value)period.value='semana';
+  document.getElementById('autoPlantaoWeekendHint').style.display=period.value==='fim_semana'?'block':'none';
+  document.getElementById('autoPlantaoPreview').style.display='none';
+  document.getElementById('saveAutoPlantao').disabled=true;
+  loadAutoPlantaoEmployees();
+};
 document.getElementById('autoPlantaoCity').onchange=loadAutoPlantaoEmployees;
 document.getElementById('previewAutoPlantao').onclick=buildAutoPlantaoPreview;
 document.getElementById('autoPlantaoForm').onsubmit=async e=>{e.preventDefault();await saveAutoPlantaoScale()};
@@ -2597,6 +2635,12 @@ document.getElementById('agendaSectorFilter').onchange=()=>{
 };
 document.getElementById('addHolidayBtn').onclick=addHoliday;
 document.getElementById('autoPlantaoSize').onchange=()=>{document.getElementById('autoPlantaoPreview').style.display='none';document.getElementById('saveAutoPlantao').disabled=true};
+document.getElementById('autoPlantaoPeriod').onchange=()=>{
+  const weekend=document.getElementById('autoPlantaoPeriod').value==='fim_semana';
+  document.getElementById('autoPlantaoWeekendHint').style.display=weekend?'block':'none';
+  document.getElementById('autoPlantaoPreview').style.display='none';
+  document.getElementById('saveAutoPlantao').disabled=true;
+};
 document.getElementById('closeEditPlantao').onclick=closeEditPlantao;
 document.getElementById('cancelEditPlantao').onclick=closeEditPlantao;
 document.getElementById('editPlantaoModal').onclick=e=>{if(e.target.id==='editPlantaoModal')closeEditPlantao()};
