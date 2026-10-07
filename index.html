@@ -1668,12 +1668,12 @@ function renderPlantoes(){
   body.innerHTML=pageRows.map(r=>{
     const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
     const folga=r.folga_gerada?`🟣 ${fmtDate(nextSaturdayAfter(r.data_final))} (${r.funcionario2_id?'dupla':'individual'})`:'—';
-    const edit=`<button class="mini-btn approve" onclick="openEditPlantao(${r.id})">Editar</button>`;
-    const del=canDo('plantoes_excluir')?`<button class="mini-btn deny" onclick="deletePlantao(${r.id})">Excluir</button>`:'';
+    const edit=`<button type="button" onclick="openEditPlantao(${r.id});closeEmployeeActions()">✏ Editar</button>`;
+    const del=canDo('plantoes_excluir')?`<button type="button" class="danger" onclick="deletePlantao(${r.id});closeEmployeeActions()">🗑 Excluir</button>`:'';
     const dupla=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).map(safe).join(' + ');
     const city=plantaoCity(r);
     const cityHtml=city?`<span class="status-pill" style="background:#f6f3ff;color:#5b3fa3">${safe(city)}</span>`:'—';
-    return `<tr><td><b>${dupla||'Funcionário'}</b></td><td>${cityHtml}</td><td>${safe(r.equipe?.setor||'—')}</td><td>${period}</td><td>${safe(r.observacao||'—')}</td><td>${folga}</td><td><div class="actions">${edit}${del}</div></td></tr>`;
+    return `<tr><td><b>${dupla||'Funcionário'}</b></td><td>${cityHtml}</td><td>${safe(r.equipe?.setor||'—')}</td><td>${period}</td><td>${safe(r.observacao||'—')}</td><td>${folga}</td><td><div class="action-menu"><button type="button" class="action-trigger" onclick="toggleEmployeeActions(event,'p-${r.id}')">⋮ Ações</button><div class="action-dropdown" data-action-menu="p-${r.id}">${edit}${del}</div></div></td></tr>`;
   }).join('');
 }
 let editingPlantao=null;
@@ -1914,7 +1914,7 @@ function renderErrors(){
     <td>${fmtDate(r.data)}</td><td>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
     <td>${safe(r.tipo||'—')}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${Number(r.peso||1)}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
-    <td><button class="mini" data-error-edit="${r.id}">Editar</button>${canDo('erros_excluir')?` <button class="mini danger" data-error-delete="${r.id}">Excluir</button>`:''}</td>
+    <td><div class="action-menu"><button type="button" class="action-trigger" onclick="toggleEmployeeActions(event,'e-${r.id}')">⋮ Ações</button><div class="action-dropdown" data-action-menu="e-${r.id}"><button type="button" data-error-edit="${r.id}">✏ Editar</button>${canDo('erros_excluir')?`<button type="button" class="danger" data-error-delete="${r.id}">🗑 Excluir</button>`:''}</div></div></td>
   </tr>`).join('')||'<tr><td colspan="9">Nenhum erro registrado neste mês.</td></tr>';
 }
 
@@ -2320,9 +2320,17 @@ function toggleEmployeeActions(event,id){
   closeEmployeeActions();
   if(menu&&!wasOpen){
     menu.classList.add('open');
-    menu.previousElementSibling?.classList.add('open');
+    const trigger=menu.previousElementSibling;
+    trigger?.classList.add('open');
+    if(trigger){
+      const r=trigger.getBoundingClientRect(),h=menu.offsetHeight;
+      menu.style.position='fixed';menu.style.left='auto';
+      menu.style.right=Math.max(8,window.innerWidth-r.right)+'px';
+      menu.style.top=((r.bottom+6+h>window.innerHeight&&r.top-h-6>0)?r.top-h-6:r.bottom+6)+'px';
+    }
   }
 }
+window.addEventListener('scroll',()=>closeEmployeeActions(),true);
 document.addEventListener('click',closeEmployeeActions);
 
 async function toggleEmployee(id,isActive){
