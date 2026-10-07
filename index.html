@@ -86,7 +86,8 @@ header h1,header p{overflow-wrap:anywhere}
 .action-dropdown button.danger{color:#b73932}
 .action-dropdown button.success{color:#227a43}
 .team-plantao-pill{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}
-.requests-box{margin-top:28px;padding:20px}.requests-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.requests-toolbar select{border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111}.requests-toolbar span{font-size:13px;color:#77766b}.table-wrap{overflow:auto}.requests-table{width:100%;border-collapse:collapse;min-width:760px}.requests-table th,.requests-table td{text-align:left;padding:14px 12px;border-bottom:1px solid #eceadf;font-size:14px}.requests-table th{color:#75746a;font-size:12px;text-transform:uppercase;letter-spacing:.04em}.status-pill{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}.status-Pendente{background:#fff0d4;color:#b36b00}.status-Aprovada{background:#fee9e7;color:#c8433b}.status-Negada{background:#efede2;color:#6b6a60}.status-Férias{background:#e7f0ff;color:#2f6fd0}.status-Folga-do-Plantão{background:#f1e8ff;color:#7e4dc4}.actions{display:flex;gap:6px;flex-wrap:wrap}.mini-btn{border:0;border-radius:8px;padding:7px 9px;font-size:12px;font-weight:700;cursor:pointer}.approve{background:#e9f7ef;color:#227a43}.deny{background:#feeceb;color:#b73932}.mutebtn{background:#efede2;color:#4a4942}
+.requests-box{margin-top:28px;padding:20px}.requests-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.requests-toolbar select{border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111}.requests-toolbar span{font-size:13px;color:#77766b}
+.requests-filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.requests-filters label{display:flex;align-items:center;gap:6px;font-size:13px;color:#77766b}.requests-filters input[type=date]{border:1px solid #dcdacb;border-radius:10px;padding:9px 10px;background:white;color:#111111;font-family:inherit}.pager{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}.pager span{font-size:13px;color:#77766b}.pager div{display:flex;gap:8px;align-items:center}.pager button{border:1px solid #dcdacb;background:white;border-radius:8px;padding:7px 12px;cursor:pointer;font-family:inherit;font-size:13px}.pager button:disabled{opacity:.45;cursor:default}.perm-group{margin-top:16px;padding-top:14px;border-top:1px dashed #dcdacb}.perm-group h4{margin:0 0 4px;font-size:15px}.perm-group small{display:block;color:#6f6e63;margin-bottom:10px}.table-wrap{overflow:auto}.requests-table{width:100%;border-collapse:collapse;min-width:760px}.requests-table th,.requests-table td{text-align:left;padding:14px 12px;border-bottom:1px solid #eceadf;font-size:14px}.requests-table th{color:#75746a;font-size:12px;text-transform:uppercase;letter-spacing:.04em}.status-pill{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}.status-Pendente{background:#fff0d4;color:#b36b00}.status-Aprovada{background:#fee9e7;color:#c8433b}.status-Negada{background:#efede2;color:#6b6a60}.status-Férias{background:#e7f0ff;color:#2f6fd0}.status-Folga-do-Plantão{background:#f1e8ff;color:#7e4dc4}.actions{display:flex;gap:6px;flex-wrap:wrap}.mini-btn{border:0;border-radius:8px;padding:7px 9px;font-size:12px;font-weight:700;cursor:pointer}.approve{background:#e9f7ef;color:#227a43}.deny{background:#feeceb;color:#b73932}.mutebtn{background:#efede2;color:#4a4942}
 .login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#000000,#1a1a1a);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100}
 .login-card{width:min(430px,100%);background:white;border-radius:22px;padding:30px;box-shadow:0 30px 80px #0005}
 .login-logo{margin-bottom:24px}.login-logo b{font-size:34px;letter-spacing:1px;color:#000000}.login-logo span{display:block;color:#ff9c00;font-size:13px;font-weight:800;letter-spacing:2px}
@@ -301,7 +302,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
 <div style="display:flex;gap:8px;margin-top:9px"><button class="btn primary" id="saveAgendaNote" type="button">Salvar anotação</button><button class="mini-btn mutebtn" id="cancelAgendaNote" type="button">Cancelar</button></div>
 </div>
 <div id="agendaNotesList"></div>
-</div></div></section></section><section id="requestsView" style="display:none"><header><div><h1>Solicitações</h1><p>Analise e atualize os pedidos da equipe.</p></div><button class="btn primary" id="newRequestBtn">+ Nova solicitação</button></header><div class="box requests-box"><div class="requests-toolbar"><select id="statusFilter"><option value="">Todos os status</option><option>Pendente</option><option>Aprovada</option><option>Negada</option><option>Férias</option><option>Folga do Plantão</option></select><span id="requestsTotal">Carregando...</span></div><div class="table-wrap"><table class="requests-table"><thead><tr><th>Funcionário</th><th>Período</th><th>Motivo</th><th>Status</th><th>Ações</th></tr></thead><tbody id="requestsTableBody"><tr><td colspan="5">Carregando...</td></tr></tbody></table></div></div></section><section id="historyView" style="display:none"><header><div><h1>Histórico</h1><p>Consulte todas as solicitações registradas.</p></div></header><div class="box requests-box"><div class="requests-toolbar"><div><h2>Histórico de solicitações</h2><small id="historyTotal">0 registros</small></div><select id="historyStatusFilter"><option value="">Todos os status</option><option>Pendente</option><option>Aprovada</option><option>Negada</option><option>Férias</option><option>Folga do Plantão</option></select></div><div class="requests-table"><table><thead><tr><th>Funcionário</th><th>Data do pedido</th><th>Período</th><th>Motivo</th><th>Status</th><th>Observação</th></tr></thead><tbody id="historyTableBody"><tr><td colspan="6">Carregando...</td></tr></tbody></table></div></div></section>
+</div></div></section></section><section id="requestsView" style="display:none"><header><div><h1>Solicitações</h1><p>Analise e atualize os pedidos da equipe.</p></div><button class="btn primary" id="newRequestBtn">+ Nova solicitação</button></header><div class="box requests-box"><div class="requests-toolbar"><div class="requests-filters"><select id="statusFilter"><option value="">Todos os status</option><option>Pendente</option><option>Aprovada</option><option>Negada</option><option>Férias</option><option>Folga do Plantão</option></select><label>De <input type="date" id="requestsDateFrom"></label><label>Até <input type="date" id="requestsDateTo"></label><button type="button" class="mini" id="requestsClearDates">Limpar datas</button></div><span id="requestsTotal">Carregando...</span></div><div class="table-wrap"><table class="requests-table"><thead><tr><th>Funcionário</th><th>Período</th><th>Motivo</th><th>Status</th><th>Ações</th></tr></thead><tbody id="requestsTableBody"><tr><td colspan="5">Carregando...</td></tr></tbody></table></div><div class="pager" id="requestsPager" style="display:none"><span id="requestsPageInfo"></span><div><button type="button" id="requestsPrev">← Anterior</button><span id="requestsPageNum"></span><button type="button" id="requestsNext">Próxima →</button></div></div></div></section><section id="historyView" style="display:none"><header><div><h1>Histórico</h1><p>Consulte todas as solicitações registradas.</p></div></header><div class="box requests-box"><div class="requests-toolbar"><div><h2>Histórico de solicitações</h2><small id="historyTotal">0 registros</small></div><div class="requests-filters"><select id="historyStatusFilter"><option value="">Todos os status</option><option>Pendente</option><option>Aprovada</option><option>Negada</option><option>Férias</option><option>Folga do Plantão</option></select><div class="requests-filters"><label>De <input type="date" id="historyDateFrom"></label><label>Até <input type="date" id="historyDateTo"></label><button type="button" class="mini" id="historyClearDates">Limpar datas</button></div></div></div><div class="requests-table"><table><thead><tr><th>Funcionário</th><th>Data do pedido</th><th>Período</th><th>Motivo</th><th>Status</th><th>Observação</th></tr></thead><tbody id="historyTableBody"><tr><td colspan="6">Carregando...</td></tr></tbody></table></div></div></section>
 <section id="teamView" style="display:none">
   <header>
     <div>
@@ -366,7 +367,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
         <option value="">Todos os setores</option><option>Infraestrutura</option><option>Call Center</option><option>Operacional</option><option>Financeiro</option>
       </select>
       <select id="plantaoCityFilter" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111"><option value="">Todas as cidades</option></select>
-      <input id="plantaoMonthFilter" type="month" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111">
+      <input id="plantaoMonthFilter" type="month" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111"><div class="requests-filters"><label>De <input type="date" id="plantaoDateFrom"></label><label>Até <input type="date" id="plantaoDateTo"></label><button type="button" class="mini" id="plantaoClearDates">Limpar datas</button></div>
     </div>
   </div>
   <div class="requests-table"><table>
@@ -412,7 +413,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <input id="airSearch" type="search" placeholder="Pesquisar local, tipo ou identificação...">
       <select id="maintenanceTypeFilter"><option value="">Todos os tipos</option></select>
-      <select id="airStatusFilter"><option value="">Todos os status</option><option value="Em dia">Em dia</option><option value="Próximo">Próximos do vencimento</option><option value="Vencido">Vencidos</option><option value="Inativo">Inativos</option></select>
+      <select id="airStatusFilter"><option value="">Todos os status</option><option value="Em dia">Em dia</option><option value="Próximo">Próximos do vencimento</option><option value="Vencido">Vencidos</option><option value="Inativo">Inativos</option></select><div class="requests-filters"><label>Próxima de <input type="date" id="airDateFrom"></label><label>até <input type="date" id="airDateTo"></label><button type="button" class="mini" id="airClearDates">Limpar datas</button></div>
     </div>
   </div>
   <table style="width:100%;border-collapse:collapse;min-width:1080px;margin-top:14px">
@@ -620,6 +621,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
             <button type="button" class="mini" id="clearAllPermissions">Limpar</button>
           </div>
         </div>
+        <div style="margin:0 0 12px"><label style="font-size:13px;color:#6f6e63">Nível rápido <select id="userPreset" style="margin-left:6px;border:1px solid #dcdacb;border-radius:8px;padding:7px 10px;background:white;color:#111111"><option value="">Personalizado</option><option value="visualizador">Visualizador — só consulta</option><option value="operador">Operador — lança e edita, sem excluir</option><option value="supervisor">Supervisor — operador + pode excluir lançamentos</option></select></label></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
           <label><input type="checkbox" class="userPerm" value="dashboard"> Dashboard</label>
           <label><input type="checkbox" class="userPerm" value="agenda"> Agenda</label>
@@ -632,6 +634,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
           <label><input type="checkbox" class="userPerm" value="manutencoes"> Manutenções Preventivas</label>
           <label><input type="checkbox" class="userPerm" value="relatorios"> Relatórios</label>
         </div>
+        <div class="perm-group"><h4>Ações sensíveis</h4><small>Permitem apagar lançamentos feitos por engano, sem dar acesso de administrador. Só valem para quem também tem acesso à área correspondente.</small><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"><label><input type="checkbox" class="userPerm" value="plantoes_excluir"> Excluir plantões</label><label><input type="checkbox" class="userPerm" value="solicitacoes_excluir"> Excluir solicitações</label><label><input type="checkbox" class="userPerm" value="erros_excluir"> Excluir erros da equipe</label><label><input type="checkbox" class="userPerm" value="manutencoes_excluir"> Excluir manutenções</label></div></div>
       </div>
       <div class="modal-actions">
         <button type="button" class="secondary" id="cancelUserModal">Cancelar</button>
@@ -818,6 +821,45 @@ function showLogin(){
 }
 
 const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','manutencoes','relatorios'];
+const ACTION_PERMISSIONS=['plantoes_excluir','solicitacoes_excluir','erros_excluir','manutencoes_excluir'];
+const PERMISSION_PRESETS={
+  visualizador:['dashboard','agenda','historico','relatorios'],
+  operador:ALL_PERMISSIONS.slice(),
+  supervisor:ALL_PERMISSIONS.concat(ACTION_PERMISSIONS)
+};
+const PAGE_SIZE=50,pageState={};
+function resetPage(key){pageState[key]=1}
+function paginateList(key,list,tbody,rerender){
+  const total=list.length,pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  const page=Math.min(Math.max(pageState[key]||1,1),pages);pageState[key]=page;
+  const start=(page-1)*PAGE_SIZE,slice=list.slice(start,start+PAGE_SIZE);
+  const table=tbody.closest('table');
+  const anchor=table.parentElement.classList.contains('box')?table:table.parentElement;
+  let el=document.getElementById('pager-'+key);
+  if(!el){
+    el=document.createElement('div');el.id='pager-'+key;el.className='pager';
+    anchor.insertAdjacentElement('afterend',el);
+    el.addEventListener('click',ev=>{
+      const b=ev.target.closest('button[data-dir]');if(!b||b.disabled)return;
+      pageState[key]=(pageState[key]||1)+Number(b.dataset.dir);
+      if(el._rerender)el._rerender();
+      anchor.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  }
+  el._rerender=rerender;
+  if(total<=PAGE_SIZE){el.style.display='none';el.innerHTML=''}
+  else{
+    el.style.display='flex';
+    el.innerHTML=`<span>Mostrando ${start+1}–${start+slice.length} de ${total}</span><div><button type="button" data-dir="-1"${page<=1?' disabled':''}>← Anterior</button><span>Página ${page} de ${pages}</span><button type="button" data-dir="1"${page>=pages?' disabled':''}>Próxima →</button></div>`;
+  }
+  return slice;
+}
+function bindDateFilter(prefix,key,fn){
+  const f=document.getElementById(prefix+'DateFrom'),t=document.getElementById(prefix+'DateTo'),c=document.getElementById(prefix+'ClearDates');
+  if(!f||!t||!c)return;
+  const go=()=>{resetPage(key);fn()};
+  f.onchange=go;t.onchange=go;c.onclick=()=>{f.value='';t.value='';go()};
+}
 const NAV_PERMISSION={
   dashboardNav:'dashboard',agendaNav:'agenda',openRequestNav:'nova_solicitacao',
   requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',errorsNav:'erros_equipe',airNav:'manutencoes',reportsNav:'relatorios'
@@ -839,6 +881,7 @@ function currentPermissions(){
   return Array.isArray(p)?p:[];
 }
 function canAccess(permission){return currentRole()==='admin'||currentPermissions().includes(permission)}
+function canDo(action){return currentRole()==='admin'||currentPermissions().includes(action)}
 function applyAccessControls(){
   Object.entries(NAV_PERMISSION).forEach(([id,perm])=>{
     const el=document.getElementById(id); if(el)el.style.display=canAccess(perm)?'flex':'none';
@@ -1616,14 +1659,17 @@ function renderPlantoes(){
     const last=new Date(y,m,0),to=iso(last);
     rows=rows.filter(r=>r.data_inicial<=to&&r.data_final>=from);
   }
+  const pdf=document.getElementById('plantaoDateFrom').value,pdt=document.getElementById('plantaoDateTo').value;
+  if(pdf||pdt)rows=rows.filter(r=>(!pdf||r.data_final>=pdf)&&(!pdt||r.data_inicial<=pdt));
   document.getElementById('plantaoTotal').textContent=`${rows.length} plantão${rows.length===1?'':'ões'}`;
   const body=document.getElementById('plantaoTableBody');
+  const pageRows=paginateList('plantoes',rows,body,renderPlantoes);
   if(!rows.length){body.innerHTML='<tr><td colspan="7">Nenhum plantão encontrado.</td></tr>';return}
-  body.innerHTML=rows.map(r=>{
+  body.innerHTML=pageRows.map(r=>{
     const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
     const folga=r.folga_gerada?`🟣 ${fmtDate(nextSaturdayAfter(r.data_final))} (${r.funcionario2_id?'dupla':'individual'})`:'—';
     const edit=`<button class="mini-btn approve" onclick="openEditPlantao(${r.id})">Editar</button>`;
-    const del=currentRole()==='admin'?`<button class="mini-btn deny" onclick="deletePlantao(${r.id})">Excluir</button>`:'';
+    const del=canDo('plantoes_excluir')?`<button class="mini-btn deny" onclick="deletePlantao(${r.id})">Excluir</button>`:'';
     const dupla=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).map(safe).join(' + ');
     const city=plantaoCity(r);
     const cityHtml=city?`<span class="status-pill" style="background:#f6f3ff;color:#5b3fa3">${safe(city)}</span>`:'—';
@@ -1722,7 +1768,7 @@ async function saveEditPlantao(e){
   finally{btn.disabled=false;btn.textContent='Salvar alteração'}
 }
 async function deletePlantao(id){
-  if(currentRole()!=='admin')return;
+  if(!canDo('plantoes_excluir')){showToast('Você não tem permissão para excluir plantões.');return}
   const r=plantaoRows.find(x=>x.id===id);if(!r)return;
   if(!window.confirm(`Excluir o plantão de ${[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ')||'funcionário'} (${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)})?${r.folga_solicitacao_id?'\n\nA folga gerada automaticamente também será excluída.':''}`))return;
   try{
@@ -1863,11 +1909,12 @@ function renderErrors(){
     const note=Math.max(0,10-(v.points/2));
     return `<div class="card"><p><span style="display:inline-block;padding:3px 7px;border-radius:999px;background:#efede2;color:#55544c;font-size:11px;margin-bottom:5px">${safe(v.sector)}</span><br>${safe(v.label)}</p><b>${note.toFixed(1)}</b><small>${scoreClass(note)} · ${v.errors} ${v.errors===1?'erro':'erros'} · ${v.points} pts</small></div>`;
   }).join('')||'<div style="color:#77766b">Nenhum erro registrado neste período.</div>';
-  document.getElementById('errorsTableBody').innerHTML=rows.map(r=>`<tr>
+  const pageRows=paginateList('errors',rows,document.getElementById('errorsTableBody'),renderErrors);
+  document.getElementById('errorsTableBody').innerHTML=pageRows.map(r=>`<tr>
     <td>${fmtDate(r.data)}</td><td>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
     <td>${safe(r.tipo||'—')}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${Number(r.peso||1)}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
-    <td><button class="mini" data-error-edit="${r.id}">Editar</button>${currentRole()==='admin'?` <button class="mini danger" data-error-delete="${r.id}">Excluir</button>`:''}</td>
+    <td><button class="mini" data-error-edit="${r.id}">Editar</button>${canDo('erros_excluir')?` <button class="mini danger" data-error-delete="${r.id}">Excluir</button>`:''}</td>
   </tr>`).join('')||'<tr><td colspan="9">Nenhum erro registrado neste mês.</td></tr>';
 }
 
@@ -1942,10 +1989,11 @@ function renderAir(){
   const q=(document.getElementById('airSearch').value||'').trim().toLowerCase();
   const sf=document.getElementById('airStatusFilter').value;
   const tf=document.getElementById('maintenanceTypeFilter').value;
+  const af=document.getElementById('airDateFrom').value,at=document.getElementById('airDateTo').value;
   const rows=airRows.filter(r=>{
     const st=airEffectiveStatus(r);
     const txt=`${r.tipo||''} ${r.local_instalacao||''} ${r.identificacao||''}`.toLowerCase();
-    return (!sf||st===sf)&&(!tf||r.tipo===tf)&&(!q||txt.includes(q));
+    const px=r.proxima_manutencao||'';return (!sf||st===sf)&&(!tf||r.tipo===tf)&&(!q||txt.includes(q))&&(!af||px>=af)&&(!at||(px&&px<=at));
   });
   let active=0,soon=0,expired=0,ok=0;
   airRows.forEach(r=>{const st=airEffectiveStatus(r);if(r.ativo!==false)active++;if(st==='Próximo')soon++;else if(st==='Vencido')expired++;else if(st==='Em dia')ok++});
@@ -1953,7 +2001,8 @@ function renderAir(){
   document.getElementById('airSoonCount').textContent=soon;
   document.getElementById('airExpiredCount').textContent=expired;
   document.getElementById('airOkCount').textContent=ok;
-  document.getElementById('airTableBody').innerHTML=rows.map(r=>`<tr>
+  const pageRows=paginateList('air',rows,document.getElementById('airTableBody'),renderAir);
+  document.getElementById('airTableBody').innerHTML=pageRows.map(r=>`<tr>
     <td><b>${maintenanceIcon(r.tipo)} ${safe(r.tipo||'Manutenção')}</b></td>
     <td><b>${safe(r.local_instalacao)}</b></td>
     <td>${safe(r.identificacao||'—')}</td>
@@ -1962,7 +2011,7 @@ function renderAir(){
     <td>${r.dias_alerta} dias antes</td>
     <td>${airStatusBadge(r)}</td>
     <td>${safe(r.observacao||'—')}</td>
-    <td><button class="mini" data-air-edit="${r.id}">Editar</button> <button class="mini" data-air-done="${r.id}">Registrar manutenção</button>${currentRole()==='admin'?` <button class="mini danger" data-air-delete="${r.id}">Excluir</button>`:''}</td>
+    <td><button class="mini" data-air-edit="${r.id}">Editar</button> <button class="mini" data-air-done="${r.id}">Registrar manutenção</button>${canDo('manutencoes_excluir')?` <button class="mini danger" data-air-delete="${r.id}">Excluir</button>`:''}</td>
   </tr>`).join('')||'<tr><td colspan="9">Nenhuma manutenção encontrada.</td></tr>';
 }
 async function registerAirMaintenance(r){
@@ -2126,7 +2175,7 @@ async function userAdminApi(payload){
 }
 function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Nunca'}
 function permissionLabel(p){
-  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios'}[p]||p;
+  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções'}[p]||p;
 }
 async function loadUsers(){
   const tbody=document.getElementById('usersTableBody');
@@ -2134,7 +2183,8 @@ async function loadUsers(){
   try{
     const {users}=await userAdminApi({action:'list'});
     window.userRows=users;
-    tbody.innerHTML=users.map(u=>{
+    const rerenderUsers=()=>{const pageUsers=paginateList('users',window.userRows||[],tbody,rerenderUsers);
+    tbody.innerHTML=pageUsers.map(u=>{
       const perms=u.role==='admin'?'Acesso total':((u.permissions||[]).map(permissionLabel).join(', ')||'Sem áreas liberadas');
       return `<tr>
         <td>${safe(u.name||'-')}<div style="font-size:12px;color:#6f6e63;margin-top:3px">${safe(perms)}</div></td>
@@ -2148,7 +2198,8 @@ async function loadUsers(){
           <button type="button" class="action-btn ${u.active?'deny':'approve'}" data-user-toggle="${u.id}" data-active="${u.active}">${u.active?'Inativar':'Ativar'}</button>
         </td>
       </tr>`;
-    }).join('')||'<tr><td colspan="7">Nenhum usuário.</td></tr>';
+    }).join('')||'<tr><td colspan="7">Nenhum usuário.</td></tr>';};
+    resetPage('users');rerenderUsers();
   }catch(err){console.error(err);tbody.innerHTML=`<tr><td colspan="7">${safe(err.message)}</td></tr>`}
 }
 async function showUsers(){
@@ -2162,8 +2213,15 @@ document.getElementById('clearAllPermissions').onclick=()=>{if(document.getEleme
 document.getElementById('selectAllSectors').onclick=()=>{if(document.getElementById('userRole').value!=='admin')document.querySelectorAll('.userSectorCheck').forEach(cb=>cb.checked=true)};
 document.getElementById('clearAllSectors').onclick=()=>{if(document.getElementById('userRole').value!=='admin')document.querySelectorAll('.userSectorCheck').forEach(cb=>cb.checked=false)};
 
+function detectPreset(){
+  const sel=document.getElementById('userPreset');if(!sel)return;
+  const cur=new Set(selectedUserPermissions());let found='';
+  Object.entries(PERMISSION_PRESETS).forEach(([k,list])=>{if(list.length===cur.size&&list.every(x=>cur.has(x)))found=k});
+  sel.value=found;
+}
 function updatePermissionUI(){
   const isAdmin=document.getElementById('userRole').value==='admin';
+  const presetSel=document.getElementById('userPreset');if(presetSel){presetSel.disabled=isAdmin;if(!isAdmin)detectPreset()}
   document.querySelectorAll('.userPerm').forEach(cb=>{cb.disabled=isAdmin;if(isAdmin)cb.checked=true});
   document.querySelectorAll('.userSectorCheck').forEach(cb=>{cb.disabled=isAdmin;if(isAdmin)cb.checked=true});
   document.getElementById('selectAllSectors').disabled=isAdmin;
@@ -2225,11 +2283,12 @@ function renderTeamView(){
   const inativos=rows.filter(r=>!r.ativo).length;
   document.getElementById('teamTotal').textContent=`${rows.length} funcionário${rows.length===1?'':'s'} • ${ativos} ativo${ativos===1?'':'s'} • ${inativos} inativo${inativos===1?'':'s'}`;
   const body=document.getElementById('teamTableBody');
+  const pageRows=paginateList('team',rows,body,renderTeamView);
   if(!rows.length){
     body.innerHTML='<tr><td colspan="6">Nenhum funcionário encontrado.</td></tr>';
     return;
   }
-  body.innerHTML=rows.map(r=>`<tr>
+  body.innerHTML=pageRows.map(r=>`<tr>
     <td><b>${safe(r.nome||'Funcionário')}</b></td>
     <td>${r.setor?`<span class="status-pill" style="background:#eef4ff;color:#234a7d">${safe(r.setor)}</span>`:'<span style="color:#9d9c90">Sem setor</span>'}</td>
     <td>${r.cidade?`<span class="status-pill" style="background:#f6f3ff;color:#5b3fa3">${safe(r.cidade)}</span>`:'<span style="color:#9d9c90">Sem cidade</span>'}</td>
@@ -2288,14 +2347,15 @@ async function toggleEmployee(id,isActive){
 }
 
 async function loadHistory(){const body=document.getElementById('historyTableBody');body.innerHTML='<tr><td colspan="6">Carregando...</td></tr>';try{window.historyRows=await sb('solicitacoes?select=id,data_pedido,data_inicial,data_final,status,motivo,observacao,equipe(nome)&order=data_pedido.desc');renderHistory()}catch(e){console.error(e);body.innerHTML='<tr><td colspan="6">Erro ao carregar histórico.</td></tr>'}}
-function renderHistory(){const filter=document.getElementById('historyStatusFilter').value;const rows=(window.historyRows||[]).filter(r=>!filter||r.status===filter);document.getElementById('historyTotal').textContent=`${rows.length} registro${rows.length===1?'':'s'}`;const body=document.getElementById('historyTableBody');if(!rows.length){body.innerHTML='<tr><td colspan="6">Nenhum registro encontrado.</td></tr>';return}body.innerHTML=rows.map(r=>{const cls='status-'+r.status.replaceAll(' ','-');const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;const pedido=r.data_pedido?new Date(r.data_pedido).toLocaleDateString('pt-BR'):'—';return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${pedido}</td><td>${period}</td><td>${safe(r.motivo||'—')}</td><td><span class="status-pill ${cls}">${safe(r.status)}</span></td><td>${safe(r.observacao||'—')}</td></tr>`}).join('')}
+function renderHistory(){const filter=document.getElementById('historyStatusFilter').value;const hf=document.getElementById('historyDateFrom').value,ht=document.getElementById('historyDateTo').value;const rows=(window.historyRows||[]).filter(r=>(!filter||r.status===filter)&&(!hf||(r.data_final||r.data_inicial)>=hf)&&(!ht||r.data_inicial<=ht));document.getElementById('historyTotal').textContent=`${rows.length} registro${rows.length===1?'':'s'}`;const body=document.getElementById('historyTableBody');const pageRows=paginateList('history',rows,body,renderHistory);if(!rows.length){body.innerHTML='<tr><td colspan="6">Nenhum registro encontrado.</td></tr>';return}body.innerHTML=pageRows.map(r=>{const cls='status-'+r.status.replaceAll(' ','-');const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;const pedido=r.data_pedido?new Date(r.data_pedido).toLocaleDateString('pt-BR'):'—';return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${pedido}</td><td>${period}</td><td>${safe(r.motivo||'—')}</td><td><span class="status-pill ${cls}">${safe(r.status)}</span></td><td>${safe(r.observacao||'—')}</td></tr>`}).join('')}
 function fmtDate(v){if(!v)return '—';const [y,m,d]=v.split('-');return `${d}/${m}/${y}`}
 function safe(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 let allRequests=[];
 async function loadAllRequests(){const body=document.getElementById('requestsTableBody');body.innerHTML='<tr><td colspan="5">Carregando...</td></tr>';try{allRequests=await sb('solicitacoes?select=id,data_pedido,data_inicial,data_final,status,motivo,observacao,equipe(nome)&order=data_pedido.desc');renderRequestsTable()}catch(e){console.error(e);body.innerHTML='<tr><td colspan="5">Erro ao carregar solicitações.</td></tr>'}}
-function renderRequestsTable(){const filter=document.getElementById('statusFilter').value;const list=filter?allRequests.filter(r=>r.status===filter):allRequests;document.getElementById('requestsTotal').textContent=`${list.length} solicitação${list.length===1?'':'ões'}`;const body=document.getElementById('requestsTableBody');if(!list.length){body.innerHTML='<tr><td colspan="5">Nenhuma solicitação encontrada.</td></tr>';return}body.innerHTML=list.map(r=>{const cls='status-'+r.status.replaceAll(' ','-');const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;const baseActions=r.status==='Pendente'?`<button class="mini-btn approve" onclick="updateRequestStatus(${r.id},'Aprovada')">Aprovar</button><button class="mini-btn deny" onclick="updateRequestStatus(${r.id},'Negada')">Negar</button>`:`<button class="mini-btn mutebtn" onclick="updateRequestStatus(${r.id},'Pendente')">Voltar p/ pendente</button>`;const deleteAction=currentRole()==='admin'?`<button class="mini-btn deny" onclick="confirmDeleteRequest(${r.id})">Excluir</button>`:'';const actions=`<div class="actions">${baseActions}${deleteAction}</div>`;return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${period}</td><td>${safe(r.motivo||'—')}</td><td><span class="status-pill ${cls}">${safe(r.status)}</span></td><td>${actions}</td></tr>`}).join('')}
+const REQUESTS_PAGE_SIZE=50;let requestsPage=1;
+function renderRequestsTable(resetPage){if(resetPage===true)requestsPage=1;const filter=document.getElementById('statusFilter').value;const from=document.getElementById('requestsDateFrom').value,to=document.getElementById('requestsDateTo').value;const list=allRequests.filter(r=>(!filter||r.status===filter)&&(!from||(r.data_final||r.data_inicial)>=from)&&(!to||r.data_inicial<=to));const totalPages=Math.max(1,Math.ceil(list.length/REQUESTS_PAGE_SIZE));if(requestsPage>totalPages)requestsPage=totalPages;if(requestsPage<1)requestsPage=1;const start=(requestsPage-1)*REQUESTS_PAGE_SIZE;const pageList=list.slice(start,start+REQUESTS_PAGE_SIZE);document.getElementById('requestsTotal').textContent=`${list.length} solicitação${list.length===1?'':'ões'}`;const pager=document.getElementById('requestsPager');pager.style.display=list.length>REQUESTS_PAGE_SIZE?'flex':'none';document.getElementById('requestsPageInfo').textContent=list.length?`Mostrando ${start+1}–${start+pageList.length} de ${list.length}`:'';document.getElementById('requestsPageNum').textContent=`Página ${requestsPage} de ${totalPages}`;document.getElementById('requestsPrev').disabled=requestsPage<=1;document.getElementById('requestsNext').disabled=requestsPage>=totalPages;const body=document.getElementById('requestsTableBody');if(!list.length){body.innerHTML='<tr><td colspan="5">Nenhuma solicitação encontrada.</td></tr>';return}body.innerHTML=pageList.map(r=>{const cls='status-'+r.status.replaceAll(' ','-');const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;const baseActions=r.status==='Pendente'?`<button class="mini-btn approve" onclick="updateRequestStatus(${r.id},'Aprovada')">Aprovar</button><button class="mini-btn deny" onclick="updateRequestStatus(${r.id},'Negada')">Negar</button>`:`<button class="mini-btn mutebtn" onclick="updateRequestStatus(${r.id},'Pendente')">Voltar p/ pendente</button>`;const deleteAction=canDo('solicitacoes_excluir')?`<button class="mini-btn deny" onclick="confirmDeleteRequest(${r.id})">Excluir</button>`:'';const actions=`<div class="actions">${baseActions}${deleteAction}</div>`;return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${period}</td><td>${safe(r.motivo||'—')}</td><td><span class="status-pill ${cls}">${safe(r.status)}</span></td><td>${actions}</td></tr>`}).join('')}
 function confirmDeleteRequest(id){
-  if(currentRole()!=='admin'){showToast('Somente administradores podem excluir solicitações.');return}
+  if(!canDo('solicitacoes_excluir')){showToast('Você não tem permissão para excluir solicitações.');return}
   const r=allRequests.find(x=>x.id===id);
   if(!r)return;
   const nome=r.equipe?.nome||'Funcionário';
@@ -2304,7 +2364,7 @@ function confirmDeleteRequest(id){
   if(ok)deleteRequest(id);
 }
 async function deleteRequest(id){
-  if(currentRole()!=='admin'){showToast('Somente administradores podem excluir solicitações.');return}
+  if(!canDo('solicitacoes_excluir')){showToast('Você não tem permissão para excluir solicitações.');return}
   try{
     await sb(`solicitacoes?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     showToast('Solicitação excluída com sucesso!');
@@ -2344,9 +2404,9 @@ document.getElementById('newAirBtn').onclick=()=>openAirModal();
 document.getElementById('closeAirModal').onclick=closeAirModal;
 document.getElementById('cancelAir').onclick=closeAirModal;
 document.getElementById('airModal').onclick=e=>{if(e.target.id==='airModal')closeAirModal()};
-document.getElementById('airSearch').oninput=renderAir;
-document.getElementById('maintenanceTypeFilter').onchange=renderAir;
-document.getElementById('airStatusFilter').onchange=renderAir;
+document.getElementById('airSearch').oninput=()=>{resetPage('air');renderAir()};
+document.getElementById('maintenanceTypeFilter').onchange=()=>{resetPage('air');renderAir()};
+document.getElementById('airStatusFilter').onchange=()=>{resetPage('air');renderAir()};
 document.getElementById('airForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('airId').value;
@@ -2374,7 +2434,8 @@ document.getElementById('airTableBody').onclick=async e=>{
   const done=e.target.closest('[data-air-done]');
   if(done){const r=airRows.find(x=>String(x.id)===done.dataset.airDone);if(r)await registerAirMaintenance(r);return}
   const del=e.target.closest('[data-air-delete]');
-  if(del&&currentRole()==='admin'){
+  if(del&&!canDo('manutencoes_excluir')){showToast('Você não tem permissão para excluir manutenções.');return}
+  if(del){
     const r=airRows.find(x=>String(x.id)===del.dataset.airDelete);if(!r||!confirm(`Excluir ${r.tipo} de ${r.local_instalacao}?`))return;
     try{await sb(`manutencoes_preventivas?id=eq.${r.id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Manutenção excluída!');await loadAir();loadAirDashboardAlert()}catch(err){console.error(err);showToast('Não foi possível excluir.')}
   }
@@ -2396,9 +2457,10 @@ document.getElementById('newErrorBtn').onclick=()=>openErrorModal();
 document.getElementById('closeErrorModal').onclick=closeErrorModal;
 document.getElementById('cancelError').onclick=closeErrorModal;
 document.getElementById('errorModal').onclick=e=>{if(e.target.id==='errorModal')closeErrorModal()};
-document.getElementById('errorMonthFilter').onchange=loadErrors;
+document.getElementById('errorMonthFilter').onchange=()=>{resetPage('errors');loadErrors()};
 document.getElementById('errorSector').onchange=fillErrorEmployees;
 document.getElementById('errorSectorFilter').onchange=()=>{
+  resetPage('errors');
   const sf=document.getElementById('errorSectorFilter');
   const ef=document.getElementById('errorEmployeeFilter');
   const sector=sf.value;
@@ -2408,7 +2470,7 @@ document.getElementById('errorSectorFilter').onchange=()=>{
   ef.value=employees.some(e=>String(e.id)===cur)?cur:'';
   renderErrors();
 };
-document.getElementById('errorEmployeeFilter').onchange=renderErrors;
+document.getElementById('errorEmployeeFilter').onchange=()=>{resetPage('errors');renderErrors()};
 document.getElementById('errorForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('errorId').value;
@@ -2430,7 +2492,8 @@ document.getElementById('errorsTableBody').onclick=async e=>{
   const edit=e.target.closest('[data-error-edit]');
   if(edit){const r=errorRows.find(x=>String(x.id)===edit.dataset.errorEdit);if(r)openErrorModal(r);return}
   const del=e.target.closest('[data-error-delete]');
-  if(del&&currentRole()==='admin'&&confirm('Excluir este registro de erro?')){
+  if(del&&!canDo('erros_excluir')){showToast('Você não tem permissão para excluir erros.');return}
+  if(del&&confirm('Excluir este registro de erro?')){
     try{await sb(`erros_equipes?id=eq.${del.dataset.errorDelete}`,{method:'DELETE'});showToast('Erro excluído.');await loadErrors()}catch(err){showToast('Não foi possível excluir.')}
   }
 };
@@ -2441,9 +2504,9 @@ document.getElementById('cancelPlantao').onclick=closePlantao;
 document.getElementById('plantaoModal').onclick=e=>{if(e.target.id==='plantaoModal')closePlantao()};
 document.getElementById('plantaoSector').onchange=fillPlantaoEmployees;
 document.getElementById('plantaoCity').onchange=fillPlantaoEmployees;
-document.getElementById('plantaoCityFilter').onchange=renderPlantoes;
-document.getElementById('plantaoSectorFilter').onchange=renderPlantoes;
-document.getElementById('plantaoMonthFilter').onchange=renderPlantoes;
+document.getElementById('plantaoCityFilter').onchange=()=>{resetPage('plantoes');renderPlantoes()};
+document.getElementById('plantaoSectorFilter').onchange=()=>{resetPage('plantoes');renderPlantoes()};
+document.getElementById('plantaoMonthFilter').onchange=()=>{resetPage('plantoes');renderPlantoes()};
 document.getElementById('plantaoForm').onsubmit=async e=>{
   e.preventDefault();
   const btn=document.getElementById('savePlantao');
@@ -2500,10 +2563,10 @@ document.getElementById('refreshReports').onclick=loadReports;
 document.getElementById('exportReports').onclick=exportReportsCSV;
 document.getElementById('reportMonth').onchange=loadReports;
 document.getElementById('reportEmployee').onchange=loadReports;
-document.getElementById('teamSearch').oninput=renderTeamView;
-document.getElementById('teamStatusFilter').onchange=renderTeamView;
-document.getElementById('teamSectorFilter').onchange=renderTeamView;
-document.getElementById('teamCityFilter').onchange=renderTeamView;
+document.getElementById('teamSearch').oninput=()=>{resetPage('team');renderTeamView()};
+document.getElementById('teamStatusFilter').onchange=()=>{resetPage('team');renderTeamView()};
+document.getElementById('teamSectorFilter').onchange=()=>{resetPage('team');renderTeamView()};
+document.getElementById('teamCityFilter').onchange=()=>{resetPage('team');renderTeamView()};
 document.getElementById('openEmployee').onclick=openEmployee;
 document.getElementById('closeEmployee').onclick=closeEmployee;
 document.getElementById('cancelEmployee').onclick=closeEmployee;
@@ -2541,6 +2604,13 @@ document.getElementById('newUserBtn').onclick=()=>openUserModal();
 document.getElementById('closeUserModal').onclick=closeUserModal;
 document.getElementById('cancelUserModal').onclick=closeUserModal;
 document.getElementById('userRole').onchange=updatePermissionUI;
+document.getElementById('userPreset').onchange=e=>{
+  if(document.getElementById('userRole').value==='admin'||!e.target.value)return;
+  const list=PERMISSION_PRESETS[e.target.value]||[];
+  document.querySelectorAll('.userPerm').forEach(cb=>cb.checked=list.includes(cb.value));
+};
+document.getElementById('permissionsBox').addEventListener('change',e=>{if(e.target.classList.contains('userPerm'))detectPreset()});
+document.getElementById('permissionsBox').addEventListener('click',e=>{if(e.target.closest('#selectAllPermissions,#clearAllPermissions'))detectPreset()});
 document.getElementById('userModal').onclick=e=>{if(e.target.id==='userModal')closeUserModal()};
 document.getElementById('userForm').onsubmit=async e=>{
   e.preventDefault();
@@ -2548,7 +2618,7 @@ document.getElementById('userForm').onsubmit=async e=>{
   try{
     const id=document.getElementById('userId').value;
     const role=document.getElementById('userRole').value;
-    const permissions=role==='admin'?ALL_PERMISSIONS:selectedUserPermissions();
+    const permissions=role==='admin'?ALL_PERMISSIONS.concat(ACTION_PERMISSIONS):selectedUserPermissions();
     const sectors=role==='admin'?[]:selectedUserSectors();
     if(role!=='admin'&&!permissions.length)throw new Error('Selecione pelo menos uma permissão para o usuário.');
     if(role!=='admin'&&!sectors.length)throw new Error('Selecione pelo menos um setor de acesso do usuário.');
@@ -2643,10 +2713,16 @@ document.getElementById('employeeForm').onsubmit=async e=>{
     btn.textContent='Cadastrar funcionário';
   }
 };
-document.getElementById('historyStatusFilter').onchange=renderHistory;
+document.getElementById('historyStatusFilter').onchange=()=>{resetPage('history');renderHistory()};
+bindDateFilter('history','history',renderHistory);bindDateFilter('plantao','plantoes',renderPlantoes);bindDateFilter('air','air',renderAir);
 document.getElementById('newRequestBtn').onclick=openRequest;
 document.getElementById('requestSector').onchange=fillEmployees;
-document.getElementById('statusFilter').onchange=renderRequestsTable;
+document.getElementById('statusFilter').onchange=()=>renderRequestsTable(true);
+document.getElementById('requestsDateFrom').onchange=()=>renderRequestsTable(true);
+document.getElementById('requestsDateTo').onchange=()=>renderRequestsTable(true);
+document.getElementById('requestsClearDates').onclick=()=>{document.getElementById('requestsDateFrom').value='';document.getElementById('requestsDateTo').value='';renderRequestsTable(true)};
+document.getElementById('requestsPrev').onclick=()=>{requestsPage--;renderRequestsTable();document.getElementById('requestsView').scrollIntoView({behavior:'smooth'})};
+document.getElementById('requestsNext').onclick=()=>{requestsPage++;renderRequestsTable();document.getElementById('requestsView').scrollIntoView({behavior:'smooth'})};
 document.getElementById('closeRequest').onclick=closeRequest;
 document.getElementById('cancelRequest').onclick=closeRequest;
 document.getElementById('requestModal').onclick=e=>{if(e.target.id==='requestModal')closeRequest()};
