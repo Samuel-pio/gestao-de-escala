@@ -530,6 +530,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
     <div class="form-grid">
       <div class="field"><label>Data</label><input type="date" id="errorDate" required></div>
       <div class="field"><label>Tipo do erro</label><input type="text" id="errorType" placeholder="Ex.: Instalação, acabamento..." required maxlength="120"></div><div class="field"><label>Gravidade</label><select id="errorSeverity" required></select></div>
+      <div class="field"><label>Setor</label><select id="errorSector"><option value="">Todos os setores</option></select></div>
       <div class="field"><label>Técnico 1</label><select id="errorEmployee1" required></select></div>
       <div class="field">
 <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="useSecondErrorTech" style="width:auto"> Adicionar segundo técnico</label>
@@ -1732,15 +1733,30 @@ async function deletePlantao(id){
 }
 
 let errorRows=[];
+function fillErrorEmployees(){
+  const sector=document.getElementById('errorSector')?.value||'';
+  const team=(teamCache||[]).filter(e=>e.ativo!==false && hasSectorAccess(e.setor) && (!sector||e.setor===sector));
+  const html='<option value="">'+(team.length?'Selecione...':'Nenhum técnico neste setor')+'</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  ['errorEmployee1','errorEmployee2'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const cur=el.value;
+    el.innerHTML=html;
+    el.value=team.some(e=>String(e.id)===cur)?cur:'';
+  });
+}
 function openErrorModal(row=null){
   const modal=document.getElementById('errorModal');
   document.getElementById('errorForm').reset();
   document.getElementById('errorId').value=row?.id||'';
   document.getElementById('errorModalTitle').textContent=row?'Editar erro':'Registrar erro';
-  const team=(teamCache||[]).filter(e=>e.ativo!==false && hasSectorAccess(e.setor));
-  const opts='<option value="">Selecione...</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
-  document.getElementById('errorEmployee1').innerHTML=opts;
-  document.getElementById('errorEmployee2').innerHTML='<option value="">Selecione...</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}</option>`).join('');
+  const allowedSectors=currentRole()==='admin'?sectorCache:currentSectors();
+  const secSel=document.getElementById('errorSector');
+  secSel.innerHTML='<option value="">Todos os setores</option>'+allowedSectors.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('');
+  if(row){
+    const emp1=(teamCache||[]).find(e=>String(e.id)===String(row.funcionario1_id));
+    secSel.value=emp1&&allowedSectors.includes(emp1.setor)?emp1.setor:'';
+  }else if(allowedSectors.length===1)secSel.value=allowedSectors[0];
+  fillErrorEmployees();
   const useSecond=document.getElementById('useSecondErrorTech');
   const secondSelect=document.getElementById('errorEmployee2');
   useSecond.checked=!!row?.funcionario2_id;
@@ -2381,6 +2397,7 @@ document.getElementById('closeErrorModal').onclick=closeErrorModal;
 document.getElementById('cancelError').onclick=closeErrorModal;
 document.getElementById('errorModal').onclick=e=>{if(e.target.id==='errorModal')closeErrorModal()};
 document.getElementById('errorMonthFilter').onchange=loadErrors;
+document.getElementById('errorSector').onchange=fillErrorEmployees;
 document.getElementById('errorSectorFilter').onchange=()=>{
   const sf=document.getElementById('errorSectorFilter');
   const ef=document.getElementById('errorEmployeeFilter');
