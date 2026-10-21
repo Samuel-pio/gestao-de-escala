@@ -277,6 +277,10 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
 <div class="boxhead"><div><h2>🛠️ Manutenções preventivas</h2><p>Itens próximos do vencimento da próxima manutenção.</p></div><strong id="airDashboardBadge">0</strong></div>
 <div id="airDashboardList"></div>
 </section>
+<section class="box" id="plantoesDashboardBox" style="margin-bottom:18px;display:none">
+<div class="boxhead"><div><h2>🗓️ Próximos plantões</h2><p>Plantões deste mês e do próximo, para você programar sua folga.</p></div><strong id="plantoesDashboardBadge">0</strong></div>
+<div id="plantoesDashboardList"></div>
+</section>
 <section class="box" id="errorsDashboardBox" style="margin-bottom:18px;display:none">
 <div class="boxhead"><div><h2>⚠️ Erros aguardando correção</h2><p>Erros da equipe ainda em aberto nos seus setores.</p></div><strong id="errorsDashboardBadge">0</strong></div>
 <div id="errorsDashboardList"></div>
@@ -547,6 +551,19 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
       <div class="field full"><label>Observação</label><textarea id="errorObservation" rows="4" placeholder="Descreva o que aconteceu..."></textarea></div>
     </div>
     <div class="form-actions"><button type="button" class="secondary" id="cancelError">Cancelar</button><button type="submit" class="primary" id="saveError">Salvar erro</button></div>
+  </form>
+</div></div>
+<div class="modal" id="returnPendingModal" aria-hidden="true">
+<div class="modal-card" style="max-width:520px">
+  <div class="modal-head"><div><h2>Voltar para pendente</h2><p id="returnPendingInfo"></p></div><button class="close" id="closeReturnPending" type="button">×</button></div>
+  <form id="returnPendingForm">
+    <input type="hidden" id="returnPendingId">
+    <div class="form-grid">
+      <div class="field"><label>Nova data inicial</label><input type="date" id="returnPendingStart" required></div>
+      <div class="field"><label>Nova data final</label><input type="date" id="returnPendingEnd" required></div>
+    </div>
+    <p style="font-size:12px;color:#77766b;margin:10px 0 0">Se o pedido mudou de data, altere aqui mesmo. Para só voltar para pendente, deixe as datas como estão.</p>
+    <div class="form-actions"><button type="button" class="secondary" id="cancelReturnPending">Cancelar</button><button type="submit" class="primary" id="saveReturnPending">Voltar para pendente</button></div>
   </form>
 </div></div>
 <div class="modal" id="errorFixModal" aria-hidden="true">
@@ -2039,6 +2056,33 @@ function exportErrorsCSV(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`erros-equipe-${document.getElementById('errorMonthFilter').value||'periodo'}.csv`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
+async function loadPlantoesDashboard(){
+  const box=document.getElementById('plantoesDashboardBox');if(!box)return;
+  try{
+    const today=todayIsoLocal();
+    const t=new Date(today+'T12:00:00');
+    const end=iso(new Date(t.getFullYear(),t.getMonth()+2,0));
+    const rows=await sb(`plantoes?select=id,data_inicial,data_final,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_final=gte.${today}&data_inicial=lte.${end}&order=data_inicial.asc&limit=300`);
+    const list=rows.filter(r=>hasSectorAccess(r.equipe?.setor||r.equipe2?.setor||''));
+    box.style.display=list.length?'block':'none';
+    document.getElementById('plantoesDashboardBadge').textContent=list.length;
+    const wd=d=>new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','');
+    const dt=d=>`${fmtDate(d)} (${wd(d)})`;
+    let html='',lastMonth='';
+    list.forEach(r=>{
+      const ref=r.data_inicial<today?today:r.data_inicial;
+      const month=new Date(ref+'T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+      if(month!==lastMonth){html+=`<div style="font-weight:700;margin:14px 0 4px;text-transform:capitalize">${safe(month)}</div>`;lastMonth=month}
+      const names=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ')||'—';
+      const where=[r.equipe?.setor||r.equipe2?.setor,r.equipe?.cidade||r.equipe2?.cidade].filter(Boolean).join(' • ');
+      const range=r.data_inicial===r.data_final?dt(r.data_inicial):`${dt(r.data_inicial)} a ${dt(r.data_final)}`;
+      const days=Math.ceil((new Date(r.data_inicial+'T12:00:00')-t)/86400000);
+      const tag=r.data_inicial<=today?'🟢 Em andamento':days===1?'🟡 Amanhã':days<=7?`🟡 Em ${days}d`:'';
+      html+=`<div class="req"><span><b>${safe(names)}</b><small>${safe(where||'Plantão')}</small></span><em>${range}${tag?'<br>'+tag:''}</em></div>`;
+    });
+    document.getElementById('plantoesDashboardList').innerHTML=html;
+  }catch(e){console.warn('Próximos plantões indisponível',e);box.style.display='none'}
+}
 async function loadErrorsDashboardAlert(){
   const box=document.getElementById('errorsDashboardBox');if(!box)return;
   if(!canAccess('erros_equipe')){box.style.display='none';return}
@@ -2161,6 +2205,7 @@ async function registerAirMaintenance(r){
 }
 async function loadAirDashboardAlert(){
   loadErrorsDashboardAlert();
+  loadPlantoesDashboard();
   const box=document.getElementById('airDashboardBox');if(!box)return;
   if(!canAccess('manutencoes')){box.style.display='none';return}
   try{
@@ -2496,7 +2541,7 @@ function safe(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 let allRequests=[];
 async function loadAllRequests(){const body=document.getElementById('requestsTableBody');body.innerHTML='<tr><td colspan="5">Carregando...</td></tr>';try{allRequests=await sb('solicitacoes?select=id,data_pedido,data_inicial,data_final,status,motivo,observacao,equipe(nome)&order=data_pedido.desc');renderRequestsTable()}catch(e){console.error(e);body.innerHTML='<tr><td colspan="5">Erro ao carregar solicitações.</td></tr>'}}
 const REQUESTS_PAGE_SIZE=50;let requestsPage=1;
-function renderRequestsTable(resetPage){if(resetPage===true)requestsPage=1;const filter=document.getElementById('statusFilter').value;const from=document.getElementById('requestsDateFrom').value,to=document.getElementById('requestsDateTo').value;const list=allRequests.filter(r=>(!filter||r.status===filter)&&(!from||(r.data_final||r.data_inicial)>=from)&&(!to||r.data_inicial<=to));const totalPages=Math.max(1,Math.ceil(list.length/REQUESTS_PAGE_SIZE));if(requestsPage>totalPages)requestsPage=totalPages;if(requestsPage<1)requestsPage=1;const start=(requestsPage-1)*REQUESTS_PAGE_SIZE;const pageList=list.slice(start,start+REQUESTS_PAGE_SIZE);document.getElementById('requestsTotal').textContent=`${list.length} solicitação${list.length===1?'':'ões'}`;const pager=document.getElementById('requestsPager');pager.style.display=list.length>REQUESTS_PAGE_SIZE?'flex':'none';document.getElementById('requestsPageInfo').textContent=list.length?`Mostrando ${start+1}–${start+pageList.length} de ${list.length}`:'';document.getElementById('requestsPageNum').textContent=`Página ${requestsPage} de ${totalPages}`;document.getElementById('requestsPrev').disabled=requestsPage<=1;document.getElementById('requestsNext').disabled=requestsPage>=totalPages;const body=document.getElementById('requestsTableBody');if(!list.length){body.innerHTML='<tr><td colspan="5">Nenhuma solicitação encontrada.</td></tr>';return}body.innerHTML=pageList.map(r=>{const cls='status-'+r.status.replaceAll(' ','-');const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;const baseActions=r.status==='Pendente'?`<button class="mini-btn approve" onclick="updateRequestStatus(${r.id},'Aprovada')">Aprovar</button><button class="mini-btn deny" onclick="updateRequestStatus(${r.id},'Negada')">Negar</button>`:`<button class="mini-btn mutebtn" onclick="updateRequestStatus(${r.id},'Pendente')">Voltar p/ pendente</button>`;const deleteAction=canDo('solicitacoes_excluir')?`<button class="mini-btn deny" onclick="confirmDeleteRequest(${r.id})">Excluir</button>`:'';const actions=`<div class="actions">${baseActions}${deleteAction}</div>`;return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${period}</td><td>${safe(r.motivo||'—')}</td><td><span class="status-pill ${cls}">${safe(r.status)}</span></td><td>${actions}</td></tr>`}).join('')}
+function renderRequestsTable(resetPage){if(resetPage===true)requestsPage=1;const filter=document.getElementById('statusFilter').value;const from=document.getElementById('requestsDateFrom').value,to=document.getElementById('requestsDateTo').value;const list=allRequests.filter(r=>(!filter||r.status===filter)&&(!from||(r.data_final||r.data_inicial)>=from)&&(!to||r.data_inicial<=to));const totalPages=Math.max(1,Math.ceil(list.length/REQUESTS_PAGE_SIZE));if(requestsPage>totalPages)requestsPage=totalPages;if(requestsPage<1)requestsPage=1;const start=(requestsPage-1)*REQUESTS_PAGE_SIZE;const pageList=list.slice(start,start+REQUESTS_PAGE_SIZE);document.getElementById('requestsTotal').textContent=`${list.length} solicitação${list.length===1?'':'ões'}`;const pager=document.getElementById('requestsPager');pager.style.display=list.length>REQUESTS_PAGE_SIZE?'flex':'none';document.getElementById('requestsPageInfo').textContent=list.length?`Mostrando ${start+1}–${start+pageList.length} de ${list.length}`:'';document.getElementById('requestsPageNum').textContent=`Página ${requestsPage} de ${totalPages}`;document.getElementById('requestsPrev').disabled=requestsPage<=1;document.getElementById('requestsNext').disabled=requestsPage>=totalPages;const body=document.getElementById('requestsTableBody');if(!list.length){body.innerHTML='<tr><td colspan="5">Nenhuma solicitação encontrada.</td></tr>';return}body.innerHTML=pageList.map(r=>{const cls='status-'+r.status.replaceAll(' ','-');const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;const baseActions=r.status==='Pendente'?`<button class="mini-btn approve" onclick="updateRequestStatus(${r.id},'Aprovada')">Aprovar</button><button class="mini-btn deny" onclick="updateRequestStatus(${r.id},'Negada')">Negar</button>`:`<button class="mini-btn mutebtn" onclick="openReturnPending(${r.id})">Voltar p/ pendente</button>`;const deleteAction=canDo('solicitacoes_excluir')?`<button class="mini-btn deny" onclick="confirmDeleteRequest(${r.id})">Excluir</button>`:'';const actions=`<div class="actions">${baseActions}${deleteAction}</div>`;return `<tr><td><b>${safe(r.equipe?.nome||'Funcionário')}</b></td><td>${period}</td><td>${safe(r.motivo||'—')}</td><td><span class="status-pill ${cls}">${safe(r.status)}</span></td><td>${actions}</td></tr>`}).join('')}
 function confirmDeleteRequest(id){
   if(!canDo('solicitacoes_excluir')){showToast('Você não tem permissão para excluir solicitações.');return}
   const r=allRequests.find(x=>x.id===id);
@@ -2519,6 +2564,36 @@ async function deleteRequest(id){
     showToast(deleteErrorMsg(e,'a solicitação'));
   }
 }
+function openReturnPending(id){
+  const r=allRequests.find(x=>x.id===id);if(!r)return;
+  document.getElementById('returnPendingId').value=id;
+  document.getElementById('returnPendingStart').value=r.data_inicial;
+  document.getElementById('returnPendingEnd').value=r.data_final||r.data_inicial;
+  const period=r.data_inicial===r.data_final?fmtDate(r.data_inicial):`${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)}`;
+  document.getElementById('returnPendingInfo').textContent=`${r.equipe?.nome||'Funcionário'} • ${r.motivo||r.status} • ${period}`;
+  const m=document.getElementById('returnPendingModal');m.classList.add('open');m.setAttribute('aria-hidden','false');
+}
+function closeReturnPending(){const m=document.getElementById('returnPendingModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
+document.getElementById('closeReturnPending').onclick=closeReturnPending;
+document.getElementById('cancelReturnPending').onclick=closeReturnPending;
+document.getElementById('returnPendingStart').onchange=()=>{const a=document.getElementById('returnPendingStart'),b=document.getElementById('returnPendingEnd');if(!b.value||b.value<a.value)b.value=a.value};
+document.getElementById('returnPendingForm').onsubmit=async e=>{
+  e.preventDefault();
+  const id=document.getElementById('returnPendingId').value;
+  const r=allRequests.find(x=>String(x.id)===String(id));if(!r)return;
+  const start=document.getElementById('returnPendingStart').value,end=document.getElementById('returnPendingEnd').value;
+  if(!start||!end)return showToast('Informe as datas.');
+  if(end<start)return showToast('A data final não pode ser antes da inicial.');
+  const changed=start!==r.data_inicial||end!==(r.data_final||r.data_inicial);
+  const btn=document.getElementById('saveReturnPending');btn.disabled=true;
+  try{
+    await sbPatchChecked(`solicitacoes?id=eq.${id}`,{status:'Pendente',data_inicial:start,data_final:end});
+    closeReturnPending();
+    showToast(changed?'Solicitação voltou para pendente com as novas datas.':'Solicitação voltou para pendente.');
+    await loadAllRequests();await load();
+  }catch(err){console.error(err);showToast(err&&err.message==='NAO_ATUALIZADO'?'O banco não permitiu alterar esta solicitação (regras RLS do Supabase).':'Erro ao atualizar a solicitação.')}
+  finally{btn.disabled=false}
+};
 async function updateRequestStatus(id,status){try{await sb(`solicitacoes?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status})});showToast(`Solicitação ${status==='Aprovada'?'aprovada':status==='Negada'?'negada':'atualizada'}.`);await loadAllRequests();await load()}catch(e){console.error(e);showToast('Erro ao atualizar a solicitação.')}}
 
 document.getElementById('saveAgendaNote').onclick=saveAgendaNote;
