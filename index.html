@@ -401,6 +401,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
       <button type="button" class="mini" id="exportErrors">⬇ CSV</button>
     </div>
   </div>
+  <div id="errorPrivacyNotice" class="setup-notice" style="display:none">Modo de lançamento: você verá somente os erros que registrou. A equipe de gestão com acesso completo continua vendo os registros do setor.</div>
   <div id="errorSetupNotice" class="setup-notice" style="display:none"></div><div id="errorKpis" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0 0"></div><div id="errorSummary" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0"></div><div class="box" id="errorWeightsBox" style="padding:16px;margin:0 0 18px;background:#faf9f4">
 <div class="boxhead"><div><h2>Pesos da avaliação</h2><p>Nota mensal = 10 − (pontos ÷ 2), nunca abaixo de 0. O prazo define quando um erro em aberto fica atrasado; ao ser corrigido, o erro passa a contar só o percentual indicado. O administrador pode alterar tudo isso.</p></div></div>
 <div id="errorWeights" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"></div>
@@ -651,7 +652,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
       </div>
       <div id="permissionsBox" style="margin-top:18px;border-top:1px solid #e6e4d6;padding-top:16px">
         <div style="margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div><b>Permissões de acesso</b><div id="permissionsHint" style="font-size:13px;color:#6f6e63;margin-top:3px">Libere somente as áreas necessárias. Exclusões e correções são permissões separadas e devem ser marcadas apenas quando indispensáveis.</div></div>
+          <div><b>Permissões de acesso</b><div id="permissionsHint" style="font-size:13px;color:#6f6e63;margin-top:3px">Para lançamento restrito, marque apenas “Lançar erros”: o usuário registra erros e vê somente os próprios. “Erros da Equipe” permite consultar os registros do setor.</div></div>
           <div style="display:flex;gap:6px">
             <button type="button" class="mini" id="selectAllPermissions">Marcar todas</button>
             <button type="button" class="mini" id="clearAllPermissions">Limpar</button>
@@ -666,7 +667,8 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
           <label><input type="checkbox" class="userPerm" value="historico"> Histórico</label>
           <label><input type="checkbox" class="userPerm" value="equipe"> Equipe</label>
           <label><input type="checkbox" class="userPerm" value="plantoes"> Plantões</label>
-          <label><input type="checkbox" class="userPerm" value="erros_equipe"> Erros da Equipe</label>
+          <label><input type="checkbox" class="userPerm" value="erros_equipe"> Erros da Equipe — visualizar registros do setor</label>
+          <label><input type="checkbox" class="userPerm" value="erros_lancar"> Lançar erros — visualizar somente os próprios lançamentos</label>
           <label><input type="checkbox" class="userPerm" value="manutencoes"> Manutenções Preventivas</label>
           <label><input type="checkbox" class="userPerm" value="relatorios"> Relatórios</label>
         </div>
@@ -856,12 +858,12 @@ function showLogin(){
   setTimeout(()=>document.getElementById('loginEmail').focus(),50);
 }
 
-const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','manutencoes','relatorios'];
+const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','erros_lancar','manutencoes','relatorios'];
 const ACTION_PERMISSIONS=['plantoes_excluir','solicitacoes_excluir','erros_excluir','manutencoes_excluir','erros_corrigir'];
 const PERMISSION_PRESETS={
   visualizador:['dashboard','agenda','historico','relatorios'],
-  operador:ALL_PERMISSIONS.slice(),
-  supervisor:ALL_PERMISSIONS.slice()
+  operador:['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','manutencoes','relatorios'],
+  supervisor:ALL_PERMISSIONS.filter(x=>x!=='erros_lancar').concat(ACTION_PERMISSIONS)
 };
 async function sbDelete(path){
   const rows=await sb(path,{method:'DELETE',headers:{Prefer:'return=representation'}});
@@ -925,15 +927,25 @@ function currentPermissions(){
   return Array.isArray(p)?p:[];
 }
 function canAccess(permission){return currentRole()==='admin'||currentPermissions().includes(permission)}
+function canAccessErrors(){return currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_lancar')}
+function canLaunchError(){return currentRole()==='admin'||canAccess('erros_lancar')||canAccess('erros_equipe')}
+function canEditError(r){
+  if(!r)return false;
+  if(currentRole()==='admin'||canAccess('erros_equipe'))return hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'');
+  return canAccess('erros_lancar')&&String(r.criado_por||'')===String(authSession?.user?.id||'')&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'');
+}
 function canDo(action){
   if(currentRole()==='admin')return true;
   const p=currentPermissions();
-  const parent={plantoes_excluir:'plantoes',solicitacoes_excluir:'solicitacoes',erros_excluir:'erros_equipe',manutencoes_excluir:'manutencoes',erros_corrigir:'erros_equipe'}[action];
+  if(action==='erros_excluir'){
+    return p.includes(action)&&(p.includes('erros_equipe')||(p.includes('erros_lancar')&&p.includes('erros_lancar')));
+  }
+  const parent={plantoes_excluir:'plantoes',solicitacoes_excluir:'solicitacoes',manutencoes_excluir:'manutencoes',erros_corrigir:'erros_equipe'}[action];
   return p.includes(action)&&(!parent||p.includes(parent));
 }
 function applyAccessControls(){
   Object.entries(NAV_PERMISSION).forEach(([id,perm])=>{
-    const el=document.getElementById(id); if(el)el.style.display=canAccess(perm)?'flex':'none';
+    const el=document.getElementById(id); if(el)el.style.display=(id==='errorsNav'?canAccessErrors():canAccess(perm))?'flex':'none';
   });
   const usersNav=document.getElementById('usersNav');
   if(usersNav)usersNav.style.display=currentRole()==='admin'?'flex':'none';
@@ -945,7 +957,7 @@ function showFirstAllowedView(){
   if(canAccess('historico'))return showHistory();
   if(canAccess('equipe'))return showTeam();
   if(canAccess('plantoes'))return showPlantoes();
-  if(canAccess('erros_equipe'))return showErrors();
+  if(canAccessErrors())return showErrors();
   if(canAccess('manutencoes'))return showAir();
   if(canAccess('relatorios'))return showReports();
   hideViews();
@@ -1840,6 +1852,8 @@ function fillErrorEmployees(){
   });
 }
 function openErrorModal(row=null){
+  if(!row&&!canLaunchError()){showToast('Você não tem permissão para lançar erros.');return}
+  if(row&&!canEditError(row)){showToast('Você só pode editar erros que lançou, ou erros do seu setor com permissão completa.');return}
   const modal=document.getElementById('errorModal');
   document.getElementById('errorForm').reset();
   document.getElementById('errorId').value=row?.id||'';
@@ -1871,13 +1885,17 @@ function openErrorModal(row=null){
 }
 function closeErrorModal(){const m=document.getElementById('errorModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
 async function showErrors(){
-  if(!canAccess('erros_equipe'))return;
+  if(!canAccessErrors())return;
   hideViews();document.getElementById('errorsView').style.display='block';setActiveNav('errorsNav');
+  const launchOnly=currentRole()!=='admin'&&!canAccess('erros_equipe')&&canAccess('erros_lancar');
+  const newBtn=document.getElementById('newErrorBtn');if(newBtn)newBtn.style.display=canLaunchError()?'':'none';
+  const weightsBox=document.getElementById('errorWeightsBox');if(weightsBox)weightsBox.style.display=canAccess('erros_equipe')||currentRole()==='admin'?'':'none';
+  const privacyNote=document.getElementById('errorPrivacyNotice');if(privacyNote)privacyNote.style.display=launchOnly?'block':'none';
   const mf=document.getElementById('errorMonthFilter');
   if(!mf.value){const d=new Date();mf.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
   const sf=document.getElementById('errorSectorFilter');
   const sfCur=sf.value;
-  const sectors=(typeof sectorCache!=='undefined' && sectorCache.length)?sectorCache.slice():[...new Set((teamCache||[]).map(e=>e.setor).filter(Boolean))];
+  const sectors=currentRole()==='admin'?sectorCache.slice():currentSectors();
   sf.innerHTML='<option value="">Todos os setores</option>'+sectors.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('');
   sf.value=sectors.includes(sfCur)?sfCur:'';
   const ef=document.getElementById('errorEmployeeFilter');
@@ -1992,7 +2010,9 @@ function renderErrors(){
   const sector=document.getElementById('errorSectorFilter')?.value||'';
   const emp=document.getElementById('errorEmployeeFilter').value;
   const st=document.getElementById('errorStatusFilter')?.value||'';
+  const ownOnly=currentRole()!=='admin'&&!canAccess('erros_equipe')&&canAccess('erros_lancar');
   const base=errorRows.filter(r=>{
+    if(ownOnly&&String(r.criado_por||'')!==String(authSession?.user?.id||''))return false;
     const s1=r.equipe1?.setor||'';
     const s2=r.equipe2?.setor||'';
     const sectorMatch=!sector||s1===sector||s2===sector;
@@ -2042,7 +2062,7 @@ function renderErrors(){
     <td>${fmtDate(r.data)}</td><td>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
     <td>${safe(r.tipo||'—')}${errIsRecurrent(r)?'<span class="err-badge rec" title="Mesmo tipo de erro com a mesma dupla/técnico nos últimos 30 dias">↻ Reincidente</span>':''}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${Number(r.peso||1)}${r.corrigido?`<span class="err-sub">conta ${fmtPts(errRowPoints(r))}</span>`:''}</td><td>${statusCell(r)}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
-    <td><div class="action-menu"><button type="button" class="action-trigger" onclick="toggleEmployeeActions(event,'e-${r.id}')">⋮ Ações</button><div class="action-dropdown" data-action-menu="e-${r.id}"><button type="button" data-error-edit="${r.id}">✏ Editar</button>${canDo('erros_excluir')?`<button type="button" class="danger" data-error-delete="${r.id}">🗑 Excluir</button>`:''}</div></div></td>
+    <td>${(canEditError(r)||(canDo('erros_excluir')&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'')))?`<div class="action-menu"><button type="button" class="action-trigger" onclick="toggleEmployeeActions(event,'e-${r.id}')">⋮ Ações</button><div class="action-dropdown" data-action-menu="e-${r.id}">${canEditError(r)?`<button type="button" data-error-edit="${r.id}">✏ Editar</button>`:''}${canDo('erros_excluir')&&(currentRole()==='admin'||canAccess('erros_equipe')||String(r.criado_por||'')===String(authSession?.user?.id||''))?`<button type="button" class="danger" data-error-delete="${r.id}">🗑 Excluir</button>`:''}</div></div>`:'—'}</td>
   </tr>`).join('')||'<tr><td colspan="10">Nenhum erro registrado neste mês.</td></tr>';
 }
 function openErrorFixModal(r){
@@ -2225,7 +2245,7 @@ async function loadPlantoesDashboard(){
 }
 async function loadErrorsDashboardAlert(){
   const box=document.getElementById('errorsDashboardBox');if(!box)return;
-  if(!canAccess('erros_equipe')){box.style.display='none';return}
+  if(!canAccessErrors()||!canAccess('erros_equipe')){box.style.display='none';return}
   try{
     const rows=await sb('erros_equipes?select=id,data,tipo,gravidade,corrigido,equipe1:equipe!erros_equipes_funcionario1_id_fkey(nome,setor),equipe2:equipe!erros_equipes_funcionario2_id_fkey(nome,setor)&corrigido=eq.false&order=data.asc&limit=300');
     const list=rows.filter(r=>hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||''));
@@ -2495,7 +2515,7 @@ async function userAdminApi(payload){
 }
 function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Nunca'}
 function permissionLabel(p){
-  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos'}[p]||p;
+  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe (visão do setor)',erros_lancar:'Lançar erros (somente próprios)',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos'}[p]||p;
 }
 async function loadUsers(){
   const tbody=document.getElementById('usersTableBody');
@@ -2547,7 +2567,7 @@ function updatePermissionUI(){
   document.getElementById('selectAllSectors').disabled=isAdmin;
   document.getElementById('clearAllSectors').disabled=isAdmin;
   document.getElementById('userSectorLabel').style.opacity=isAdmin?'.65':'1';
-  document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema e a todos os setores.':'Libere somente as áreas necessárias. Exclusões e correções são permissões separadas e devem ser marcadas apenas quando indispensáveis.';
+  document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema e a todos os setores.':'Para lançamento restrito, marque apenas “Lançar erros”: o usuário registra erros e vê somente os próprios. “Erros da Equipe” permite consultar os registros do setor.';
 }
 async function openUserModal(user=null){
   await loadSectors();
@@ -2846,6 +2866,9 @@ document.getElementById('errorEmployeeFilter').onchange=()=>{resetPage('errors')
 document.getElementById('errorForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('errorId').value;
+  const existing=id?errorRows.find(x=>String(x.id)===String(id)):null;
+  if(id&&!canEditError(existing)){showToast('Você não tem permissão para editar este erro.');return}
+  if(!id&&!canLaunchError()){showToast('Você não tem permissão para lançar erros.');return}
   const f1=Number(document.getElementById('errorEmployee1').value),useSecond=document.getElementById('useSecondErrorTech').checked,f2Raw=useSecond?document.getElementById('errorEmployee2').value:'',f2=f2Raw?Number(f2Raw):null;
   if(!f1)return showToast('Selecione o técnico.');
   if(useSecond&&!f2)return showToast('Selecione o segundo técnico ou desmarque a opção.');
@@ -2858,7 +2881,7 @@ document.getElementById('errorForm').onsubmit=async e=>{
   const btn=document.getElementById('saveError');btn.disabled=true;
   try{
     if(id)await sb(`erros_equipes?id=eq.${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
-    else await sb('erros_equipes',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(payload)});
+    else await sb('erros_equipes',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({...payload,criado_por:authSession?.user?.id||null})});
     closeErrorModal();showToast(id?'Erro atualizado!':(f2?'Erro registrado para a dupla!':'Erro registrado para o técnico!'));await loadErrors();
   }catch(err){console.error(err);showToast('Não foi possível salvar o erro.')}finally{btn.disabled=false}
 };
@@ -2874,7 +2897,7 @@ document.getElementById('errorsTableBody').onclick=async e=>{
     return;
   }
   const edit=e.target.closest('[data-error-edit]');
-  if(edit){const r=errorRows.find(x=>String(x.id)===edit.dataset.errorEdit);if(r)openErrorModal(r);return}
+  if(edit){const r=errorRows.find(x=>String(x.id)===edit.dataset.errorEdit);if(r&&canEditError(r))openErrorModal(r);else showToast('Você não tem permissão para editar este erro.');return}
   const del=e.target.closest('[data-error-delete]');
   if(del&&!canDo('erros_excluir')){showToast('Você não tem permissão para excluir erros.');return}
   if(del&&confirm('Excluir este registro de erro?')){
