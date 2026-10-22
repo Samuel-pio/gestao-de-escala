@@ -2099,14 +2099,21 @@ function plCopyText(txt,successMessage){
 function plCopy(){
   const vis=plVisible();
   if(!vis.length){showToast('Nenhum plantão para copiar.');return}
-  let txt='🗓️ *Próximos plantões*\\n';
-  plSectors(vis).forEach(sec=>{
-    txt+=`\\n*${sec}*\\n`;
-    vis.filter(r=>plSectorOf(r)===sec).forEach(r=>{
-      const range=r.data_inicial===r.data_final?`${plDm(r.data_inicial)} (${plWd(r.data_inicial)})`:`${plDm(r.data_inicial)} (${plWd(r.data_inicial)}) a ${plDm(r.data_final)} (${plWd(r.data_final)})`;
-      const names=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ')||'—';
+  // Formato compacto e legível para WhatsApp: título, setores e um plantão por linha.
+  let txt='🗓️ *Próximos plantões*\n';
+  const norm=x=>(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const sectors=plSectors(vis);
+  sectors.forEach(sec=>{
+    txt+=`\n*${sec}*\n`;
+    const rows=vis.filter(r=>plSectorOf(r)===sec).sort((a,b)=>a.data_inicial.localeCompare(b.data_inicial));
+    rows.forEach(r=>{
+      const start=`${plDm(r.data_inicial)} (${plWd(r.data_inicial)})`;
+      const end=`${plDm(r.data_final)} (${plWd(r.data_final)})`;
+      const range=r.data_inicial===r.data_final?start:`${start} a ${end}`;
+      const names=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ')||'Responsável não definido';
       const city=plCityOf(r),folga=plFolgaText(r);
-      txt+=`• ${range} — ${names}${city?` (${city})`:''}${folga?` | Folga: ${folga}`:''}\\n`;
+      const details=[city?city:'',folga?`Folga: ${folga}`:''].filter(Boolean).join(' | ');
+      txt+=`• ${range} — ${names}${details?` | ${details}`:''}\n`;
     });
   });
   plCopyText(txt,'Escala copiada! É só colar no WhatsApp.');
