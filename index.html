@@ -2124,25 +2124,32 @@ function plCopyGroupMessage(){
   let weekend=vis.filter(r=>r.data_inicial<=sunIso&&r.data_final>=satIso);
   if(!weekend.length)weekend=vis;
 
-  // Agrupa cada funcionário pela cidade do próprio cadastro, não pelo setor operacional.
+  // Call Center fica separado por função; as equipes de rua ficam separadas por cidade.
+  const callCenter=[];
   const byCity={};
+  const norm=x=>(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   weekend.forEach(r=>{
-    [[r.equipe?.nome,r.equipe?.cidade],[r.equipe2?.nome,r.equipe2?.cidade]].forEach(([name,city])=>{
+    [[r.equipe?.nome,r.equipe?.cidade,r.equipe?.setor],[r.equipe2?.nome,r.equipe2?.cidade,r.equipe2?.setor]].forEach(([name,city,sector])=>{
       if(!name)return;
-      const key=(city||'Cidade não informada').trim();
-      if(!byCity[key])byCity[key]=[];
-      if(!byCity[key].includes(name))byCity[key].push(name);
+      const setor=norm(sector);
+      if(setor.includes('call center')||setor.includes('atendimento')){
+        if(!callCenter.includes(name))callCenter.push(name);
+      }else{
+        const key=(city||'Cidade não informada').trim();
+        if(!byCity[key])byCity[key]=[];
+        if(!byCity[key].includes(name))byCity[key].push(name);
+      }
     });
   });
   const preferred=['Buritis','Arinos','Cabeceiras','Quantiver'];
   const cityNames=Object.keys(byCity).sort((a,b)=>{
-    const norm=x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     const ia=preferred.findIndex(x=>norm(x)===norm(a)),ib=preferred.findIndex(x=>norm(x)===norm(b));
     return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b,'pt-BR');
   });
   let txt=`Bom dia! 🌞\n\nSegue a escala do final de semana.\n\nSábado, das 12h00 às 18h00.\nDomingo, das 08h00 às 12h00.\n\n`;
+  if(callCenter.length)txt+=`*Call Center (Atendimento):* ${callCenter.join(' e ')}.\n`;
   cityNames.forEach(city=>{
-    const label=city==='Cidade não informada'?'Equipe':`Equipe ${city}`;
+    const label=city==='Cidade não informada'?'Equipe Operacional':`Equipe ${city} (Operacional)`;
     txt+=`${label}: ${byCity[city].join(' e ')}.\n`;
   });
   txt+='\n*Que todos tenham um excelente plantão! 🍀👨🏽‍💻👨🏼‍🏭*';
