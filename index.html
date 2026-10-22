@@ -2128,15 +2128,14 @@ function plCopyGroupMessage(){
     if(!bySector[sec])bySector[sec]=[];
     [r.equipe?.nome,r.equipe2?.nome].filter(Boolean).forEach(n=>{if(!bySector[sec].includes(n))bySector[sec].push(n)});
   });
-  const labels={'Call Center':'Call center','Buritis':'Equipe Buritis','Cabeceiras':'Equipe Cabeceiras','Arinos':'Equipe Arinos','Infraestrutura':'Infraestrutura'};
+  const labels={'Call Center':'Atendimento','Buritis':'Equipe Buritis','Cabeceiras':'Equipe Cabeceiras','Arinos':'Equipe Arinos','Infraestrutura':'Infraestrutura'};
   const order=['Call Center','Buritis','Cabeceiras','Arinos','Infraestrutura'];
   const sectors=[...Object.keys(bySector).sort((a,b)=>{
     const ia=order.indexOf(a),ib=order.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b,'pt-BR')
   })];
-  const dateLine=`Sábado, das 12h00 às 18h00.\\nDomingo, das 08h00 às 12h00.`;
-  let txt=`Bom dia! 🌞\\nSegue a escala do final de semana.\\n${dateLine}\\n`;
-  sectors.forEach(sec=>{txt+=`${labels[sec]||sec}: ${bySector[sec].join(' e ')||'A definir'}.\\n`});
-  txt+='Que todos tenham um excelente plantão! 🍀👨🏽‍💻👨🏼‍🏭';
+  let txt=`Bom dia! 🌞\n\nSegue a escala do final de semana.\n\nSábado, das 12h00 às 18h00.\nDomingo, das 08h00 às 12h00.\n\n`;
+  sectors.forEach(sec=>{txt+=`${labels[sec]||sec}: ${bySector[sec].join(' e ')||'A definir'}.\n`});
+  txt+='\n*Que todos tenham um excelente plantão! 🍀👨🏽‍💻👨🏼‍🏭*';
   plCopyText(txt,'Mensagem pronta para o grupo copiada!');
 }
 function plCopyFallback(txt,done){
