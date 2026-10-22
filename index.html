@@ -1248,7 +1248,7 @@ function renderAgendaHolidayBox(){
   box.style.display=(isAdmin||list.length)?'block':'none';
   document.getElementById('agendaHolidayList').innerHTML=list.map(h=>{
     const shifts=(agendaPlantoes||[]).filter(p=>p.data_inicial<=h.data&&p.data_final>=h.data&&String(p.observacao||'').toLocaleLowerCase('pt-BR').includes(('Plantão de feriado: '+h.nome).toLocaleLowerCase('pt-BR')));
-    const shiftButtons=canPl?(shifts.length?shifts.map(p=>`<button type="button" class="mini-btn approve" onclick="editHolidayPlantao(${p.id})">Editar plantão${shifts.length>1?' #'+p.id:''}</button>`).join(''):`<button type="button" class="mini-btn approve" onclick="scheduleHolidayPlantao(${h.id})">Escalar plantão</button>`):'';
+    const shiftButtons=canPl?(shifts.length?shifts.map(p=>`<span style="display:inline-flex;gap:5px;flex-wrap:wrap"><button type="button" class="mini-btn approve" onclick="editHolidayPlantao(${p.id})">Editar plantão${shifts.length>1?' #'+p.id:''}</button>${isAdmin?`<button type="button" class="mini-btn deny" onclick="removeHolidayPlantao(${p.id})" title="Remover a escala deste feriado">Remover plantão</button>`:''}</span>`).join(''):`<button type="button" class="mini-btn approve" onclick="scheduleHolidayPlantao(${h.id})">Escalar plantão</button>`):'';
     const assigned=shifts.map(p=>[p.equipe?.nome,p.equipe2?.nome].filter(Boolean).join(' + ')).filter(Boolean);
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:7px 0"><span>🎌 <b>${safe(h.nome)}</b> <small style="color:#8d8c80">(${h.cidade?safe(h.cidade):'todas as cidades'})</small>${assigned.length?`<small style="display:block;color:#555;margin:3px 0 0 22px">Plantão: ${assigned.map(safe).join(' / ')}</small>`:''}</span><span style="display:flex;gap:6px;flex-wrap:wrap">${shiftButtons}${isAdmin?`<button type="button" class="mini-btn deny" onclick="deleteHoliday(${h.id})">Remover</button>`:''}</span></div>`;
   }).join('');
@@ -1276,6 +1276,19 @@ async function deleteHoliday(id){
   if(!window.confirm(`Remover o feriado "${h.nome}" de ${fmtDate(h.data)}?\n\nPlantões já escalados nesse dia não serão apagados.`))return;
   try{await sb(`feriados?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Feriado removido.');await load()}
   catch(e){console.error(e);showToast('Não foi possível remover o feriado.')}
+}
+
+async function removeHolidayPlantao(id){
+  if(currentRole()!=='admin')return showToast('Apenas administradores podem remover o plantão do feriado.');
+  const p=(agendaPlantoes||[]).find(x=>String(x.id)===String(id));
+  if(!p)return showToast('Plantão não encontrado. Atualize a Agenda e tente novamente.');
+  const nomes=[p.equipe?.nome,p.equipe2?.nome].filter(Boolean).join(' e ')||'os funcionários escalados';
+  if(!window.confirm(`Remover o plantão de feriado de ${nomes} em ${fmtDate(p.data_inicial)}?\n\nUse esta opção se o local ficará fechado e ninguém deverá ficar de plantão. O feriado continuará cadastrado na Agenda.`))return;
+  try{
+    await sb(`plantoes?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    showToast('Plantão do feriado removido. O feriado foi mantido na Agenda.');
+    await load();
+  }catch(e){console.error(e);showToast('Não foi possível remover o plantão. Verifique sua permissão.');}
 }
 
 async function editHolidayPlantao(id){
