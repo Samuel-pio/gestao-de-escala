@@ -2064,7 +2064,7 @@ function exportErrorsCSV(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`erros-equipe-${document.getElementById('errorMonthFilter').value||'periodo'}.csv`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
-let plDash={rows:[],folga:{},showNext:false,city:''};
+let plDash={rows:[],folga:{},showNext:false,city:'',sector:''};
 const plDm=d=>d.slice(8,10)+'/'+d.slice(5,7);
 const plWd=d=>new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','');
 const plSectorOf=r=>r.equipe?.setor||r.equipe2?.setor||'Sem setor';
@@ -2082,7 +2082,7 @@ function plFolgaText(r){
 function plVisible(){
   const t=new Date(todayIsoLocal()+'T12:00:00');
   const endCur=iso(new Date(t.getFullYear(),t.getMonth()+1,0));
-  return plDash.rows.filter(r=>(plDash.showNext||r.data_inicial<=endCur)&&(!plDash.city||plCityOf(r)===plDash.city));
+  return plDash.rows.filter(r=>(plDash.showNext||r.data_inicial<=endCur)&&(!plDash.city||plCityOf(r)===plDash.city)&&(!plDash.sector||plSectorOf(r)===plDash.sector));
 }
 function plSectors(list){
   const order=(typeof sectorCache!=='undefined'&&sectorCache.length)?sectorCache:[];
@@ -2090,6 +2090,7 @@ function plSectors(list){
 }
 function plToggleNext(){plDash.showNext=!plDash.showNext;renderPlantoesDashboard()}
 function plSetCity(v){plDash.city=v;renderPlantoesDashboard()}
+function plSetSector(v){plDash.sector=v;renderPlantoesDashboard()}
 function plCopyText(txt,successMessage){
   const done=()=>showToast(successMessage);
   if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(txt).then(done).catch(()=>plCopyFallback(txt,done));
@@ -2158,17 +2159,23 @@ function renderPlantoesDashboard(){
   const today=todayIsoLocal();const t=new Date(today+'T12:00:00');
   box.style.display=plDash.rows.length?'block':'none';
   const cities=[...new Set(plDash.rows.map(plCityOf))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const sectors=[...new Set(plDash.rows.map(plSectorOf))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   if(plDash.city&&!cities.includes(plDash.city))plDash.city='';
+  if(plDash.sector&&!sectors.includes(plDash.sector))plDash.sector='';
   const vis=plVisible();
   document.getElementById('plantoesDashboardBadge').textContent=vis.length;
   document.getElementById('plantoesDashboardControls').innerHTML=
-    (cities.length>1?`<select onchange="plSetCity(this.value)"><option value="">Todas as cidades</option>${cities.map(c=>`<option value="${safe(c)}"${c===plDash.city?' selected':''}>${safe(c)}</option>`).join('')}</select>`:'')+
+    (cities.length>1?`<select aria-label="Filtrar por cidade" onchange="plSetCity(this.value)"><option value="">Todas as cidades</option>${cities.map(c=>`<option value="${safe(c)}"${c===plDash.city?' selected':''}>${safe(c)}</option>`).join('')}</select>`:'')+
+    (sectors.length>1?`<select aria-label="Filtrar por setor" onchange="plSetSector(this.value)"><option value="">Todos os setores</option>${sectors.map(c=>`<option value="${safe(c)}"${c===plDash.sector?' selected':''}>${safe(c)}</option>`).join('')}</select>`:'')+
     `<button type="button" onclick="plToggleNext()">${plDash.showNext?'Só este mês':'Ver próximo mês'}</button>`+
     `<button type="button" class="primary-soft" onclick="plCopy()">📋 Copiar escala</button>`+
     `<button type="button" onclick="plCopyGroupMessage()">💬 Mensagem para o grupo</button>`;
   if(!vis.length){document.getElementById('plantoesDashboardList').innerHTML='<div style="color:#77766b;padding:10px 0">Nenhum plantão neste filtro.</div>';return}
-  const colHtml=sec=>{
-    const items=vis.filter(r=>plSectorOf(r)===sec);
+  // Cada cartão representa uma combinação de cidade + setor para evitar misturar equipes.
+  const groups=[...new Map(vis.map(r=>[`${plCityOf(r)||'Cidade não informada'}|||${plSectorOf(r)}`,{city:plCityOf(r)||'Cidade não informada',sector:plSectorOf(r)}])).values()]
+    .sort((a,b)=>a.city.localeCompare(b.city,'pt-BR')||a.sector.localeCompare(b.sector,'pt-BR'));
+  const colHtml=group=>{
+    const items=vis.filter(r=>(plCityOf(r)||'Cidade não informada')===group.city&&plSectorOf(r)===group.sector);
     let lastMonth='',rowsHtml='';
     items.forEach(r=>{
       const ref=r.data_inicial<today?today:r.data_inicial;
@@ -2183,9 +2190,9 @@ function renderPlantoesDashboard(){
       const tag=ongoing?'<span class="pl-tag now">Em andamento</span>':days===1?'<span class="pl-tag">Amanhã</span>':days<=7?`<span class="pl-tag">Em ${days} dias</span>`:'';
       rowsHtml+=`<div class="pl-item${ongoing?' now':''}"><div class="pl-date">${dateHtml}</div><div class="pl-info"><div class="pl-names">${safe(names)}</div><div class="pl-meta">${city?`<span>${safe(city)}</span>`:''}${tag}</div>${folga?`<div class="pl-folga">🏖️ Folga: ${safe(folga)}</div>`:''}</div></div>`;
     });
-    return `<div class="pl-col"><div class="pl-col-head"><h3>${safe(sec)}</h3><span>${items.length}</span></div>${rowsHtml}</div>`;
+    return `<div class="pl-col"><div class="pl-col-head"><h3>${safe(group.city)} • ${safe(group.sector)}</h3><span>${items.length}</span></div>${rowsHtml}</div>`;
   };
-  document.getElementById('plantoesDashboardList').innerHTML=`<div class="pl-grid">${plSectors(vis).map(colHtml).join('')}</div>`;
+  document.getElementById('plantoesDashboardList').innerHTML=`<div class="pl-grid">${groups.map(colHtml).join('')}</div>`;
 }
 async function loadPlantoesDashboard(){
   const box=document.getElementById('plantoesDashboardBox');if(!box)return;
