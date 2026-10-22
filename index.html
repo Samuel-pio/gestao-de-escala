@@ -2153,11 +2153,11 @@ function plCopyGroupMessage(){
     const ia=preferred.findIndex(x=>norm(x)===norm(a)),ib=preferred.findIndex(x=>norm(x)===norm(b));
     return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b,'pt-BR');
   });
-  let txt=`Bom dia! 🌞\n\nSegue a escala do final de semana.\n\nSábado, das 12h00 às 18h00.\nDomingo, das 08h00 às 12h00.\n\n`;
+  let txt=`*Bom dia! 🌞*\n\n*Segue a escala do final de semana.*\n\n*Sábado, das 12h00 às 18h00.*\n*Domingo, das 08h00 às 12h00.*\n\n`;
   if(callCenter.length)txt+=`*Call Center (Atendimento):* ${callCenter.join(' e ')}.\n`;
   cityNames.forEach(city=>{
     const label=city==='Cidade não informada'?'Equipe Operacional':`Equipe ${city} (Operacional)`;
-    txt+=`${label}: ${byCity[city].join(' e ')}.\n`;
+    txt+=`*${label}:* ${byCity[city].join(' e ')}.\n`;
   });
   txt+='\n*Que todos tenham um excelente plantão! 🍀👨🏽‍💻👨🏼‍🏭*';
   plCopyText(txt,'Mensagem pronta para o grupo copiada!');
