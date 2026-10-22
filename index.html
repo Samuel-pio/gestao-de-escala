@@ -2116,25 +2116,34 @@ function plCopyGroupMessage(){
   // Prioriza a próxima janela de sábado e domingo; se não houver plantão nesse intervalo,
   // utiliza a escala que já está visível no painel.
   const now=new Date(todayIsoLocal()+'T12:00:00');
-  const saturday=new Date(now); const daysToSat=(6-saturday.getDay()+7)%7;
+  const saturday=new Date(now);const daysToSat=(6-saturday.getDay()+7)%7;
   saturday.setDate(saturday.getDate()+daysToSat);
   const sunday=new Date(saturday);sunday.setDate(sunday.getDate()+1);
   const satIso=iso(saturday),sunIso=iso(sunday);
   let weekend=vis.filter(r=>r.data_inicial<=sunIso&&r.data_final>=satIso);
   if(!weekend.length)weekend=vis;
-  const bySector={};
+
+  // Agrupa cada funcionário pela cidade do próprio cadastro, não pelo setor operacional.
+  const byCity={};
   weekend.forEach(r=>{
-    const sec=plSectorOf(r)||'Equipe';
-    if(!bySector[sec])bySector[sec]=[];
-    [r.equipe?.nome,r.equipe2?.nome].filter(Boolean).forEach(n=>{if(!bySector[sec].includes(n))bySector[sec].push(n)});
+    [[r.equipe?.nome,r.equipe?.cidade],[r.equipe2?.nome,r.equipe2?.cidade]].forEach(([name,city])=>{
+      if(!name)return;
+      const key=(city||'Cidade não informada').trim();
+      if(!byCity[key])byCity[key]=[];
+      if(!byCity[key].includes(name))byCity[key].push(name);
+    });
   });
-  const labels={'Call Center':'Atendimento','Buritis':'Equipe Buritis','Cabeceiras':'Equipe Cabeceiras','Arinos':'Equipe Arinos','Infraestrutura':'Infraestrutura'};
-  const order=['Call Center','Buritis','Cabeceiras','Arinos','Infraestrutura'];
-  const sectors=[...Object.keys(bySector).sort((a,b)=>{
-    const ia=order.indexOf(a),ib=order.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b,'pt-BR')
-  })];
+  const preferred=['Buritis','Arinos','Cabeceiras','Quantiver'];
+  const cityNames=Object.keys(byCity).sort((a,b)=>{
+    const norm=x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const ia=preferred.findIndex(x=>norm(x)===norm(a)),ib=preferred.findIndex(x=>norm(x)===norm(b));
+    return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b,'pt-BR');
+  });
   let txt=`Bom dia! 🌞\n\nSegue a escala do final de semana.\n\nSábado, das 12h00 às 18h00.\nDomingo, das 08h00 às 12h00.\n\n`;
-  sectors.forEach(sec=>{txt+=`${labels[sec]||sec}: ${bySector[sec].join(' e ')||'A definir'}.\n`});
+  cityNames.forEach(city=>{
+    const label=city==='Cidade não informada'?'Equipe':`Equipe ${city}`;
+    txt+=`${label}: ${byCity[city].join(' e ')}.\n`;
+  });
   txt+='\n*Que todos tenham um excelente plantão! 🍀👨🏽‍💻👨🏼‍🏭*';
   plCopyText(txt,'Mensagem pronta para o grupo copiada!');
 }
