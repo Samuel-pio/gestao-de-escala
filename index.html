@@ -651,7 +651,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
       </div>
       <div id="permissionsBox" style="margin-top:18px;border-top:1px solid #e6e4d6;padding-top:16px">
         <div style="margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div><b>Permissões de acesso</b><div id="permissionsHint" style="font-size:13px;color:#6f6e63;margin-top:3px">Marque apenas as áreas que esse usuário poderá acessar.</div></div>
+          <div><b>Permissões de acesso</b><div id="permissionsHint" style="font-size:13px;color:#6f6e63;margin-top:3px">Libere somente as áreas necessárias. Exclusões e correções são permissões separadas e devem ser marcadas apenas quando indispensáveis.</div></div>
           <div style="display:flex;gap:6px">
             <button type="button" class="mini" id="selectAllPermissions">Marcar todas</button>
             <button type="button" class="mini" id="clearAllPermissions">Limpar</button>
@@ -861,7 +861,7 @@ const ACTION_PERMISSIONS=['plantoes_excluir','solicitacoes_excluir','erros_exclu
 const PERMISSION_PRESETS={
   visualizador:['dashboard','agenda','historico','relatorios'],
   operador:ALL_PERMISSIONS.slice(),
-  supervisor:ALL_PERMISSIONS.concat(ACTION_PERMISSIONS)
+  supervisor:ALL_PERMISSIONS.slice()
 };
 async function sbDelete(path){
   const rows=await sb(path,{method:'DELETE',headers:{Prefer:'return=representation'}});
@@ -925,7 +925,12 @@ function currentPermissions(){
   return Array.isArray(p)?p:[];
 }
 function canAccess(permission){return currentRole()==='admin'||currentPermissions().includes(permission)}
-function canDo(action){return currentRole()==='admin'||currentPermissions().includes(action)}
+function canDo(action){
+  if(currentRole()==='admin')return true;
+  const p=currentPermissions();
+  const parent={plantoes_excluir:'plantoes',solicitacoes_excluir:'solicitacoes',erros_excluir:'erros_equipe',manutencoes_excluir:'manutencoes',erros_corrigir:'erros_equipe'}[action];
+  return p.includes(action)&&(!parent||p.includes(parent));
+}
 function applyAccessControls(){
   Object.entries(NAV_PERMISSION).forEach(([id,perm])=>{
     const el=document.getElementById(id); if(el)el.style.display=canAccess(perm)?'flex':'none';
@@ -2085,22 +2090,54 @@ function plSectors(list){
 }
 function plToggleNext(){plDash.showNext=!plDash.showNext;renderPlantoesDashboard()}
 function plSetCity(v){plDash.city=v;renderPlantoesDashboard()}
+function plCopyText(txt,successMessage){
+  const done=()=>showToast(successMessage);
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(txt).then(done).catch(()=>plCopyFallback(txt,done));
+  else plCopyFallback(txt,done);
+}
 function plCopy(){
   const vis=plVisible();
   if(!vis.length){showToast('Nenhum plantão para copiar.');return}
-  let txt='🗓️ *Próximos plantões*\n';
+  let txt='🗓️ *Próximos plantões*\\n';
   plSectors(vis).forEach(sec=>{
-    txt+=`\n*${sec}*\n`;
+    txt+=`\\n*${sec}*\\n`;
     vis.filter(r=>plSectorOf(r)===sec).forEach(r=>{
       const range=r.data_inicial===r.data_final?`${plDm(r.data_inicial)} (${plWd(r.data_inicial)})`:`${plDm(r.data_inicial)} (${plWd(r.data_inicial)}) a ${plDm(r.data_final)} (${plWd(r.data_final)})`;
       const names=[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ')||'—';
       const city=plCityOf(r),folga=plFolgaText(r);
-      txt+=`• ${range} — ${names}${city?` (${city})`:''}${folga?` | Folga: ${folga}`:''}\n`;
+      txt+=`• ${range} — ${names}${city?` (${city})`:''}${folga?` | Folga: ${folga}`:''}\\n`;
     });
   });
-  const done=()=>showToast('Escala copiada! É só colar no WhatsApp.');
-  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(txt).then(done).catch(()=>plCopyFallback(txt,done));
-  else plCopyFallback(txt,done);
+  plCopyText(txt,'Escala copiada! É só colar no WhatsApp.');
+}
+function plCopyGroupMessage(){
+  const vis=plVisible();
+  if(!vis.length){showToast('Nenhum plantão para montar a mensagem.');return}
+  // Prioriza a próxima janela de sábado e domingo; se não houver plantão nesse intervalo,
+  // utiliza a escala que já está visível no painel.
+  const now=new Date(todayIsoLocal()+'T12:00:00');
+  const saturday=new Date(now); const daysToSat=(6-saturday.getDay()+7)%7;
+  saturday.setDate(saturday.getDate()+daysToSat);
+  const sunday=new Date(saturday);sunday.setDate(sunday.getDate()+1);
+  const satIso=iso(saturday),sunIso=iso(sunday);
+  let weekend=vis.filter(r=>r.data_inicial<=sunIso&&r.data_final>=satIso);
+  if(!weekend.length)weekend=vis;
+  const bySector={};
+  weekend.forEach(r=>{
+    const sec=plSectorOf(r)||'Equipe';
+    if(!bySector[sec])bySector[sec]=[];
+    [r.equipe?.nome,r.equipe2?.nome].filter(Boolean).forEach(n=>{if(!bySector[sec].includes(n))bySector[sec].push(n)});
+  });
+  const labels={'Call Center':'Call center','Buritis':'Equipe Buritis','Cabeceiras':'Equipe Cabeceiras','Arinos':'Equipe Arinos','Infraestrutura':'Infraestrutura'};
+  const order=['Call Center','Buritis','Cabeceiras','Arinos','Infraestrutura'];
+  const sectors=[...Object.keys(bySector).sort((a,b)=>{
+    const ia=order.indexOf(a),ib=order.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b,'pt-BR')
+  })];
+  const dateLine=`Sábado, das 12h00 às 18h00.\\nDomingo, das 08h00 às 12h00.`;
+  let txt=`Bom dia! 🌞\\nSegue a escala do final de semana.\\n${dateLine}\\n`;
+  sectors.forEach(sec=>{txt+=`${labels[sec]||sec}: ${bySector[sec].join(' e ')||'A definir'}.\\n`});
+  txt+='Que todos tenham um excelente plantão! 🍀👨🏽‍💻👨🏼‍🏭';
+  plCopyText(txt,'Mensagem pronta para o grupo copiada!');
 }
 function plCopyFallback(txt,done){
   const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
@@ -2119,7 +2156,8 @@ function renderPlantoesDashboard(){
   document.getElementById('plantoesDashboardControls').innerHTML=
     (cities.length>1?`<select onchange="plSetCity(this.value)"><option value="">Todas as cidades</option>${cities.map(c=>`<option value="${safe(c)}"${c===plDash.city?' selected':''}>${safe(c)}</option>`).join('')}</select>`:'')+
     `<button type="button" onclick="plToggleNext()">${plDash.showNext?'Só este mês':'Ver próximo mês'}</button>`+
-    `<button type="button" class="primary-soft" onclick="plCopy()">📋 Copiar escala</button>`;
+    `<button type="button" class="primary-soft" onclick="plCopy()">📋 Copiar escala</button>`+
+    `<button type="button" onclick="plCopyGroupMessage()">💬 Mensagem para o grupo</button>`;
   if(!vis.length){document.getElementById('plantoesDashboardList').innerHTML='<div style="color:#77766b;padding:10px 0">Nenhum plantão neste filtro.</div>';return}
   const colHtml=sec=>{
     const items=vis.filter(r=>plSectorOf(r)===sec);
@@ -2480,7 +2518,7 @@ function updatePermissionUI(){
   document.getElementById('selectAllSectors').disabled=isAdmin;
   document.getElementById('clearAllSectors').disabled=isAdmin;
   document.getElementById('userSectorLabel').style.opacity=isAdmin?'.65':'1';
-  document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema e a todos os setores.':'Marque apenas as áreas que esse usuário poderá acessar.';
+  document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema e a todos os setores.':'Libere somente as áreas necessárias. Exclusões e correções são permissões separadas e devem ser marcadas apenas quando indispensáveis.';
 }
 async function openUserModal(user=null){
   await loadSectors();
