@@ -2831,7 +2831,7 @@ document.getElementById('alertPanel').onclick=e=>{
   if(target==='maintenance'&&canAccess('manutencoes'))showAir();
 };
 document.addEventListener('click',()=>toggleAlertPanel(false));
-document.getElementById('errorsNav').onclick=()=>{if(canAccess('erros_equipe'))showErrors()};
+document.getElementById('errorsNav').onclick=()=>{if(canAccessErrors())showErrors()};
 document.getElementById('newErrorBtn').onclick=()=>openErrorModal();
 document.getElementById('closeErrorModal').onclick=closeErrorModal;
 document.getElementById('closeErrorFix').onclick=closeErrorFixModal;
