@@ -663,6 +663,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
         <div style="margin:0 0 12px"><label style="font-size:13px;color:#6f6e63">Nível rápido <select id="userPreset" style="margin-left:6px;border:1px solid #dcdacb;border-radius:8px;padding:7px 10px;background:white;color:#111111"><option value="">Personalizado</option><option value="visualizador">Visualizador — só consulta</option><option value="operador">Operador — lança e edita, sem excluir</option><option value="supervisor">Supervisor — operador + pode excluir lançamentos</option></select></label></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
           <label><input type="checkbox" class="userPerm" value="dashboard"> Dashboard</label>
+          <label><input type="checkbox" class="userPerm" value="dashboard_plantoes_todos"> Dashboard — visualizar plantões de todas as cidades</label>
           <label><input type="checkbox" class="userPerm" value="agenda"> Agenda</label>
           <label><input type="checkbox" class="userPerm" value="nova_solicitacao"> Nova Solicitação</label>
           <label><input type="checkbox" class="userPerm" value="solicitacoes"> Solicitações</label>
@@ -860,7 +861,7 @@ function showLogin(){
   setTimeout(()=>document.getElementById('loginEmail').focus(),50);
 }
 
-const ALL_PERMISSIONS=['dashboard','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','erros_lancar','manutencoes','relatorios'];
+const ALL_PERMISSIONS=['dashboard','dashboard_plantoes_todos','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','erros_lancar','manutencoes','relatorios'];
 const ACTION_PERMISSIONS=['plantoes_excluir','solicitacoes_excluir','erros_excluir','manutencoes_excluir','erros_corrigir'];
 const PERMISSION_PRESETS={
   visualizador:['dashboard','agenda','historico','relatorios'],
@@ -2244,7 +2245,7 @@ async function loadPlantoesDashboard(){
     const t=new Date(today+'T12:00:00');
     const end=iso(new Date(t.getFullYear(),t.getMonth()+2,0));
     const rows=await sb(`plantoes?select=id,data_inicial,data_final,folga_solicitacao_id,folga2_solicitacao_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_final=gte.${today}&data_inicial=lte.${end}&order=data_inicial.asc&limit=300`);
-    const list=rows.filter(r=>hasSectorAccess(r.equipe?.setor||r.equipe2?.setor||''));
+    const list=rows.filter(r=>canAccess('dashboard_plantoes_todos')||hasSectorAccess(r.equipe?.setor||r.equipe2?.setor||''));
     const ids=[...new Set(list.flatMap(r=>[r.folga_solicitacao_id,r.folga2_solicitacao_id]).filter(Boolean))];
     const folga={};
     if(ids.length){try{(await sb(`solicitacoes?select=id,data_inicial,data_final,status&id=in.(${ids.join(',')})`)).forEach(x=>folga[x.id]=x)}catch(e){console.warn('Folgas dos plantões indisponíveis',e)}}
@@ -2524,7 +2525,7 @@ async function userAdminApi(payload){
 }
 function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Nunca'}
 function permissionLabel(p){
-  return {dashboard:'Dashboard',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe (visão do setor)',erros_lancar:'Lançar erros (somente próprios)',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos'}[p]||p;
+  return {dashboard:'Dashboard',dashboard_plantoes_todos:'Dashboard — visualizar plantões de todas as cidades',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe (visão do setor)',erros_lancar:'Lançar erros (somente próprios)',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos'}[p]||p;
 }
 async function loadUsers(){
   const tbody=document.getElementById('usersTableBody');
