@@ -2052,11 +2052,14 @@ function renderErrors(){
     if(!teams[teamKey])teams[teamKey]={errors:0,points:0,sector:sectorName,label:key};
     teams[teamKey].errors++;teams[teamKey].points+=errRowPoints(r);
   });
+  // O resumo de notas/pesos foi removido da interface; renderizar apenas se existir em versões antigas.
   const summary=document.getElementById('errorSummary');
-  summary.innerHTML=Object.entries(teams).sort((a,b)=>a[1].points-b[1].points).map(([_,v])=>{
-    const note=Math.max(0,10-(v.points/2));
-    return `<div class="card"><p><span style="display:inline-block;padding:3px 7px;border-radius:999px;background:#efede2;color:#55544c;font-size:11px;margin-bottom:5px">${safe(v.sector)}</span><br>${safe(v.label)}</p><b>${note.toFixed(1)}</b><small>${scoreClass(note)} · ${v.errors} ${v.errors===1?'erro':'erros'} · ${fmtPts(v.points)} pts</small></div>`;
-  }).join('')||'<div style="color:#77766b">Nenhum erro registrado neste período.</div>';
+  if(summary){
+    summary.innerHTML=Object.entries(teams).sort((a,b)=>a[1].points-b[1].points).map(([_,v])=>{
+      const note=Math.max(0,10-(v.points/2));
+      return `<div class="card"><p><span style="display:inline-block;padding:3px 7px;border-radius:999px;background:#efede2;color:#55544c;font-size:11px;margin-bottom:5px">${safe(v.sector)}</span><br>${safe(v.label)}</p><b>${note.toFixed(1)}</b><small>${scoreClass(note)} · ${v.errors} ${v.errors===1?'erro':'erros'} · ${fmtPts(v.points)} pts</small></div>`;
+    }).join('')||'<div style="color:#77766b">Nenhum erro registrado neste período.</div>';
+  }
   errorRows.forEach(r=>{if(r.tipo)knownErrorTypes.add(r.tipo.trim())});
   const dl=document.getElementById('errorTypeList');if(dl)dl.innerHTML=[...knownErrorTypes].sort((a,b)=>a.localeCompare(b,'pt-BR')).map(t=>`<option value="${safe(t)}"></option>`).join('');
   const statusCell=r=>{
