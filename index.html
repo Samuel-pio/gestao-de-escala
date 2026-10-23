@@ -1970,9 +1970,11 @@ async function loadErrorAuthors(){
     const raw=(me.user_metadata?.name||email.split('@')[0]||'Usuário').replace(/[._-]+/g,' ').trim();
     window.errorAuthorMap[me.id]=raw.replace(/\b\w/g,c=>c.toUpperCase());
   }
-  if(currentRole()==='admin'){
+  if(currentRole()==='admin'||canAccess('erros_equipe')){
     try{
-      const data=await userAdminApi({action:'list'});
+      // Ação dedicada: retorna apenas IDs e nomes dos usuários para identificar quem lançou cada erro.
+      // Não usa a ação administrativa 'list', que é restrita a administradores.
+      const data=await userAdminApi({action:currentRole()==='admin'?'list':'error-authors'});
       (data.users||[]).forEach(u=>{
         const raw=(u.name||u.user_metadata?.name||u.email?.split('@')[0]||'Usuário').replace(/[._-]+/g,' ').trim();
         window.errorAuthorMap[u.id]=raw.replace(/\b\w/g,c=>c.toUpperCase());
