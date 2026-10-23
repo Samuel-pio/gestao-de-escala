@@ -1993,9 +1993,9 @@ async function loadErrorAuthors(){
     const raw=(me.user_metadata?.name||email.split('@')[0]||'Usuário').replace(/[._-]+/g,' ').trim();
     window.errorAuthorMap[me.id]=raw.replace(/\b\w/g,c=>c.toUpperCase());
   }
-  if(currentRole()==='admin'){
+  if(currentRole()==='admin'||canAccess('erros_equipe')){
     try{
-      const data=await userAdminApi({action:'list'});
+      const data=await userAdminApi({action:currentRole()==='admin'?'list':'error-authors'});
       (data.users||[]).forEach(u=>{
         const raw=(u.name||u.user_metadata?.name||u.email?.split('@')[0]||'Usuário').replace(/[._-]+/g,' ').trim();
         window.errorAuthorMap[u.id]=raw.replace(/\b\w/g,c=>c.toUpperCase());
@@ -2178,9 +2178,10 @@ function plCopyGroupMessage(){
   let weekend=vis.filter(r=>r.data_inicial<=sunIso&&r.data_final>=satIso);
   if(!weekend.length)weekend=vis;
 
-  // Call Center fica separado por função; as equipes de rua ficam separadas por cidade.
+  // Call Center separado por função; Operacional e Infraestrutura separados por cidade.
   const callCenter=[];
   const byCity={};
+  const infraByCity={};
   const norm=x=>(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   weekend.forEach(r=>{
     [[r.equipe?.nome,r.equipe?.cidade,r.equipe?.setor],[r.equipe2?.nome,r.equipe2?.cidade,r.equipe2?.setor]].forEach(([name,city,sector])=>{
@@ -2188,6 +2189,10 @@ function plCopyGroupMessage(){
       const setor=norm(sector);
       if(setor.includes('call center')||setor.includes('atendimento')){
         if(!callCenter.includes(name))callCenter.push(name);
+      }else if(setor.includes('infra')){
+        const key=(city||'Cidade não informada').trim();
+        if(!infraByCity[key])infraByCity[key]=[];
+        if(!infraByCity[key].includes(name))infraByCity[key].push(name);
       }else{
         const key=(city||'Cidade não informada').trim();
         if(!byCity[key])byCity[key]=[];
@@ -2196,15 +2201,21 @@ function plCopyGroupMessage(){
     });
   });
   const preferred=['Buritis','Arinos','Cabeceiras','Quantiver'];
-  const cityNames=Object.keys(byCity).sort((a,b)=>{
+  const sortCities=items=>Object.keys(items).sort((a,b)=>{
     const ia=preferred.findIndex(x=>norm(x)===norm(a)),ib=preferred.findIndex(x=>norm(x)===norm(b));
     return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b,'pt-BR');
   });
+  const cityNames=sortCities(byCity);
+  const infraCityNames=sortCities(infraByCity);
   let txt=`*Bom dia! 🌞*\n\n*Segue a escala do final de semana.*\n\n*Sábado, das 12h00 às 18h00.*\n*Domingo, das 08h00 às 12h00.*\n\n`;
   if(callCenter.length)txt+=`*Call Center (Atendimento):* ${callCenter.join(' e ')}.\n`;
   cityNames.forEach(city=>{
     const label=city==='Cidade não informada'?'Equipe Operacional':`Equipe ${city} (Operacional)`;
     txt+=`*${label}:* ${byCity[city].join(' e ')}.\n`;
+  });
+  infraCityNames.forEach(city=>{
+    const label=city==='Cidade não informada'?'Equipe Infraestrutura':`Equipe ${city} (Infraestrutura)`;
+    txt+=`*${label}:* ${infraByCity[city].join(' e ')}.\n`;
   });
   txt+='\n*Que todos tenham um excelente plantão! 🍀👨🏽‍💻👨🏼‍🏭*';
   plCopyText(txt,'Mensagem pronta para o grupo copiada!');
