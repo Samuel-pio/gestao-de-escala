@@ -398,6 +398,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
       <input id="errorMonthFilter" type="month">
       <select id="errorSectorFilter"><option value="">Todos os setores</option></select>
       <select id="errorEmployeeFilter"><option value="">Todos os funcionários</option></select>
+      <input id="errorSearchFilter" type="search" placeholder="Buscar tipo de erro..." aria-label="Buscar palavra no tipo de erro" style="min-width:190px">
       <select id="errorStatusFilter"><option value="">Todos os status</option><option value="aberto">Em aberto</option><option value="atrasado">Atrasados</option><option value="corrigido">Corrigidos</option></select>
       <button type="button" class="mini" id="exportErrors">⬇ CSV</button>
     </div>
@@ -2016,9 +2017,11 @@ function renderErrors(){
   const sector=document.getElementById('errorSectorFilter')?.value||'';
   const emp=document.getElementById('errorEmployeeFilter').value;
   const st=document.getElementById('errorStatusFilter')?.value||'';
+  const search=(document.getElementById('errorSearchFilter')?.value||'').trim().toLocaleLowerCase('pt-BR');
   const ownOnly=currentRole()!=='admin'&&!canAccess('erros_equipe')&&canAccess('erros_lancar');
   const base=errorRows.filter(r=>{
     if(ownOnly&&String(r.criado_por||'')!==String(authSession?.user?.id||''))return false;
+    if(search&&!(String(r.tipo||'').toLocaleLowerCase('pt-BR').includes(search)))return false;
     const s1=r.equipe1?.setor||'';
     const s2=r.equipe2?.setor||'';
     const sectorMatch=!sector||s1===sector||s2===sector;
@@ -2872,6 +2875,7 @@ document.getElementById('errorSectorFilter').onchange=()=>{
   renderErrors();
 };
 document.getElementById('errorEmployeeFilter').onchange=()=>{resetPage('errors');renderErrors()};
+document.getElementById('errorSearchFilter').oninput=()=>{resetPage('errors');renderErrors()};
 document.getElementById('errorForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('errorId').value;
