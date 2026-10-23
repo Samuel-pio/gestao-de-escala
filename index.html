@@ -1886,8 +1886,11 @@ function openErrorModal(row=null){
 }
 function closeErrorModal(){const m=document.getElementById('errorModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
 async function showErrors(){
-  if(!canAccessErrors())return;
-  hideViews();document.getElementById('errorsView').style.display='block';setActiveNav('errorsNav');
+  const allowedToOpen=currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_lancar');
+  if(!allowedToOpen){showToast('Seu usuário não tem permissão para acessar Erros da Equipe.');return}
+  const errorsView=document.getElementById('errorsView');
+  if(!errorsView){showToast('A tela de erros não foi encontrada. Atualize o sistema.');return}
+  hideViews();errorsView.style.display='block';setActiveNav('errorsNav');
   const launchOnly=currentRole()!=='admin'&&!canAccess('erros_equipe')&&canAccess('erros_lancar');
   const newBtn=document.getElementById('newErrorBtn');if(newBtn)newBtn.style.display=canLaunchError()?'':'none';
   const weightsBox=document.getElementById('errorWeightsBox');if(weightsBox)weightsBox.style.display=canAccess('erros_equipe')||currentRole()==='admin'?'':'none';
@@ -2831,7 +2834,10 @@ document.getElementById('alertPanel').onclick=e=>{
   if(target==='maintenance'&&canAccess('manutencoes'))showAir();
 };
 document.addEventListener('click',()=>toggleAlertPanel(false));
-document.getElementById('errorsNav').onclick=()=>{if(canAccessErrors())showErrors()};
+document.getElementById('errorsNav').onclick=async(e)=>{
+  if(e){e.preventDefault();e.stopPropagation()}
+  try{await showErrors()}catch(err){console.error('Falha ao abrir Erros da Equipe:',err);const v=document.getElementById('errorsView');if(v){hideViews();v.style.display='block';setActiveNav('errorsNav')}showToast('A tela abriu, mas ocorreu um erro ao carregar os dados. Confira o console ou tente atualizar a página.')}
+};
 document.getElementById('newErrorBtn').onclick=()=>openErrorModal();
 document.getElementById('closeErrorModal').onclick=closeErrorModal;
 document.getElementById('closeErrorFix').onclick=closeErrorFixModal;
