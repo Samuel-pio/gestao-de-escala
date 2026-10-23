@@ -284,15 +284,16 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
 <div class="pl-controls" id="plantoesDashboardControls"></div>
 <div id="plantoesDashboardList"></div>
 </section>
-<section class="box" id="errorsDashboardBox" style="margin-bottom:18px;display:none">
-<div class="boxhead"><div><h2>⚠️ Erros aguardando correção</h2><p>Erros da equipe ainda em aberto nos seus setores.</p></div><strong id="errorsDashboardBadge">0</strong></div>
-<div id="errorsDashboardList"></div>
-</section>
 <section class="dashboard-three">
 <div class="box pending"><div class="boxhead"><div><h2>Solicitações pendentes</h2><p>Pedidos que ainda precisam de análise.</p></div><strong id="pendingBadge">—</strong></div><div id="pendingList"><div class="req"><span><b>Carregando...</b><small></small></span></div></div></div>
 <div class="box pending"><div class="boxhead"><div><h2>🔵 Férias hoje</h2><p>Quem está de férias neste momento.</p></div></div><div id="vacationTodayList"><div class="req"><span><b>Carregando...</b><small></small></span></div></div></div>
 <div class="box pending"><div class="boxhead"><div><h2>📅 Próximas ausências</h2><p>Folgas e férias dos próximos 7 dias.</p></div></div><div id="upcomingAbsences"><div class="req"><span><b>Carregando...</b><small></small></span></div></div></div>
-</section></div>
+</section>
+<section class="box" id="errorsDashboardBox" style="margin-bottom:18px;display:none">
+<div class="boxhead"><div><h2>⚠️ Erros aguardando correção</h2><p>Erros da equipe ainda em aberto nos seus setores.</p></div><strong id="errorsDashboardBadge">0</strong></div>
+<div id="errorsDashboardList"></div>
+</section>
+</div>
 <section id="agendaView" style="display:none"><header><div><h1>Agenda</h1><p>Visualize a escala, folgas, férias e solicitações da equipe.</p></div><select id="agendaSectorFilter" title="Filtrar agenda por setor" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111;min-width:200px"><option value="">Todos os setores</option></select></header><section class="grid" style="margin-top:28px"><div class="calendar box"><div class="boxhead"><div><h2>Calendário</h2><p id="monthTitle">Carregando...</p></div><div class="arrows"><button id="prevMonth">‹</button><button id="nextMonth">›</button></div></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="month" id="month"></div></div><div class="side"><div class="box legend"><h2>Legenda</h2><p>🔴 Folga</p><p>🟡 Pendente</p><p>🔵 Férias</p><p>🟣 Folga do Plantão</p><p>🟠 Plantão</p><p>🎌 Feriado</p></div>
 <div class="box" id="agendaNotesBox" style="margin-top:18px">
 <h2 style="margin-bottom:6px">Anotações da Agenda</h2>
@@ -1172,7 +1173,7 @@ async function load(){
       sb('equipe?select=id,nome,setor,cidade,ativo,pode_plantao&ativo=eq.true&order=setor.asc.nullslast,nome.asc'),
       sb(`solicitacoes?select=id,funcionario_id,data_inicial,data_final,status,motivo,observacao,equipe(nome,setor)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`),
       sb(`agenda_anotacoes?select=id,data,funcionario_id,anotacao,equipe(nome,setor)&data=gte.${from}&data=lte.${to}&order=data.asc,created_at.asc`),
-      sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,observacao,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`,[]),
+      sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`,[]),
       sb(`solicitacoes?select=id,funcionario_id,data_inicial,data_final,status,motivo,observacao,equipe(nome)&data_inicial=lte.${dashTo}&data_final=gte.${today}&order=data_inicial.asc`),
       sbSafe(`plantoes?select=id,data_inicial,data_final,funcionario_id,funcionario2_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&data_final=gte.${today}&order=data_inicial.asc&limit=100`,[]),
       sbSafe(`feriados?select=id,data,nome,cidade&data=gte.${from}&data=lte.${to}&order=data.asc`,[])
@@ -1246,12 +1247,7 @@ function renderAgendaHolidayBox(){
   const isAdmin=currentRole()==='admin',canPl=canAccess('plantoes');
   const list=selectedAgendaDate?agendaHolidays.filter(h=>h.data===selectedAgendaDate):[];
   box.style.display=(isAdmin||list.length)?'block':'none';
-  document.getElementById('agendaHolidayList').innerHTML=list.map(h=>{
-    const shifts=(agendaPlantoes||[]).filter(p=>p.data_inicial<=h.data&&p.data_final>=h.data&&String(p.observacao||'').toLocaleLowerCase('pt-BR').includes(('Plantão de feriado: '+h.nome).toLocaleLowerCase('pt-BR')));
-    const shiftButtons=canPl?(shifts.length?shifts.map(p=>`<span style="display:inline-flex;gap:5px;flex-wrap:wrap"><button type="button" class="mini-btn approve" onclick="editHolidayPlantao(${p.id})">Editar plantão${shifts.length>1?' #'+p.id:''}</button>${isAdmin?`<button type="button" class="mini-btn deny" onclick="removeHolidayPlantao(${p.id})" title="Remover a escala deste feriado">Remover plantão</button>`:''}</span>`).join(''):`<button type="button" class="mini-btn approve" onclick="scheduleHolidayPlantao(${h.id})">Escalar plantão</button>`):'';
-    const assigned=shifts.map(p=>[p.equipe?.nome,p.equipe2?.nome].filter(Boolean).join(' + ')).filter(Boolean);
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:7px 0"><span>🎌 <b>${safe(h.nome)}</b> <small style="color:#8d8c80">(${h.cidade?safe(h.cidade):'todas as cidades'})</small>${assigned.length?`<small style="display:block;color:#555;margin:3px 0 0 22px">Plantão: ${assigned.map(safe).join(' / ')}</small>`:''}</span><span style="display:flex;gap:6px;flex-wrap:wrap">${shiftButtons}${isAdmin?`<button type="button" class="mini-btn deny" onclick="deleteHoliday(${h.id})">Remover</button>`:''}</span></div>`;
-  }).join('');
+  document.getElementById('agendaHolidayList').innerHTML=list.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:5px 0"><span>🎌 <b>${safe(h.nome)}</b> <small style="color:#8d8c80">(${h.cidade?safe(h.cidade):'todas as cidades'})</small></span><span style="display:flex;gap:6px">${canPl?`<button type="button" class="mini-btn approve" onclick="scheduleHolidayPlantao(${h.id})">Escalar plantão</button>`:''}${isAdmin?`<button type="button" class="mini-btn deny" onclick="deleteHoliday(${h.id})">Remover</button>`:''}</span></div>`).join('');
   document.getElementById('agendaHolidayAdd').style.display=isAdmin?'block':'none';
   fillCitySelect('holidayCity','Todas as cidades');
 }
@@ -1276,28 +1272,6 @@ async function deleteHoliday(id){
   if(!window.confirm(`Remover o feriado "${h.nome}" de ${fmtDate(h.data)}?\n\nPlantões já escalados nesse dia não serão apagados.`))return;
   try{await sb(`feriados?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});showToast('Feriado removido.');await load()}
   catch(e){console.error(e);showToast('Não foi possível remover o feriado.')}
-}
-
-async function removeHolidayPlantao(id){
-  if(currentRole()!=='admin')return showToast('Apenas administradores podem remover o plantão do feriado.');
-  const p=(agendaPlantoes||[]).find(x=>String(x.id)===String(id));
-  if(!p)return showToast('Plantão não encontrado. Atualize a Agenda e tente novamente.');
-  const nomes=[p.equipe?.nome,p.equipe2?.nome].filter(Boolean).join(' e ')||'os funcionários escalados';
-  if(!window.confirm(`Remover o plantão de feriado de ${nomes} em ${fmtDate(p.data_inicial)}?\n\nUse esta opção se o local ficará fechado e ninguém deverá ficar de plantão. O feriado continuará cadastrado na Agenda.`))return;
-  try{
-    await sb(`plantoes?id=eq.${id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
-    showToast('Plantão do feriado removido. O feriado foi mantido na Agenda.');
-    await load();
-  }catch(e){console.error(e);showToast('Não foi possível remover o plantão. Verifique sua permissão.');}
-}
-
-async function editHolidayPlantao(id){
-  try{
-    // Carrega a escala completa para que o modal de edição tenha os dados atualizados.
-    plantaoRows=await sb('plantoes?select=id,funcionario_id,funcionario2_id,data_inicial,data_final,observacao,folga_gerada,folga_solicitacao_id,folga2_solicitacao_id,equipe:equipe!plantoes_funcionario_id_fkey(nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(nome,setor,cidade)&order=data_inicial.desc');
-    if(!plantaoRows.length)return showToast('Esse plantão não foi encontrado. Atualize a agenda e tente novamente.');
-    openEditPlantao(id);
-  }catch(e){console.error(e);showToast('Não foi possível abrir a edição do plantão do feriado.');}
 }
 function scheduleHolidayPlantao(id){
   const h=agendaHolidays.find(x=>x.id===id);if(!h)return;
@@ -1993,9 +1967,9 @@ async function loadErrorAuthors(){
     const raw=(me.user_metadata?.name||email.split('@')[0]||'Usuário').replace(/[._-]+/g,' ').trim();
     window.errorAuthorMap[me.id]=raw.replace(/\b\w/g,c=>c.toUpperCase());
   }
-  if(currentRole()==='admin'||canAccess('erros_equipe')){
+  if(currentRole()==='admin'){
     try{
-      const data=await userAdminApi({action:currentRole()==='admin'?'list':'error-authors'});
+      const data=await userAdminApi({action:'list'});
       (data.users||[]).forEach(u=>{
         const raw=(u.name||u.user_metadata?.name||u.email?.split('@')[0]||'Usuário').replace(/[._-]+/g,' ').trim();
         window.errorAuthorMap[u.id]=raw.replace(/\b\w/g,c=>c.toUpperCase());
@@ -2178,10 +2152,9 @@ function plCopyGroupMessage(){
   let weekend=vis.filter(r=>r.data_inicial<=sunIso&&r.data_final>=satIso);
   if(!weekend.length)weekend=vis;
 
-  // Call Center separado por função; Operacional e Infraestrutura separados por cidade.
+  // Call Center fica separado por função; as equipes de rua ficam separadas por cidade.
   const callCenter=[];
   const byCity={};
-  const infraByCity={};
   const norm=x=>(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   weekend.forEach(r=>{
     [[r.equipe?.nome,r.equipe?.cidade,r.equipe?.setor],[r.equipe2?.nome,r.equipe2?.cidade,r.equipe2?.setor]].forEach(([name,city,sector])=>{
@@ -2189,10 +2162,6 @@ function plCopyGroupMessage(){
       const setor=norm(sector);
       if(setor.includes('call center')||setor.includes('atendimento')){
         if(!callCenter.includes(name))callCenter.push(name);
-      }else if(setor.includes('infra')){
-        const key=(city||'Cidade não informada').trim();
-        if(!infraByCity[key])infraByCity[key]=[];
-        if(!infraByCity[key].includes(name))infraByCity[key].push(name);
       }else{
         const key=(city||'Cidade não informada').trim();
         if(!byCity[key])byCity[key]=[];
@@ -2201,21 +2170,15 @@ function plCopyGroupMessage(){
     });
   });
   const preferred=['Buritis','Arinos','Cabeceiras','Quantiver'];
-  const sortCities=items=>Object.keys(items).sort((a,b)=>{
+  const cityNames=Object.keys(byCity).sort((a,b)=>{
     const ia=preferred.findIndex(x=>norm(x)===norm(a)),ib=preferred.findIndex(x=>norm(x)===norm(b));
     return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b,'pt-BR');
   });
-  const cityNames=sortCities(byCity);
-  const infraCityNames=sortCities(infraByCity);
   let txt=`*Bom dia! 🌞*\n\n*Segue a escala do final de semana.*\n\n*Sábado, das 12h00 às 18h00.*\n*Domingo, das 08h00 às 12h00.*\n\n`;
   if(callCenter.length)txt+=`*Call Center (Atendimento):* ${callCenter.join(' e ')}.\n`;
   cityNames.forEach(city=>{
     const label=city==='Cidade não informada'?'Equipe Operacional':`Equipe ${city} (Operacional)`;
     txt+=`*${label}:* ${byCity[city].join(' e ')}.\n`;
-  });
-  infraCityNames.forEach(city=>{
-    const label=city==='Cidade não informada'?'Equipe Infraestrutura':`Equipe ${city} (Infraestrutura)`;
-    txt+=`*${label}:* ${infraByCity[city].join(' e ')}.\n`;
   });
   txt+='\n*Que todos tenham um excelente plantão! 🍀👨🏽‍💻👨🏼‍🏭*';
   plCopyText(txt,'Mensagem pronta para o grupo copiada!');
