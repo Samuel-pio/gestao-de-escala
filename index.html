@@ -235,6 +235,8 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
   .brand .logo-mark{width:32px;height:32px}
   .logout-btn{padding:4px 5px;font-size:12px}
 }
+
+@media print { body.printing-reports * { visibility:hidden !important; } body.printing-reports #reportsView, body.printing-reports #reportsView * { visibility:visible !important; } body.printing-reports #reportsView { display:block !important; position:absolute !important; inset:0 auto auto 0 !important; width:100% !important; margin:0 !important; padding:0 !important; } body.printing-reports .sidebar, body.printing-reports nav, body.printing-reports button, body.printing-reports input, body.printing-reports select { display:none !important; } body.printing-reports .box, body.printing-reports .card { box-shadow:none !important; break-inside:avoid; } body.printing-reports table { width:100% !important; min-width:0 !important; font-size:10px !important; } body.printing-reports #reportsView .grid { display:block !important; } body.printing-reports #reportsView .side { display:grid !important; grid-template-columns:1fr 1fr !important; gap:10px !important; } }
 </style></head><body>
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
@@ -447,18 +449,18 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
   <div class="box" style="margin-bottom:20px">
     <div class="requests-toolbar">
       <div>
-        <h2>Filtros</h2>
-        <small>Selecione o período e, se quiser, um funcionário.</small>
+        <h2>Filtros do relatório geral</h2>
+        <small>Período, setor, cidade e funcionário. O relatório reúne solicitações, plantões e erros conforme as permissões da conta.</small>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <input id="reportMonth" type="month"
-          style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111">
-        <select id="reportEmployee"
-          style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111;min-width:220px">
-          <option value="">Todos os funcionários</option>
-        </select>
-        <button class="btn primary" id="refreshReports">Atualizar</button>
-        <button class="btn secondary" id="exportReports">⬇ Exportar CSV</button>
+        <label>De <input id="reportFrom" type="date" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111"></label>
+        <label>Até <input id="reportTo" type="date" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111"></label>
+        <select id="reportSector" aria-label="Filtrar setor" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111"><option value="">Todos os setores</option></select>
+        <select id="reportCity" aria-label="Filtrar cidade" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111"><option value="">Todas as cidades</option></select>
+        <select id="reportEmployee" aria-label="Filtrar funcionário" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111;min-width:220px"><option value="">Todos os funcionários</option></select>
+        <button class="btn primary" id="refreshReports" type="button">Atualizar</button>
+        <button class="btn secondary" id="exportReports" type="button">⬇ Exportar Excel</button>
+        <button class="btn secondary" id="exportReportsPDF" type="button">Imprimir / PDF</button>
       </div>
     </div>
   </div>
@@ -468,6 +470,9 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
     <div class="card"><p>Dias de férias</p><b id="reportVacation">0</b><small>no período</small></div>
     <div class="card"><p>Folga do Plantão</p><b id="reportPlantao">0</b><small>no período</small></div>
     <div class="card"><p>Pendentes</p><b id="reportPending">0</b><small>no período</small></div>
+    <div class="card"><p>Plantões registrados</p><b id="reportShifts">0</b><small>no período e filtros</small></div>
+    <div class="card"><p>Erros registrados</p><b id="reportErrors">0</b><small>conforme seu acesso</small></div>
+    <div class="card"><p>Manutenções</p><b id="reportMaintenance">0</b><small>no período</small></div>
   </section>
 
   <section class="grid" style="margin-top:20px">
@@ -487,6 +492,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
               <th>Férias</th>
               <th>Plantão</th>
               <th>Pendentes</th>
+              <th>Plantões escalados</th><th>Erros registrados</th>
             </tr>
           </thead>
           <tbody id="reportTableBody">
@@ -2167,33 +2173,41 @@ function plCopyGroupMessage(){
   let weekend=vis.filter(r=>r.data_inicial<=sunIso&&r.data_final>=satIso);
   if(!weekend.length)weekend=vis;
 
-  // Call Center fica separado por função; as equipes de rua ficam separadas por cidade.
+  // Agrupa por cidade E setor para não misturar Operacional com Infraestrutura.
   const callCenter=[];
-  const byCity={};
+  const groups={};
   const norm=x=>(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   weekend.forEach(r=>{
     [[r.equipe?.nome,r.equipe?.cidade,r.equipe?.setor],[r.equipe2?.nome,r.equipe2?.cidade,r.equipe2?.setor]].forEach(([name,city,sector])=>{
       if(!name)return;
-      const setor=norm(sector);
-      if(setor.includes('call center')||setor.includes('atendimento')){
+      const sectorNorm=norm(sector);
+      if(sectorNorm.includes('call center')||sectorNorm.includes('atendimento')){
         if(!callCenter.includes(name))callCenter.push(name);
-      }else{
-        const key=(city||'Cidade não informada').trim();
-        if(!byCity[key])byCity[key]=[];
-        if(!byCity[key].includes(name))byCity[key].push(name);
+        return;
       }
+      const cityName=(city||'Cidade não informada').trim();
+      const sectorName=(sector||'Operacional').trim();
+      const key=`${cityName}|||${sectorName}`;
+      if(!groups[key])groups[key]={city:cityName,sector:sectorName,names:[]};
+      if(!groups[key].names.includes(name))groups[key].names.push(name);
     });
   });
   const preferred=['Buritis','Arinos','Cabeceiras','Quantiver'];
-  const cityNames=Object.keys(byCity).sort((a,b)=>{
-    const ia=preferred.findIndex(x=>norm(x)===norm(a)),ib=preferred.findIndex(x=>norm(x)===norm(b));
-    return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b,'pt-BR');
+  const groupList=Object.values(groups).sort((a,b)=>{
+    const ia=preferred.findIndex(x=>norm(x)===norm(a.city)),ib=preferred.findIndex(x=>norm(x)===norm(b.city));
+    return (ia<0?999:ia)-(ib<0?999:ib)||a.city.localeCompare(b.city,'pt-BR')||a.sector.localeCompare(b.sector,'pt-BR');
   });
   let txt=`*Bom dia! 🌞*\n\n*Segue a escala do final de semana.*\n\n*Sábado, das 12h00 às 18h00.*\n*Domingo, das 08h00 às 12h00.*\n\n`;
   if(callCenter.length)txt+=`*Call Center (Atendimento):* ${callCenter.join(' e ')}.\n`;
-  cityNames.forEach(city=>{
-    const label=city==='Cidade não informada'?'Equipe Operacional':`Equipe ${city} (Operacional)`;
-    txt+=`*${label}:* ${byCity[city].join(' e ')}.\n`;
+  groupList.forEach(g=>{
+    const cityLabel=g.city==='Cidade não informada'?'':` ${g.city}`;
+    const sectorNorm=norm(g.sector);
+    let sectorLabel=g.sector;
+    if(sectorNorm==='operacional')sectorLabel='Operacional';
+    else if(sectorNorm==='infraestrutura')sectorLabel='Infraestrutura';
+    else if(sectorNorm==='recepcoes'||sectorNorm==='recepcao')sectorLabel='Recepções';
+    const label=g.city==='Cidade não informada'?`Equipe ${sectorLabel}`:`Equipe${cityLabel} (${sectorLabel})`;
+    txt+=`*${label}:* ${g.names.join(' e ')}.\n`;
   });
   txt+='\n*Que todos tenham um excelente plantão! 🍀👨🏽‍💻👨🏼‍🏭*';
   plCopyText(txt,'Mensagem pronta para o grupo copiada!');
@@ -2397,131 +2411,101 @@ async function showReports(){
   hideViews();
   document.getElementById('reportsView').style.display='block';
   setActiveNav('reportsNav');
-  if(!document.getElementById('reportMonth').value){
-    const d=new Date();
-    document.getElementById('reportMonth').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  }
+  const now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1),last=new Date(now.getFullYear(),now.getMonth()+1,0);
+  const asDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  if(!document.getElementById('reportFrom').value)document.getElementById('reportFrom').value=asDate(first);
+  if(!document.getElementById('reportTo').value)document.getElementById('reportTo').value=asDate(last);
   await fillReportEmployees();
   await loadReports();
 }
 async function fillReportEmployees(){
   try{
-    const team=await sb('equipe?select=id,nome,ativo&order=nome.asc');
+    const team=await sb('equipe?select=id,nome,ativo,setor,cidade&order=nome.asc');
+    window.reportTeamRows=team||[];
+    const currentEmp=document.getElementById('reportEmployee').value;
+    const currentSector=document.getElementById('reportSector').value;
+    const currentCity=document.getElementById('reportCity').value;
     const sel=document.getElementById('reportEmployee');
-    const current=sel.value;
     sel.innerHTML='<option value="">Todos os funcionários</option>'+team.map(e=>`<option value="${e.id}">${safe(e.nome)}${e.ativo?'':' (Inativo)'}</option>`).join('');
-    sel.value=current;
-  }catch(e){console.error(e)}
+    sel.value=currentEmp;
+    const sectors=[...new Set(team.map(e=>(e.setor||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const cities=[...new Set(team.map(e=>(e.cidade||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const ss=document.getElementById('reportSector'),cs=document.getElementById('reportCity');
+    ss.innerHTML='<option value="">Todos os setores</option>'+sectors.map(v=>`<option value="${safe(v)}">${safe(v)}</option>`).join('');
+    cs.innerHTML='<option value="">Todas as cidades</option>'+cities.map(v=>`<option value="${safe(v)}">${safe(v)}</option>`).join('');
+    ss.value=currentSector;cs.value=currentCity;
+  }catch(e){console.error('Falha ao carregar filtros de relatórios',e)}
 }
 function overlapDays(start,end,from,to){
-  const s=new Date(start+'T00:00:00');
-  const e=new Date(end+'T00:00:00');
-  const f=new Date(from+'T00:00:00');
-  const t=new Date(to+'T00:00:00');
-  const a=s>f?s:f,b=e<t?e:t;
-  if(a>b)return 0;
-  return Math.floor((b-a)/86400000)+1;
+  if(!start||!end||!from||!to)return 0;
+  const s=new Date(start+'T00:00:00'),e=new Date(end+'T00:00:00'),f=new Date(from+'T00:00:00'),t=new Date(to+'T00:00:00');
+  const a=s>f?s:f,b=e<t?e:t;if(a>b)return 0;return Math.floor((b-a)/86400000)+1;
+}
+function reportEmployeeMatch(ids){
+  const selected=document.getElementById('reportEmployee').value;
+  return !selected||(ids||[]).filter(v=>v!=null).some(v=>String(v)===String(selected));
+}
+function reportScopeMatch(people){
+  const sector=document.getElementById('reportSector').value,city=document.getElementById('reportCity').value;
+  const list=(people||[]).filter(Boolean);
+  if(!sector&&!city)return true;
+  return list.some(p=>(!sector||p.setor===sector)&&(!city||p.cidade===city));
 }
 async function loadReports(){
-  const month=document.getElementById('reportMonth').value;
-  if(!month)return;
-  const [y,m]=month.split('-').map(Number);
-  const from=`${y}-${String(m).padStart(2,'0')}-01`;
-  const last=new Date(y,m,0).getDate();
-  const to=`${y}-${String(m).padStart(2,'0')}-${String(last).padStart(2,'0')}`;
-  const empId=document.getElementById('reportEmployee').value;
-  let path=`solicitacoes?select=id,data_inicial,data_final,status,motivo,equipe(id,nome)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`;
-  if(empId)path+=`&funcionario_id=eq.${empId}`;
+  const from=document.getElementById('reportFrom').value,to=document.getElementById('reportTo').value;
+  if(!from||!to){showToast('Selecione a data inicial e final.');return}
+  if(from>to){showToast('A data inicial não pode ser posterior à data final.');return}
+  const qs=`&data_inicial=lte.${to}&data_final=gte.${from}`;
   try{
-    const rows=await sb(path);
-    window.currentReportRows=rows;
-    window.currentReportPeriod={month,from,to};
-    let approved=0,vacation=0,plantao=0,pending=0;
-    const byEmp={}, reasons={};
-    for(const r of rows){
-      const nome=r.equipe?.nome||'Funcionário';
-      if(!byEmp[nome])byEmp[nome]={folgas:0,ferias:0,plantao:0,pendentes:0};
-      const days=overlapDays(r.data_inicial,r.data_final,from,to);
-      if(r.status==='Aprovada'){
-        approved+=days;
-        byEmp[nome].folgas+=days;
-      }else if(r.status==='Férias'){
-        vacation+=days;
-        byEmp[nome].ferias+=days;
-      }else if(r.status==='Folga do Plantão'){
-        plantao+=days;
-        byEmp[nome].plantao+=days;
-      }else if(r.status==='Pendente'){
-        pending+=1;
-        byEmp[nome].pendentes+=1;
-      }
-      const motivo=(r.motivo||'Sem motivo').trim()||'Sem motivo';
-      reasons[motivo]=(reasons[motivo]||0)+1;
+    const requestPromise=sb(`solicitacoes?select=id,data_inicial,data_final,data_pedido,status,motivo,observacao,funcionario_id,equipe(id,nome,setor,cidade)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`).catch(e=>{console.warn('Solicitações não disponíveis no relatório',e);return []});
+    const shiftPromise=sb(`plantoes?select=id,data_inicial,data_final,observacao,funcionario_id,funcionario2_id,equipe1:equipe!plantoes_funcionario_id_fkey(id,nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(id,nome,setor,cidade)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`).catch(e=>{console.warn('Plantões não disponíveis no relatório',e);return []});
+    const errorPromise=sb(`erros_equipes?select=id,data,tipo,gravidade,observacao,funcionario1_id,funcionario2_id,equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor,cidade),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor,cidade)&data=gte.${from}&data=lte.${to}&order=data.desc`).catch(e=>{console.warn('Erros não disponíveis no relatório',e);return []});
+    const maintenancePromise=sb(`manutencoes_preventivas?select=id,tipo,local_instalacao,identificacao,data_manutencao,proxima_manutencao,observacao,ativo&data_manutencao=gte.${from}&data_manutencao=lte.${to}&order=data_manutencao.desc`).catch(e=>{console.warn('Manutenções não disponíveis no relatório',e);return []});
+    const [allRequests,allShifts,allErrors,allMaintenance]=await Promise.all([requestPromise,shiftPromise,errorPromise,maintenancePromise]);
+    const requests=(allRequests||[]).filter(r=>reportEmployeeMatch([r.funcionario_id])&&reportScopeMatch([r.equipe]));
+    const shifts=(allShifts||[]).filter(r=>reportEmployeeMatch([r.funcionario_id,r.funcionario2_id])&&reportScopeMatch([r.equipe1,r.equipe2]));
+    const errors=(allErrors||[]).filter(r=>reportEmployeeMatch([r.funcionario1_id,r.funcionario2_id])&&reportScopeMatch([r.equipe1,r.equipe2]));
+    const maintenance=allMaintenance||[];
+    window.currentReportRows=requests;window.currentReportShifts=shifts;window.currentReportErrors=errors;window.currentReportMaintenance=maintenance;window.currentReportPeriod={from,to};
+    let approved=0,vacation=0,plantao=0,pending=0;const byEmp={},reasons={};
+    const addEmp=(name)=>{if(!byEmp[name])byEmp[name]={folgas:0,ferias:0,plantao:0,pendentes:0,erros:0,plantoes:0};return byEmp[name]};
+    for(const r of requests){
+      const nome=r.equipe?.nome||'Funcionário',v=addEmp(nome),days=overlapDays(r.data_inicial,r.data_final,from,to);
+      if(r.status==='Aprovada'){approved+=days;v.folgas+=days}else if(r.status==='Férias'){vacation+=days;v.ferias+=days}else if(r.status==='Folga do Plantão'){plantao+=days;v.plantao+=days}else if(r.status==='Pendente'){pending++;v.pendentes++}
+      const motivo=(r.motivo||'Sem motivo').trim()||'Sem motivo';reasons[motivo]=(reasons[motivo]||0)+1;
     }
-    document.getElementById('reportApproved').textContent=approved;
-    document.getElementById('reportVacation').textContent=vacation;
-    document.getElementById('reportPlantao').textContent=plantao;
-    document.getElementById('reportPending').textContent=pending;
-
+    for(const r of shifts){const names=[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean);names.forEach(n=>addEmp(n).plantoes++);}
+    for(const r of errors){const names=[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean);names.forEach(n=>addEmp(n).erros++);}
+    document.getElementById('reportApproved').textContent=approved;document.getElementById('reportVacation').textContent=vacation;document.getElementById('reportPlantao').textContent=plantao;document.getElementById('reportPending').textContent=pending;
+    document.getElementById('reportShifts').textContent=shifts.length;document.getElementById('reportErrors').textContent=errors.length;document.getElementById('reportMaintenance').textContent=maintenance.length;
     const entries=Object.entries(byEmp).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
     const body=document.getElementById('reportTableBody');
-    body.innerHTML=entries.length?entries.map(([nome,v])=>`<tr>
-      <td><b>${safe(nome)}</b></td>
-      <td>${v.folgas}</td>
-      <td>${v.ferias} dia${v.ferias===1?'':'s'}</td>
-      <td>${v.plantao}</td>
-      <td>${v.pendentes}</td>
-    </tr>`).join(''):'<tr><td colspan="5">Nenhum registro no período.</td></tr>';
-
+    body.innerHTML=entries.length?entries.map(([nome,v])=>`<tr><td><b>${safe(nome)}</b></td><td>${v.folgas}</td><td>${v.ferias} dia${v.ferias===1?'':'s'}</td><td>${v.plantao}</td><td>${v.pendentes}</td><td>${v.plantoes}</td><td>${v.erros}</td></tr>`).join(''):'<tr><td colspan="7">Nenhum registro no período e filtros selecionados.</td></tr>';
+    const table=document.querySelector('#reportsView table thead');if(table&&table.querySelectorAll('th').length===5)table.innerHTML='<tr><th>Funcionário</th><th>Folgas</th><th>Férias</th><th>Folga plantão</th><th>Pendentes</th><th>Plantões escalados</th><th>Erros registrados</th></tr>';
     const ranking=Object.entries(byEmp).sort((a,b)=>b[1].folgas-a[1].folgas).filter(([,v])=>v.folgas>0).slice(0,5);
     document.getElementById('reportRanking').innerHTML=ranking.length?ranking.map(([nome,v],i)=>`<span><b>${i+1}. ${safe(nome)}</b><small>${v.folgas} folga${v.folgas===1?'':'s'}</small></span>`).join(''):'<span><b>Sem folgas</b><small>No período selecionado</small></span>';
-
     const reasonEntries=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,5);
     document.getElementById('reportReasons').innerHTML=reasonEntries.length?reasonEntries.map(([motivo,total])=>`<span><b>${safe(motivo)}</b><small>${total} registro${total===1?'':'s'}</small></span>`).join(''):'<span><b>Sem dados</b><small>No período selecionado</small></span>';
-  }catch(e){
-    console.error(e);
-    document.getElementById('reportTableBody').innerHTML='<tr><td colspan="5">Erro ao carregar relatório.</td></tr>';
-  }
-}
-function csvCell(value){
-  const v=String(value??'').replace(/"/g,'""');
-  return `"${v}"`;
+  }catch(e){console.error(e);document.getElementById('reportTableBody').innerHTML='<tr><td colspan="7">Erro ao carregar relatório.</td></tr>';showToast('Não foi possível montar o relatório. Veja o console para detalhes.')}
 }
 function exportReportsCSV(){
-  const rows=window.currentReportRows||[];
-  const period=window.currentReportPeriod;
-  if(!period){showToast('Atualize o relatório antes de exportar.');return}
-  if(!rows.length){showToast('Não há dados para exportar neste período.');return}
-
-  const header=['Funcionário','Data inicial','Data final','Dias no período','Motivo','Status','Observação'];
-  const lines=[header.map(csvCell).join(';')];
-
-  for(const r of rows){
-    const days=overlapDays(r.data_inicial,r.data_final,period.from,period.to);
-    lines.push([
-      r.equipe?.nome||'Funcionário',
-      r.data_inicial,
-      r.data_final,
-      days,
-      r.motivo||'',
-      r.status||'',
-      r.observacao||''
-    ].map(csvCell).join(';'));
-  }
-
-  const content='\ufeff'+lines.join('\r\n');
-  const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const emp=document.getElementById('reportEmployee');
-  const empName=emp.value ? (emp.options[emp.selectedIndex]?.text||'funcionario').replace(/\s+/g,'-').toLowerCase() : 'equipe';
-  a.href=url;
-  a.download=`relatorio-${empName}-${period.month}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-  showToast('Relatório exportado com sucesso!');
+  const period=window.currentReportPeriod;if(!period){showToast('Atualize o relatório antes de exportar.');return}
+  const rows=[
+    ['Categoria','Data inicial','Data final','Funcionário(s)','Setor','Cidade','Tipo / Motivo','Status / Gravidade','Observação'],
+    ...(window.currentReportRows||[]).map(r=>['Solicitação',r.data_inicial,r.data_final,r.equipe?.nome||'Funcionário',r.equipe?.setor||'',r.equipe?.cidade||'',r.motivo||'',r.status||'',r.observacao||'']),
+    ...(window.currentReportShifts||[]).map(r=>['Plantão',r.data_inicial,r.data_final,[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean).join(' + '),[r.equipe1?.setor,r.equipe2?.setor].filter(Boolean).join(' / '),[r.equipe1?.cidade,r.equipe2?.cidade].filter(Boolean).join(' / '),'Plantão',r.folga_gerada?'Folga gerada':'Escalado',r.observacao||'']),
+    ...(window.currentReportErrors||[]).map(r=>['Erro',r.data,r.data,[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean).join(' + '),[r.equipe1?.setor,r.equipe2?.setor].filter(Boolean).join(' / '),[r.equipe1?.cidade,r.equipe2?.cidade].filter(Boolean).join(' / '),r.tipo||'',r.gravidade||'',r.observacao||'']),
+    ...(window.currentReportMaintenance||[]).map(r=>['Manutenção',r.data_manutencao,r.proxima_manutencao,'','','',`${r.tipo||''} • ${r.local_instalacao||''} • ${r.identificacao||''}`,r.ativo?'Ativa':'Inativa',r.observacao||''])
+  ];
+  const html=`<html><head><meta charset="utf-8"></head><body><h2>Relatório geral do Gestão de Escala</h2><p>Período: ${period.from} a ${period.to}</p><table border="1"><tr>${rows[0].map(x=>`<th>${safe(x)}</th>`).join('')}</tr>${rows.slice(1).map(row=>`<tr>${row.map(x=>`<td>${safe(x)}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
+  const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`relatorio-geral-${period.from}-a-${period.to}.xls`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast('Relatório Excel exportado.');
+}
+function exportReportsPDF(){
+  if(!window.currentReportPeriod){showToast('Atualize o relatório antes de imprimir.');return}
+  document.body.classList.add('printing-reports');
+  const cleanup=()=>document.body.classList.remove('printing-reports');
+  window.addEventListener('afterprint',cleanup,{once:true});window.print();setTimeout(cleanup,1500);
 }
 async function userAdminApi(payload){
   const r=await fetch(`${SUPABASE_URL}/functions/v1/manage-users`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${authSession.access_token}`,'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -2988,8 +2972,12 @@ document.getElementById('teamNav').onclick=()=>{if(canAccess('equipe'))showTeam(
 document.getElementById('reportsNav').onclick=()=>{if(canAccess('relatorios'))showReports()};
 document.getElementById('refreshReports').onclick=loadReports;
 document.getElementById('exportReports').onclick=exportReportsCSV;
-document.getElementById('reportMonth').onchange=loadReports;
+document.getElementById('exportReportsPDF').onclick=exportReportsPDF;
+document.getElementById('reportFrom').onchange=loadReports;
+document.getElementById('reportTo').onchange=loadReports;
 document.getElementById('reportEmployee').onchange=loadReports;
+document.getElementById('reportSector').onchange=loadReports;
+document.getElementById('reportCity').onchange=loadReports;
 document.getElementById('teamSearch').oninput=()=>{resetPage('team');renderTeamView()};
 document.getElementById('teamStatusFilter').onchange=()=>{resetPage('team');renderTeamView()};
 document.getElementById('teamSectorFilter').onchange=()=>{resetPage('team');renderTeamView()};
