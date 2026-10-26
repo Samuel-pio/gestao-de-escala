@@ -400,7 +400,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
       <input id="errorMonthFilter" type="month">
       <select id="errorSectorFilter"><option value="">Todos os setores</option></select>
       <select id="errorEmployeeFilter"><option value="">Todos os funcionários</option></select>
-      <input id="errorSearchFilter" type="search" placeholder="Buscar tipo, responsável, dupla, observação..." aria-label="Buscar por tipo de erro, responsável, dupla, setor ou observação" style="min-width:190px">
+      <input id="errorSearchFilter" type="search" placeholder="Buscar tipo, cliente, responsável, dupla, observação..." aria-label="Buscar por tipo de erro, cliente, responsável, dupla, setor ou observação" style="min-width:190px">
       <select id="errorStatusFilter"><option value="">Todos os status</option><option value="aberto">Em aberto</option><option value="atrasado">Atrasados</option><option value="corrigido">Corrigidos</option></select>
       <button type="button" class="mini" id="exportErrors">⬇ CSV</button>
     </div>
@@ -409,7 +409,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
   <div id="errorSetupNotice" class="setup-notice" style="display:none"></div><div id="errorKpis" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0 0"></div>
   <div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;min-width:760px">
-      <thead><tr><th>DATA</th><th>SETOR</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>GRAVIDADE</th><th>STATUS</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
+      <thead><tr><th>DATA</th><th>SETOR</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>GRAVIDADE</th><th>STATUS</th><th>CLIENTE</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
       <tbody id="errorsTableBody"><tr><td colspan="10">Carregando...</td></tr></tbody>
     </table>
   </div>
@@ -557,7 +557,8 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
 <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="useSecondErrorTech" style="width:auto"> Adicionar segundo técnico</label>
 <select id="errorEmployee2" disabled style="margin-top:8px"><option value="">Selecione...</option></select>
 </div>
-      <div class="field full"><label>Observação</label><textarea id="errorObservation" rows="4" placeholder="Descreva o que aconteceu..."></textarea></div>
+      <div class="field full"><label for="errorClientName">Nome do cliente</label><input id="errorClientName" type="text" maxlength="160" autocomplete="off" placeholder="Digite o nome do cliente (opcional)"></div>
+      <div class="field full"><label for="errorObservation">Observação</label><textarea id="errorObservation" rows="4" placeholder="Descreva o que aconteceu..."></textarea></div>
     </div>
     <div class="form-actions"><button type="button" class="secondary" id="cancelError">Cancelar</button><button type="submit" class="primary" id="saveError">Salvar erro</button></div>
   </form>
@@ -1883,10 +1884,11 @@ function openErrorModal(row=null){
     document.getElementById('errorDate').value=row.data;
     document.getElementById('errorType').value=row.tipo||'';
     document.getElementById('errorObservation').value=row.observacao||'';
+    document.getElementById('errorClientName').value=row.cliente_nome||'';
     document.getElementById('errorSeverity').value=row.gravidade||'Leve';
     document.getElementById('errorEmployee1').value=row.funcionario1_id;
     document.getElementById('errorEmployee2').value=row.funcionario2_id||'';
-  }else document.getElementById('errorDate').value=todayIsoLocal();
+  }else {document.getElementById('errorDate').value=todayIsoLocal();document.getElementById('errorClientName').value='';}
   modal.classList.add('open');modal.setAttribute('aria-hidden','false');
 }
 function closeErrorModal(){const m=document.getElementById('errorModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
@@ -1956,7 +1958,7 @@ async function loadErrors(){
   if(!month)return;
   const [y,m]=month.split('-').map(Number);
   const from=`${month}-01`, to=iso(new Date(y,m,0));
-  const baseCols='id,data,funcionario1_id,funcionario2_id,tipo,gravidade,peso,observacao,criado_por';
+  const baseCols='id,data,funcionario1_id,funcionario2_id,tipo,gravidade,peso,cliente_nome,observacao,criado_por';
   const extCols=',corrigido,corrigido_em,corrigido_por,corrigido_obs,peso_final';
   const rel=',equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor)';
   const tail=`&data=gte.${from}&data=lte.${to}&order=data.desc,id.desc`;
@@ -2026,7 +2028,7 @@ function renderErrors(){
   const base=errorRows.filter(r=>{
     if(ownOnly&&String(r.criado_por||'')!==String(authSession?.user?.id||''))return false;
     const searchHaystack=normalizeSearch([
-      r.tipo,errorAuthorName(r.criado_por),r.observacao,
+      r.tipo,r.cliente_nome,errorAuthorName(r.criado_por),r.observacao,
       r.equipe1?.nome,r.equipe2?.nome,r.equipe1?.setor,r.equipe2?.setor,
       r.gravidade,r.data,fmtDate(r.data),r.corrigido_obs,
       r.corrigido_por?errorAuthorName(r.corrigido_por):''
@@ -2082,7 +2084,7 @@ function renderErrors(){
   const pageRows=paginateList('errors',rows,document.getElementById('errorsTableBody'),renderErrors);
   document.getElementById('errorsTableBody').innerHTML=pageRows.map(r=>`<tr>
     <td>${fmtDate(r.data)}</td><td>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
-    <td>${safe(r.tipo||'—')}${errIsRecurrent(r)?'<span class="err-badge rec" title="Mesmo tipo de erro com a mesma dupla/técnico nos últimos 30 dias">↻ Reincidente</span>':''}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${statusCell(r)}</td><td>${safe(r.observacao||'—')}</td>
+    <td>${safe(r.tipo||'—')}${errIsRecurrent(r)?'<span class="err-badge rec" title="Mesmo tipo de erro com a mesma dupla/técnico nos últimos 30 dias">↻ Reincidente</span>':''}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${statusCell(r)}</td><td>${safe(r.cliente_nome||'—')}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
     <td>${(canEditError(r)||(canDo('erros_excluir')&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'')))?`<div class="action-menu"><button type="button" class="action-trigger" onclick="toggleEmployeeActions(event,'e-${r.id}')">⋮ Ações</button><div class="action-dropdown" data-action-menu="e-${r.id}">${canEditError(r)?`<button type="button" data-error-edit="${r.id}">✏ Editar</button>`:''}${canDo('erros_excluir')&&(currentRole()==='admin'||canAccess('erros_equipe')||String(r.criado_por||'')===String(authSession?.user?.id||''))?`<button type="button" class="danger" data-error-delete="${r.id}">🗑 Excluir</button>`:''}</div></div>`:'—'}</td>
   </tr>`).join('')||'<tr><td colspan="10">Nenhum erro registrado neste mês.</td></tr>';
@@ -2098,10 +2100,10 @@ function patchErrorMsg(e){return e&&e.message==='NAO_ATUALIZADO'?'O banco não p
 function exportErrorsCSV(){
   const rows=window.errorFilteredRows||[];
   if(!rows.length){showToast('Nada para exportar neste filtro.');return}
-  const header=['Data','Setor','Dupla','Tipo','Gravidade','Peso','Pontos que contam','Status','Corrigido em','O que foi feito','Observação'];
+  const header=['Data','Setor','Dupla','Tipo','Gravidade','Cliente','Peso','Pontos que contam','Status','Corrigido em','O que foi feito','Observação'];
   const stLabel={aberto:'Em aberto',atrasado:'Atrasado',corrigido:'Corrigido'};
   const lines=[header.map(csvCell).join(';')];
-  rows.forEach(r=>lines.push([fmtDate(r.data),r.equipe1?.setor||r.equipe2?.setor||'',(r.equipe1?.nome||'')+(r.funcionario2_id?' + '+(r.equipe2?.nome||''):' (sozinho)'),r.tipo||'',r.gravidade||'',r.peso||1,fmtPts(errRowPoints(r)),errorsExtended?stLabel[errStatus(r)]:'',r.corrigido_em?new Date(r.corrigido_em).toLocaleDateString('pt-BR'):'',r.corrigido_obs||'',r.observacao||''].map(csvCell).join(';')));
+  rows.forEach(r=>lines.push([fmtDate(r.data),r.equipe1?.setor||r.equipe2?.setor||'',(r.equipe1?.nome||'')+(r.funcionario2_id?' + '+(r.equipe2?.nome||''):' (sozinho)'),r.tipo||'',r.gravidade||'',r.cliente_nome||'',r.peso||1,fmtPts(errRowPoints(r)),errorsExtended?stLabel[errStatus(r)]:'',r.corrigido_em?new Date(r.corrigido_em).toLocaleDateString('pt-BR'):'',r.corrigido_obs||'',r.observacao||''].map(csvCell).join(';')));
   const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`erros-equipe-${document.getElementById('errorMonthFilter').value||'periodo'}.csv`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
@@ -2879,7 +2881,7 @@ document.getElementById('errorForm').onsubmit=async e=>{
   if(f2&&f1===f2)return showToast('Selecione dois técnicos diferentes.');
   const severity=document.getElementById('errorSeverity').value;
   const weight=Number((errorWeightConfig.find(x=>x.gravidade===severity)||{}).peso||1);
-  const payload={data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:document.getElementById('errorType').value.trim(),gravidade:severity,peso:weight,observacao:document.getElementById('errorObservation').value.trim()||null};
+  const payload={data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:document.getElementById('errorType').value.trim(),gravidade:severity,peso:weight,cliente_nome:document.getElementById('errorClientName').value.trim()||null,observacao:document.getElementById('errorObservation').value.trim()||null};
   const curErr=id?errorRows.find(x=>String(x.id)===String(id)):null;
   if(curErr&&errorsExtended&&curErr.corrigido)payload.peso_final=Math.round(weight*errCfg(severity).pct)/100;
   const btn=document.getElementById('saveError');btn.disabled=true;
