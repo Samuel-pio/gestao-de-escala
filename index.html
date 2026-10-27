@@ -295,6 +295,10 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
 <div class="boxhead"><div><h2>⚠️ Erros aguardando correção</h2><p>Erros da equipe ainda em aberto nos seus setores.</p></div><strong id="errorsDashboardBadge">0</strong></div>
 <div id="errorsDashboardList"></div>
 </section>
+<section class="box" id="responsiblePendingBox" style="margin-bottom:18px;display:none">
+<div class="boxhead"><div><h2>📌 Pendências por responsável</h2><p>Erros em aberto e solicitações pendentes agrupados por responsável.</p></div><strong id="responsiblePendingBadge">0</strong></div>
+<div id="responsiblePendingList"></div>
+</section>
 </div>
 <section id="agendaView" style="display:none"><header><div><h1>Agenda</h1><p>Visualize a escala, folgas, férias e solicitações da equipe.</p></div><select id="agendaSectorFilter" title="Filtrar agenda por setor" style="border:1px solid #dcdacb;border-radius:10px;padding:10px 12px;background:white;color:#111111;min-width:200px"><option value="">Todos os setores</option></select></header><section class="grid" style="margin-top:28px"><div class="calendar box"><div class="boxhead"><div><h2>Calendário</h2><p id="monthTitle">Carregando...</p></div><div class="arrows"><button id="prevMonth">‹</button><button id="nextMonth">›</button></div></div><div class="week"><b>SEG</b><b>TER</b><b>QUA</b><b>QUI</b><b>SEX</b><b>SÁB</b><b>DOM</b></div><div class="month" id="month"></div></div><div class="side"><div class="box legend"><h2>Legenda</h2><p>🔴 Folga</p><p>🟡 Pendente</p><p>🔵 Férias</p><p>🟣 Folga do Plantão</p><p>🟠 Plantão</p><p>🎌 Feriado</p></div>
 <div class="box" id="agendaNotesBox" style="margin-top:18px">
@@ -585,6 +589,12 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
     <div class="form-actions"><button type="button" class="secondary" id="cancelErrorFix">Cancelar</button><button type="submit" class="primary" id="saveErrorFix">Confirmar correção</button></div>
   </form>
 </div></div>
+<div class="modal" id="errorHistoryModal" aria-hidden="true">
+  <div class="modal-card" style="max-width:850px;max-height:85vh;overflow:auto">
+    <div class="modal-head"><div><h2>Histórico de alterações</h2><p id="errorHistoryInfo">Registro de criação, edição, correção, reabertura e exclusão.</p></div><button class="close" id="closeErrorHistory" type="button">×</button></div>
+    <div id="errorHistoryBody">Carregando histórico...</div>
+  </div>
+</div>
 <div class="modal" id="editEmployeeModal" aria-hidden="true">
   <div class="modal-card">
     <div class="modal-head">
@@ -676,6 +686,9 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
           <label><input type="checkbox" class="userPerm" value="plantoes"> Plantões</label>
           <label><input type="checkbox" class="userPerm" value="erros_equipe"> Erros da Equipe — visualizar registros do setor</label>
           <label><input type="checkbox" class="userPerm" value="erros_lancar"> Lançar erros — visualizar somente os próprios lançamentos</label>
+          <label><input type="checkbox" class="userPerm" value="erros_editar"> Editar erros permitidos do setor</label>
+          <label><input type="checkbox" class="userPerm" value="erros_historico"> Consultar histórico de alterações dos erros</label>
+          <label><input type="checkbox" class="userPerm" value="pendencias_responsavel"> Ver pendências por responsável no Dashboard</label>
           <label><input type="checkbox" class="userPerm" value="manutencoes"> Manutenções Preventivas</label>
           <label><input type="checkbox" class="userPerm" value="relatorios"> Relatórios</label>
         </div>
@@ -865,7 +878,7 @@ function showLogin(){
   setTimeout(()=>document.getElementById('loginEmail').focus(),50);
 }
 
-const ALL_PERMISSIONS=['dashboard','dashboard_plantoes_todos','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','erros_lancar','manutencoes','relatorios'];
+const ALL_PERMISSIONS=['dashboard','dashboard_plantoes_todos','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','erros_lancar','erros_editar','erros_historico','pendencias_responsavel','manutencoes','relatorios'];
 const ACTION_PERMISSIONS=['plantoes_excluir','solicitacoes_excluir','erros_excluir','manutencoes_excluir','erros_corrigir'];
 const PERMISSION_PRESETS={
   visualizador:['dashboard','agenda','historico','relatorios'],
@@ -934,11 +947,11 @@ function currentPermissions(){
   return Array.isArray(p)?p:[];
 }
 function canAccess(permission){return currentRole()==='admin'||currentPermissions().includes(permission)}
-function canAccessErrors(){return currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_lancar')}
+function canAccessErrors(){return currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_lancar')||canAccess('erros_editar')}
 function canLaunchError(){return currentRole()==='admin'||canAccess('erros_lancar')||canAccess('erros_equipe')}
 function canEditError(r){
   if(!r)return false;
-  if(currentRole()==='admin'||canAccess('erros_equipe'))return hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'');
+  if(currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_editar'))return hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'');
   return canAccess('erros_lancar')&&String(r.criado_por||'')===String(authSession?.user?.id||'')&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'');
 }
 function canDo(action){
@@ -1475,7 +1488,22 @@ function toggleAlertPanel(force){
 
 function setActiveNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));const n=document.getElementById(id);if(n)n.classList.add('on')}
 function hideViews(){['dashboardView','agendaView','requestsView','historyView','teamView','plantaoView','errorsView','airView','usersView','reportsView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none'})}
-function showDashboard(){hideViews();document.getElementById('dashboardView').style.display='block';setActiveNav('dashboardNav');loadAirDashboardAlert()}
+function showDashboard(){hideViews();document.getElementById('dashboardView').style.display='block';setActiveNav('dashboardNav');loadAirDashboardAlert();loadPendingByResponsible()}
+async function loadPendingByResponsible(){
+  const box=document.getElementById('responsiblePendingBox');if(!box)return;
+  if(!(currentRole()==='admin'||canAccess('pendencias_responsavel'))){box.style.display='none';return}
+  box.style.display='block';const list=document.getElementById('responsiblePendingList');list.innerHTML='<div class="req"><span><b>Carregando...</b></span></div>';
+  try{
+    const rows=await sb('erros_equipes?select=id,data,tipo,corrigido,funcionario1_id,funcionario2_id,equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor)&corrigido=eq.false&order=data.asc&limit=500');
+    const grouped={};let assignments=0;
+    rows.forEach(r=>{for(const emp of [r.equipe1,r.funcionario2_id?r.equipe2:null].filter(Boolean)){if(!hasSectorAccess(emp.setor))continue;const key=String(emp.id);if(!grouped[key])grouped[key]={nome:emp.nome,setor:emp.setor,total:0,erros:0,solicitacoes:0,items:[]};grouped[key].total++;grouped[key].erros++;assignments++;grouped[key].items.push('Erro: '+(r.tipo||'sem tipo'))}});
+    if(canAccess('solicitacoes')){
+      try{const requests=await sb('solicitacoes?select=id,motivo,status,funcionario_id,equipe:equipe!solicitacoes_funcionario_id_fkey(id,nome,setor)&status=eq.Pendente&order=data_inicial.asc&limit=500');requests.forEach(r=>{const emp=r.equipe;if(!emp||!hasSectorAccess(emp.setor))return;const key=String(emp.id);if(!grouped[key])grouped[key]={nome:emp.nome,setor:emp.setor,total:0,erros:0,solicitacoes:0,items:[]};grouped[key].total++;grouped[key].solicitacoes++;assignments++;grouped[key].items.push('Solicitação: '+(r.motivo||'sem motivo'))})}catch(reqErr){console.warn('Solicitações pendentes indisponíveis para este usuário',reqErr)}
+    }
+    const sorted=Object.values(grouped).sort((a,b)=>b.total-a.total);document.getElementById('responsiblePendingBadge').textContent=assignments;
+    list.innerHTML=sorted.length?sorted.map(g=>`<div class="req" style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #eee"><span><b>${safe(g.nome)}</b><small>${safe(g.setor||'Sem setor')} · ${g.erros} erro(s) em aberto · ${g.solicitacoes} solicitação(ões) pendente(s)</small></span><strong style="white-space:nowrap">${g.total} pendência${g.total===1?'':'s'}</strong></div>`).join(''):'<div class="req"><span><b>Nenhuma pendência em aberto.</b></span></div>';
+  }catch(e){console.warn('Não foi possível carregar pendências por responsável',e);list.innerHTML='<div class="req"><span>Não foi possível carregar as pendências. Verifique o acesso a Erros da Equipe.</span></div>';document.getElementById('responsiblePendingBadge').textContent='—'}
+}
 function showAgenda(){hideViews();document.getElementById('agendaView').style.display='block';setActiveNav('agendaNav')}
 async function showRequests(){hideViews();document.getElementById('requestsView').style.display='block';setActiveNav('requestsNav');await loadAllRequests()}
 async function showHistory(){hideViews();document.getElementById('historyView').style.display='block';setActiveNav('historyNav');await loadHistory()}
@@ -1893,7 +1921,7 @@ function openErrorModal(row=null){
 }
 function closeErrorModal(){const m=document.getElementById('errorModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
 async function showErrors(){
-  const allowedToOpen=currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_lancar');
+  const allowedToOpen=currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_lancar')||canAccess('erros_editar');
   if(!allowedToOpen){showToast('Seu usuário não tem permissão para acessar Erros da Equipe.');return}
   const errorsView=document.getElementById('errorsView');
   if(!errorsView){showToast('A tela de erros não foi encontrada. Atualize o sistema.');return}
@@ -1976,7 +2004,7 @@ async function loadErrorAuthors(){
     const raw=(me.user_metadata?.name||email.split('@')[0]||'Usuário').replace(/[._-]+/g,' ').trim();
     window.errorAuthorMap[me.id]=raw.replace(/\b\w/g,c=>c.toUpperCase());
   }
-  if(currentRole()==='admin'||canAccess('erros_equipe')){
+  if(currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_historico')){
     try{
       // Ação dedicada: retorna apenas IDs e nomes dos usuários para identificar quem lançou cada erro.
       // Não usa a ação administrativa 'list', que é restrita a administradores.
@@ -1988,6 +2016,20 @@ async function loadErrorAuthors(){
     }catch(e){console.warn('Não foi possível carregar nomes dos autores',e)}
   }
 }
+async function openErrorHistory(id){
+  if(!(currentRole()==='admin'||canAccess('erros_historico'))){showToast('Você não tem permissão para consultar o histórico.');return}
+  const row=errorRows.find(r=>String(r.id)===String(id));
+  const modal=document.getElementById('errorHistoryModal');
+  document.getElementById('errorHistoryInfo').textContent=row?`${row.tipo||'Erro'} • ${row.equipe1?.nome||'—'}${row.funcionario2_id?' + '+(row.equipe2?.nome||'—'):''} • ${fmtDate(row.data)}`:`Erro #${id}`;
+  document.getElementById('errorHistoryBody').innerHTML='Carregando histórico...';modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+  try{
+    const logs=await sb(`erros_equipes_historico?select=id,erro_id,acao,setor,realizado_por,realizado_em,registro_anterior,registro_novo&erro_id=eq.${encodeURIComponent(id)}&order=realizado_em.desc`);
+    const relevant=['data','tipo','gravidade','cliente_nome','observacao','funcionario1_id','funcionario2_id','corrigido','corrigido_obs'];
+    const labels={data:'Data',tipo:'Tipo do erro',gravidade:'Gravidade',cliente_nome:'Cliente',observacao:'Observação',funcionario1_id:'Técnico 1',funcionario2_id:'Técnico 2',corrigido:'Corrigido',corrigido_obs:'Observação da correção'};
+    document.getElementById('errorHistoryBody').innerHTML=logs.length?`<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Data/hora</th><th>Ação</th><th>Responsável</th><th>Alterações</th></tr></thead><tbody>${logs.map(log=>{const before=log.registro_anterior||{},after=log.registro_novo||{};let changes='Registro criado';if(log.acao==='UPDATE'){const diff=relevant.filter(k=>JSON.stringify(before[k]??null)!==JSON.stringify(after[k]??null)).map(k=>`<b>${safe(labels[k]||k)}:</b> ${safe(String(before[k]??'—'))} → ${safe(String(after[k]??'—'))}`);changes=diff.join('<br>')||'Atualização sem diferença nos campos principais'}else if(log.acao==='DELETE')changes='Registro excluído';return `<tr><td style="padding:9px;border-bottom:1px solid #eee">${safe(new Date(log.realizado_em).toLocaleString('pt-BR'))}</td><td style="padding:9px;border-bottom:1px solid #eee">${log.acao==='INSERT'?'Criado':log.acao==='UPDATE'?'Alterado':'Excluído'}</td><td style="padding:9px;border-bottom:1px solid #eee">${safe(errorAuthorName(log.realizado_por))}</td><td style="padding:9px;border-bottom:1px solid #eee">${changes}</td></tr>`}).join('')}</tbody></table></div>`:'Nenhuma alteração registrada para este erro.';
+  }catch(e){console.error(e);document.getElementById('errorHistoryBody').innerHTML='Não foi possível carregar o histórico. Confira a permissão de consulta e as regras do Supabase.'}
+}
+function closeErrorHistory(){const m=document.getElementById('errorHistoryModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
 function errorAuthorName(id){
   if(!id)return '—';
   if(window.errorAuthorMap?.[id])return window.errorAuthorMap[id];
@@ -2024,7 +2066,7 @@ function renderErrors(){
   const st=document.getElementById('errorStatusFilter')?.value||'';
   const normalizeSearch=v=>String(v??'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   const search=normalizeSearch(document.getElementById('errorSearchFilter')?.value||'');
-  const ownOnly=currentRole()!=='admin'&&!canAccess('erros_equipe')&&canAccess('erros_lancar');
+  const ownOnly=currentRole()!=='admin'&&!canAccess('erros_equipe')&&!canAccess('erros_editar')&&canAccess('erros_lancar');
   const base=errorRows.filter(r=>{
     if(ownOnly&&String(r.criado_por||'')!==String(authSession?.user?.id||''))return false;
     const searchHaystack=normalizeSearch([
@@ -2086,7 +2128,7 @@ function renderErrors(){
     <td>${fmtDate(r.data)}</td><td>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
     <td>${safe(r.tipo||'—')}${errIsRecurrent(r)?'<span class="err-badge rec" title="Mesmo tipo de erro com a mesma dupla/técnico nos últimos 30 dias">↻ Reincidente</span>':''}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${statusCell(r)}</td><td>${safe(r.cliente_nome||'—')}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
-    <td>${(canEditError(r)||(canDo('erros_excluir')&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'')))?`<div class="action-menu"><button type="button" class="action-trigger" onclick="toggleEmployeeActions(event,'e-${r.id}')">⋮ Ações</button><div class="action-dropdown" data-action-menu="e-${r.id}">${canEditError(r)?`<button type="button" data-error-edit="${r.id}">✏ Editar</button>`:''}${canDo('erros_excluir')&&(currentRole()==='admin'||canAccess('erros_equipe')||String(r.criado_por||'')===String(authSession?.user?.id||''))?`<button type="button" class="danger" data-error-delete="${r.id}">🗑 Excluir</button>`:''}</div></div>`:'—'}</td>
+    <td>${(canEditError(r)||(canDo('erros_excluir')&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||''))||canAccess('erros_historico'))?`<div class="action-menu"><button type="button" class="action-trigger" onclick="toggleEmployeeActions(event,'e-${r.id}')">⋮ Ações</button><div class="action-dropdown" data-action-menu="e-${r.id}">${canEditError(r)?`<button type="button" data-error-edit="${r.id}">✏ Editar</button>`:''}${canAccess('erros_historico')?`<button type="button" data-error-history="${r.id}">◷ Histórico</button>`:''}${canDo('erros_excluir')&&(currentRole()==='admin'||canAccess('erros_equipe')||String(r.criado_por||'')===String(authSession?.user?.id||''))?`<button type="button" class="danger" data-error-delete="${r.id}">🗑 Excluir</button>`:''}</div></div>`:'—'}</td>
   </tr>`).join('')||'<tr><td colspan="10">Nenhum erro registrado neste mês.</td></tr>';
 }
 function openErrorFixModal(r){
@@ -2517,7 +2559,7 @@ async function userAdminApi(payload){
 }
 function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Nunca'}
 function permissionLabel(p){
-  return {dashboard:'Dashboard',dashboard_plantoes_todos:'Dashboard — visualizar plantões de todas as cidades',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe (visão do setor)',erros_lancar:'Lançar erros (somente próprios)',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos'}[p]||p;
+  return {dashboard:'Dashboard',dashboard_plantoes_todos:'Dashboard — visualizar plantões de todas as cidades',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe (visão do setor)',erros_lancar:'Lançar erros (somente próprios)',erros_editar:'Editar erros do setor',erros_historico:'Histórico de alterações dos erros',pendencias_responsavel:'Pendências por responsável no Dashboard',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos'}[p]||p;
 }
 async function loadUsers(){
   const tbody=document.getElementById('usersTableBody');
@@ -2854,6 +2896,7 @@ document.getElementById('errorFixForm').onsubmit=async e=>{
 };
 document.getElementById('cancelError').onclick=closeErrorModal;
 document.getElementById('errorModal').onclick=e=>{if(e.target.id==='errorModal')closeErrorModal()};
+document.getElementById('closeErrorHistory').onclick=closeErrorHistory;document.getElementById('errorHistoryModal').onclick=e=>{if(e.target.id==='errorHistoryModal')closeErrorHistory()};
 document.getElementById('errorMonthFilter').onchange=()=>{resetPage('errors');loadErrors()};
 document.getElementById('errorSector').onchange=fillErrorEmployees;
 document.getElementById('errorSectorFilter').onchange=()=>{
@@ -2902,6 +2945,8 @@ document.getElementById('errorsTableBody').onclick=async e=>{
     try{await sbPatchChecked(`erros_equipes?id=eq.${r.id}`,{corrigido:false,corrigido_em:null,corrigido_por:null,corrigido_obs:null,peso_final:null});showToast('Erro reaberto.');await loadErrors();loadErrorsDashboardAlert()}catch(err){console.error(err);showToast(patchErrorMsg(err))}
     return;
   }
+  const hist=e.target.closest('[data-error-history]');
+  if(hist){openErrorHistory(hist.dataset.errorHistory);return}
   const edit=e.target.closest('[data-error-edit]');
   if(edit){const r=errorRows.find(x=>String(x.id)===edit.dataset.errorEdit);if(r&&canEditError(r))openErrorModal(r);else showToast('Você não tem permissão para editar este erro.');return}
   const del=e.target.closest('[data-error-delete]');
