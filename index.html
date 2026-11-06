@@ -404,7 +404,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
       <input id="errorMonthFilter" type="month">
       <select id="errorSectorFilter"><option value="">Todos os setores</option></select>
       <select id="errorEmployeeFilter"><option value="">Todos os funcionários</option></select>
-      <input id="errorSearchFilter" type="search" placeholder="Buscar tipo, cliente, responsável, dupla, observação..." aria-label="Buscar por tipo de erro, cliente, responsável, dupla, setor ou observação" style="min-width:190px">
+      <input id="errorSearchFilter" type="search" placeholder="Buscar categoria, tipo, cliente, responsável..." aria-label="Buscar por categoria, tipo de erro, cliente, responsável, dupla, setor ou observação" style="min-width:190px">
       <select id="errorStatusFilter"><option value="">Todos os status</option><option value="aberto">Em aberto</option><option value="atrasado">Atrasados</option><option value="corrigido">Corrigidos</option></select>
       <button type="button" class="mini" id="exportErrors">⬇ CSV</button>
     </div>
@@ -413,7 +413,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
   <div id="errorSetupNotice" class="setup-notice" style="display:none"></div><div id="errorKpis" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0 0"></div>
   <div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;min-width:760px">
-      <thead><tr><th>DATA</th><th>SETOR</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>STATUS</th><th>CLIENTE</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
+      <thead><tr><th>DATA</th><th>SETOR</th><th>DUPLA</th><th>CATEGORIA</th><th>TIPO DO ERRO</th><th>STATUS</th><th>CLIENTE</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
       <tbody id="errorsTableBody"><tr><td colspan="10">Carregando...</td></tr></tbody>
     </table>
   </div>
@@ -554,7 +554,8 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
     <input type="hidden" id="errorId">
     <div class="form-grid">
       <div class="field"><label>Data</label><input type="date" id="errorDate" required></div>
-      <div class="field"><label>Tipo do erro</label><select id="errorType" required><option value="">Selecione...</option><option value="Atendimento">Atendimento</option><option value="Comercial">Comercial</option><option value="OS">OS</option></select></div>
+      <div class="field"><label>Categoria</label><select id="errorCategory" required><option value="">Selecione...</option><option value="Atendimento">Atendimento</option><option value="Comercial">Comercial</option><option value="OS">OS</option></select></div>
+      <div class="field"><label for="errorType">Tipo do erro</label><input id="errorType" type="text" maxlength="160" required placeholder="Ex.: não realizou contato com o cliente"></div>
       <div class="field"><label>Setor</label><select id="errorSector"><option value="">Todos os setores</option></select></div>
       <div class="field"><label>Técnico 1</label><select id="errorEmployee1" required></select></div>
       <div class="field">
@@ -1937,7 +1938,8 @@ function openErrorModal(row=null){
   useSecond.onchange=()=>{secondSelect.disabled=!useSecond.checked;if(!useSecond.checked)secondSelect.value='';};
   if(row){
     document.getElementById('errorDate').value=row.data;
-    document.getElementById('errorType').value=['Atendimento','Comercial','OS'].includes(row.tipo)?row.tipo:'';
+    document.getElementById('errorCategory').value=row.categoria||'';
+    document.getElementById('errorType').value=row.tipo||'';
     document.getElementById('errorObservation').value=row.observacao||'';
     document.getElementById('errorClientName').value=row.cliente_nome||'';
     document.getElementById('errorEmployee1').value=row.funcionario1_id;
@@ -2012,7 +2014,7 @@ async function loadErrors(){
   if(!month)return;
   const [y,m]=month.split('-').map(Number);
   const from=`${month}-01`, to=iso(new Date(y,m,0));
-  const baseCols='id,data,funcionario1_id,funcionario2_id,tipo,gravidade,peso,cliente_nome,observacao,criado_por';
+  const baseCols='id,data,funcionario1_id,funcionario2_id,categoria,tipo,gravidade,peso,cliente_nome,observacao,criado_por';
   const extCols=',corrigido,corrigido_em,corrigido_por,corrigido_obs,peso_final';
   const rel=',equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor)';
   const tail=`&data=gte.${from}&data=lte.${to}&order=data.desc,id.desc`;
@@ -2055,8 +2057,8 @@ async function openErrorHistory(id){
   document.getElementById('errorHistoryBody').innerHTML='Carregando histórico...';modal.classList.add('open');modal.setAttribute('aria-hidden','false');
   try{
     let logs; try{logs=await sb(`erros_equipes_historico?select=id,erro_id,acao,setor,realizado_por,realizado_por_nome,realizado_em,registro_anterior,registro_novo&erro_id=eq.${encodeURIComponent(id)}&order=realizado_em.desc`)}catch(_){logs=await sb(`erros_equipes_historico?select=id,erro_id,acao,setor,realizado_por,realizado_em,registro_anterior,registro_novo&erro_id=eq.${encodeURIComponent(id)}&order=realizado_em.desc`)}
-    const relevant=['data','tipo','gravidade','cliente_nome','observacao','funcionario1_id','funcionario2_id','corrigido','corrigido_obs'];
-    const labels={data:'Data',tipo:'Tipo do erro',gravidade:'Gravidade',cliente_nome:'Cliente',observacao:'Observação',funcionario1_id:'Técnico 1',funcionario2_id:'Técnico 2',corrigido:'Corrigido',corrigido_obs:'Observação da correção'};
+    const relevant=['data','categoria','tipo','gravidade','cliente_nome','observacao','funcionario1_id','funcionario2_id','corrigido','corrigido_obs'];
+    const labels={data:'Data',categoria:'Categoria',tipo:'Tipo do erro',gravidade:'Gravidade',cliente_nome:'Cliente',observacao:'Observação',funcionario1_id:'Técnico 1',funcionario2_id:'Técnico 2',corrigido:'Corrigido',corrigido_obs:'Observação da correção'};
     document.getElementById('errorHistoryBody').innerHTML=logs.length?`<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Data/hora</th><th>Ação</th><th>Responsável</th><th>Alterações</th></tr></thead><tbody>${logs.map(log=>{const before=log.registro_anterior||{},after=log.registro_novo||{};let changes='Registro criado';if(log.acao==='UPDATE'){const diff=relevant.filter(k=>JSON.stringify(before[k]??null)!==JSON.stringify(after[k]??null)).map(k=>`<b>${safe(labels[k]||k)}:</b> ${safe(String(before[k]??'—'))} → ${safe(String(after[k]??'—'))}`);changes=diff.join('<br>')||'Atualização sem diferença nos campos principais'}else if(log.acao==='DELETE')changes='Registro excluído';return `<tr><td style="padding:9px;border-bottom:1px solid #eee">${safe(new Date(log.realizado_em).toLocaleString('pt-BR'))}</td><td style="padding:9px;border-bottom:1px solid #eee">${log.acao==='INSERT'?'Criado':log.acao==='UPDATE'?'Alterado':'Excluído'}</td><td style="padding:9px;border-bottom:1px solid #eee">${safe(log.realizado_por_nome||errorAuthorName(log.realizado_por))}</td><td style="padding:9px;border-bottom:1px solid #eee">${changes}</td></tr>`}).join('')}</tbody></table></div>`:'Nenhuma alteração registrada para este erro.';
   }catch(e){console.error(e);document.getElementById('errorHistoryBody').innerHTML='Não foi possível carregar o histórico. Confira a permissão de consulta e as regras do Supabase.'}
 }
@@ -2101,7 +2103,7 @@ function renderErrors(){
   const base=errorRows.filter(r=>{
     if(ownOnly&&String(r.criado_por||'')!==String(authSession?.user?.id||''))return false;
     const searchHaystack=normalizeSearch([
-      r.tipo,r.cliente_nome,errorAuthorName(r.criado_por),r.observacao,
+      r.categoria,r.tipo,r.cliente_nome,errorAuthorName(r.criado_por),r.observacao,
       r.equipe1?.nome,r.equipe2?.nome,r.equipe1?.setor,r.equipe2?.setor,
       r.gravidade,r.data,fmtDate(r.data),r.corrigido_obs,
       r.corrigido_por?errorAuthorName(r.corrigido_por):''
@@ -2155,7 +2157,7 @@ function renderErrors(){
   const pageRows=paginateList('errors',rows,document.getElementById('errorsTableBody'),renderErrors);
   document.getElementById('errorsTableBody').innerHTML=pageRows.map(r=>`<tr>
     <td>${fmtDate(r.data)}</td><td>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
-    <td>${safe(r.tipo||'—')}${errIsRecurrent(r)?'<span class="err-badge rec" title="Mesmo tipo de erro com a mesma dupla/técnico nos últimos 30 dias">↻ Reincidente</span>':''}</td><td>${statusCell(r)}</td><td>${safe(r.cliente_nome||'—')}</td><td>${safe(r.observacao||'—')}</td>
+    <td>${safe(r.categoria||'—')}</td><td>${safe(r.tipo||'—')}${errIsRecurrent(r)?'<span class="err-badge rec" title="Mesmo tipo de erro com a mesma dupla/técnico nos últimos 30 dias">↻ Reincidente</span>':''}</td><td>${statusCell(r)}</td><td>${safe(r.cliente_nome||'—')}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
     <td>${(canEditError(r)||(canDo('erros_excluir')&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||''))||canAccess('erros_historico'))?`<div class="action-menu"><button type="button" class="action-trigger" onclick="toggleEmployeeActions(event,'e-${r.id}')">⋮ Ações</button><div class="action-dropdown" data-action-menu="e-${r.id}">${canEditError(r)?`<button type="button" data-error-edit="${r.id}">✏ Editar</button>`:''}${canAccess('erros_historico')?`<button type="button" data-error-history="${r.id}">◷ Histórico</button>`:''}${canDo('erros_excluir')&&(currentRole()==='admin'||canAccess('erros_equipe')||String(r.criado_por||'')===String(authSession?.user?.id||''))?`<button type="button" class="danger" data-error-delete="${r.id}">🗑 Excluir</button>`:''}</div></div>`:'—'}</td>
   </tr>`).join('')||'<tr><td colspan="10">Nenhum erro registrado neste mês.</td></tr>';
@@ -2171,10 +2173,10 @@ function patchErrorMsg(e){return e&&e.message==='NAO_ATUALIZADO'?'O banco não p
 function exportErrorsCSV(){
   const rows=window.errorFilteredRows||[];
   if(!rows.length){showToast('Nada para exportar neste filtro.');return}
-  const header=['Data','Setor','Dupla','Tipo','Cliente','Peso','Pontos que contam','Status','Corrigido em','O que foi feito','Observação'];
+  const header=['Data','Setor','Dupla','Categoria','Tipo do erro','Cliente','Peso','Pontos que contam','Status','Corrigido em','O que foi feito','Observação'];
   const stLabel={aberto:'Em aberto',atrasado:'Atrasado',corrigido:'Corrigido'};
   const lines=[header.map(csvCell).join(';')];
-  rows.forEach(r=>lines.push([fmtDate(r.data),r.equipe1?.setor||r.equipe2?.setor||'',(r.equipe1?.nome||'')+(r.funcionario2_id?' + '+(r.equipe2?.nome||''):' (sozinho)'),r.tipo||'',r.cliente_nome||'',r.peso||1,fmtPts(errRowPoints(r)),errorsExtended?stLabel[errStatus(r)]:'',r.corrigido_em?new Date(r.corrigido_em).toLocaleDateString('pt-BR'):'',r.corrigido_obs||'',r.observacao||''].map(csvCell).join(';')));
+  rows.forEach(r=>lines.push([fmtDate(r.data),r.equipe1?.setor||r.equipe2?.setor||'',(r.equipe1?.nome||'')+(r.funcionario2_id?' + '+(r.equipe2?.nome||''):' (sozinho)'),r.categoria||'',r.tipo||'',r.cliente_nome||'',r.peso||1,fmtPts(errRowPoints(r)),errorsExtended?stLabel[errStatus(r)]:'',r.corrigido_em?new Date(r.corrigido_em).toLocaleDateString('pt-BR'):'',r.corrigido_obs||'',r.observacao||''].map(csvCell).join(';')));
   const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`erros-equipe-${document.getElementById('errorMonthFilter').value||'periodo'}.csv`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
@@ -2532,7 +2534,7 @@ async function loadReports(){
   try{
     const requestPromise=sb(`solicitacoes?select=id,data_inicial,data_final,data_pedido,status,motivo,observacao,funcionario_id,equipe(id,nome,setor,cidade)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`).catch(e=>{console.warn('Solicitações não disponíveis no relatório',e);return []});
     const shiftPromise=sb(`plantoes?select=id,data_inicial,data_final,observacao,funcionario_id,funcionario2_id,equipe1:equipe!plantoes_funcionario_id_fkey(id,nome,setor,cidade),equipe2:equipe!plantoes_funcionario2_id_fkey(id,nome,setor,cidade)&data_inicial=lte.${to}&data_final=gte.${from}&order=data_inicial.asc`).catch(e=>{console.warn('Plantões não disponíveis no relatório',e);return []});
-    const errorPromise=sb(`erros_equipes?select=id,data,tipo,gravidade,observacao,funcionario1_id,funcionario2_id,equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor,cidade),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor,cidade)&data=gte.${from}&data=lte.${to}&order=data.desc`).catch(e=>{console.warn('Erros não disponíveis no relatório',e);return []});
+    const errorPromise=sb(`erros_equipes?select=id,data,categoria,tipo,gravidade,observacao,funcionario1_id,funcionario2_id,equipe1:equipe!erros_equipes_funcionario1_id_fkey(id,nome,setor,cidade),equipe2:equipe!erros_equipes_funcionario2_id_fkey(id,nome,setor,cidade)&data=gte.${from}&data=lte.${to}&order=data.desc`).catch(e=>{console.warn('Erros não disponíveis no relatório',e);return []});
     const maintenancePromise=sb(`manutencoes_preventivas?select=id,tipo,local_instalacao,identificacao,data_manutencao,proxima_manutencao,observacao,ativo&data_manutencao=gte.${from}&data_manutencao=lte.${to}&order=data_manutencao.desc`).catch(e=>{console.warn('Manutenções não disponíveis no relatório',e);return []});
     const [allRequests,allShifts,allErrors,allMaintenance]=await Promise.all([requestPromise,shiftPromise,errorPromise,maintenancePromise]);
     const requests=(allRequests||[]).filter(r=>reportEmployeeMatch([r.funcionario_id])&&reportScopeMatch([r.equipe]));
@@ -2564,10 +2566,10 @@ async function loadReports(){
 function exportReportsCSV(){
   const period=window.currentReportPeriod;if(!period){showToast('Atualize o relatório antes de exportar.');return}
   const rows=[
-    ['Categoria','Data inicial','Data final','Funcionário(s)','Setor','Cidade','Tipo do erro','Observação'],
+    ['Categoria','Data inicial','Data final','Funcionário(s)','Setor','Cidade','Categoria','Tipo do erro','Observação'],
     ...(window.currentReportRows||[]).map(r=>['Solicitação',r.data_inicial,r.data_final,r.equipe?.nome||'Funcionário',r.equipe?.setor||'',r.equipe?.cidade||'',r.motivo||'',r.status||'',r.observacao||'']),
     ...(window.currentReportShifts||[]).map(r=>['Plantão',r.data_inicial,r.data_final,[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean).join(' + '),[r.equipe1?.setor,r.equipe2?.setor].filter(Boolean).join(' / '),[r.equipe1?.cidade,r.equipe2?.cidade].filter(Boolean).join(' / '),'Plantão',r.folga_gerada?'Folga gerada':'Escalado',r.observacao||'']),
-    ...(window.currentReportErrors||[]).map(r=>['Erro',r.data,r.data,[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean).join(' + '),[r.equipe1?.setor,r.equipe2?.setor].filter(Boolean).join(' / '),[r.equipe1?.cidade,r.equipe2?.cidade].filter(Boolean).join(' / '),r.tipo||'',r.observacao||'']),
+    ...(window.currentReportErrors||[]).map(r=>['Erro',r.data,r.data,[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean).join(' + '),[r.equipe1?.setor,r.equipe2?.setor].filter(Boolean).join(' / '),[r.equipe1?.cidade,r.equipe2?.cidade].filter(Boolean).join(' / '),r.categoria||'',r.tipo||'',r.observacao||'']),
     ...(window.currentReportMaintenance||[]).map(r=>['Manutenção',r.data_manutencao,r.proxima_manutencao,'','','',`${r.tipo||''} • ${r.local_instalacao||''} • ${r.identificacao||''}`,r.ativo?'Ativa':'Inativa',r.observacao||''])
   ];
   const html=`<html><head><meta charset="utf-8"></head><body><h2>Relatório geral do Gestão de Escala</h2><p>Período: ${period.from} a ${period.to}</p><table border="1"><tr>${rows[0].map(x=>`<th>${safe(x)}</th>`).join('')}</tr>${rows.slice(1).map(row=>`<tr>${row.map(x=>`<td>${safe(x)}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
@@ -2953,9 +2955,11 @@ document.getElementById('errorForm').onsubmit=async e=>{
   if(f2&&f1===f2)return showToast('Selecione dois técnicos diferentes.');
   const severity='Leve';
   const weight=1;
-  const errorCategory=document.getElementById('errorType').value;
+  const errorCategory=document.getElementById('errorCategory').value;
+  const errorType=document.getElementById('errorType').value.trim();
   if(!['Atendimento','Comercial','OS'].includes(errorCategory))return showToast('Selecione uma das categorias disponíveis.');
-  const payload={data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:errorCategory,gravidade:severity,peso:weight,cliente_nome:document.getElementById('errorClientName').value.trim()||null,observacao:document.getElementById('errorObservation').value.trim()||null};
+  if(!errorType)return showToast('Informe o tipo específico do erro.');
+  const payload={categoria:errorCategory,data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:errorType,gravidade:severity,peso:weight,cliente_nome:document.getElementById('errorClientName').value.trim()||null,observacao:document.getElementById('errorObservation').value.trim()||null};
   const curErr=id?errorRows.find(x=>String(x.id)===String(id)):null;
   if(curErr&&errorsExtended&&curErr.corrigido)payload.peso_final=Math.round(weight*errCfg(severity).pct)/100;
   const btn=document.getElementById('saveError');btn.disabled=true;
