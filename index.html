@@ -555,7 +555,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
     <div class="form-grid">
       <div class="field"><label>Data</label><input type="date" id="errorDate" required></div>
       <div class="field"><label>Categoria</label><select id="errorCategory" required><option value="">Selecione...</option><option value="Atendimento">Atendimento</option><option value="Comercial">Comercial</option><option value="OS">OS</option></select></div>
-      <div class="field"><label for="errorType">Tipo do erro</label><input id="errorType" type="text" maxlength="160" required placeholder="Ex.: não realizou contato com o cliente"></div>
+      <div class="field"><label for="errorType">Tipo do erro</label><div style="display:flex;gap:8px;align-items:center"><select id="errorType" required disabled style="flex:1;min-width:0"><option value="">Selecione primeiro a categoria...</option></select><button type="button" class="secondary" id="addErrorTypeBtn" style="white-space:nowrap;display:none">+ Adicionar</button></div><small id="errorTypeHint" style="color:#777">Escolha uma categoria para carregar os tipos cadastrados.</small></div>
       <div class="field"><label>Setor</label><select id="errorSector"><option value="">Todos os setores</option></select></div>
       <div class="field"><label>Técnico 1</label><select id="errorEmployee1" required></select></div>
       <div class="field">
@@ -649,12 +649,11 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
         <label>Nome<input id="userName" required></label>
         <label>E-mail<input id="userEmail" type="email" required></label>
         <label>Senha <input id="userPassword" type="password" minlength="6" placeholder="No cadastro, mínimo 6 caracteres"></label>
-        <label>Perfil
-          <select id="userRole">
-            <option value="usuario">Usuário</option>
-            <option value="admin">Administrador</option>
-          </select>
+        <label>Cargo no sistema
+          <select id="userCargo" required><option value="">Carregando cargos...</option></select>
+          <small style="color:#6f6e63">Define o nível principal de acesso: Administrador, Gestor, Supervisor, Líder ou Funcionário.</small>
         </label>
+        <select id="userRole" hidden aria-hidden="true"><option value="usuario">Usuário</option><option value="admin">Administrador</option></select>
         <div id="userSectorLabel" style="grid-column:1/-1">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:7px">
             <span style="font-weight:600">Setores de acesso</span>
@@ -1916,7 +1915,50 @@ function fillErrorEmployees(){
     el.value=team.some(e=>String(e.id)===cur)?cur:'';
   });
 }
-function openErrorModal(row=null){
+let errorTypeCache={};
+async function loadErrorTypes(category,selected=''){
+  const select=document.getElementById('errorType');
+  const addBtn=document.getElementById('addErrorTypeBtn');
+  const hint=document.getElementById('errorTypeHint');
+  select.innerHTML='<option value="">Carregando tipos...</option>';
+  select.disabled=true;
+  addBtn.style.display=currentRole()==='admin'&&!!category?'':'none';
+  if(!category){select.innerHTML='<option value="">Selecione primeiro a categoria...</option>';hint.textContent='Escolha uma categoria para carregar os tipos cadastrados.';return}
+  try{
+    const rows=await sb(`erros_equipes_tipos?select=id,categoria,nome,ativo&categoria=eq.${encodeURIComponent(category)}&ativo=eq.true&order=nome.asc`);
+    errorTypeCache[category]=rows||[];
+    select.innerHTML='<option value="">Selecione o tipo do erro...</option>'+(rows||[]).map(x=>`<option value="${safe(x.nome)}">${safe(x.nome)}</option>`).join('');
+    if(selected&&!Array.from(select.options).some(o=>o.value===selected))select.insertAdjacentHTML('beforeend',`<option value="${safe(selected)}">${safe(selected)} (já utilizado)</option>`);
+    select.value=selected||'';
+    select.disabled=false;
+    hint.textContent=rows?.length?'Selecione um tipo cadastrado.':'Ainda não há tipos nesta categoria. '+(currentRole()==='admin'?'Use “+ Adicionar” para cadastrar o primeiro.':'Peça ao administrador para cadastrar os tipos.');
+  }catch(e){
+    console.error('Falha ao carregar catálogo de tipos de erro',e);
+    select.innerHTML='<option value="">Não foi possível carregar os tipos</option>';
+    select.disabled=true;
+    hint.textContent='O catálogo ainda precisa ser criado no Supabase. Execute o SQL de configuração.';
+  }
+}
+async function addErrorType(){
+  const category=document.getElementById('errorCategory').value;
+  if(currentRole()!=='admin'){showToast('Somente o administrador pode cadastrar novos tipos.');return}
+  if(!category){showToast('Selecione a categoria primeiro.');return}
+  const name=prompt(`Novo tipo de erro para ${category}:`);
+  if(name===null)return;
+  const clean=name.trim();
+  if(!clean)return showToast('Informe o nome do tipo de erro.');
+  if(clean.length>160)return showToast('Use no máximo 160 caracteres.');
+  try{
+    await sb('erros_equipes_tipos',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({categoria:category,nome:clean,ativo:true})});
+    await loadErrorTypes(category,clean);
+    showToast('Tipo de erro cadastrado!');
+  }catch(e){
+    console.error(e);
+    if(String(e.message||'').includes('23505'))showToast('Esse tipo já existe nesta categoria.');
+    else showToast('Não foi possível cadastrar. Confira as regras do Supabase.');
+  }
+}
+async function openErrorModal(row=null){
   if(!row&&!canLaunchError()){showToast('Você não tem permissão para lançar erros.');return}
   if(row&&!canEditError(row)){showToast('Você só pode editar erros que lançou, ou erros do seu setor com permissão completa.');return}
   const modal=document.getElementById('errorModal');
@@ -1939,12 +1981,12 @@ function openErrorModal(row=null){
   if(row){
     document.getElementById('errorDate').value=row.data;
     document.getElementById('errorCategory').value=row.categoria||'';
-    document.getElementById('errorType').value=row.tipo||'';
+    await loadErrorTypes(row.categoria||'',row.tipo||'');
     document.getElementById('errorObservation').value=row.observacao||'';
     document.getElementById('errorClientName').value=row.cliente_nome||'';
     document.getElementById('errorEmployee1').value=row.funcionario1_id;
     document.getElementById('errorEmployee2').value=row.funcionario2_id||'';
-  }else {document.getElementById('errorDate').value=todayIsoLocal();document.getElementById('errorClientName').value='';}
+  }else {document.getElementById('errorDate').value=todayIsoLocal();document.getElementById('errorClientName').value='';await loadErrorTypes('','');}
   modal.classList.add('open');modal.setAttribute('aria-hidden','false');
 }
 function closeErrorModal(){const m=document.getElementById('errorModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
@@ -2592,6 +2634,16 @@ function fmtLastAccess(v){return v?new Date(v).toLocaleString('pt-BR',{dateStyle
 function permissionLabel(p){
   return {dashboard:'Dashboard',dashboard_plantoes_todos:'Dashboard — visualizar plantões de todos os setores',agenda:'Agenda',nova_solicitacao:'Nova Solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Erros da Equipe (visão do setor)',erros_lancar:'Lançar erros (somente próprios)',erros_editar:'Editar erros do setor',erros_historico:'Histórico de alterações dos erros',pendencias_responsavel:'Pendências por responsável no Dashboard',manutencoes:'Manutenções Preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos'}[p]||p;
 }
+let userCargoCache=[];
+async function loadUserCargos(){
+  if(!userCargoCache.length){
+    userCargoCache=await sb('cargos?select=id,nome,ativo&ativo=eq.true&order=id.asc');
+  }
+  const select=document.getElementById('userCargo');
+  const current=select.value;
+  select.innerHTML='<option value="">Selecione o cargo</option>'+userCargoCache.map(c=>`<option value="${c.id}">${safe(c.nome)}</option>`).join('');
+  if(current&&userCargoCache.some(c=>String(c.id)===String(current)))select.value=current;
+}
 async function loadUsers(){
   const tbody=document.getElementById('usersTableBody');
   tbody.innerHTML='<tr><td colspan="7">Carregando...</td></tr>';
@@ -2604,7 +2656,7 @@ async function loadUsers(){
       return `<tr>
         <td>${safe(u.name||'-')}<div style="font-size:12px;color:#6f6e63;margin-top:3px">${safe(perms)}</div></td>
         <td>${safe(u.email||'-')}</td>
-        <td>${u.role==='admin'?'Administrador':'Usuário'}</td>
+        <td>${safe(u.cargo_nome|| (u.role==='admin'?'Administrador':'Sem cargo definido'))}</td>
         <td>${u.role==='admin'?'<span style="color:#6f6e63">Todos</span>':safe((u.sectors||[]).join(', ')||u.sector||'Não definido')}</td>
         <td>${u.active?'🟢 Ativo':'⚪ Inativo'}</td>
         <td>${fmtLastAccess(u.last_sign_in_at)}</td>
@@ -2645,13 +2697,14 @@ function updatePermissionUI(){
   document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema e a todos os setores.':'Para lançamento restrito, marque apenas “Lançar erros”: o usuário registra erros e vê somente os próprios. “Erros da Equipe” permite consultar os registros do setor.';
 }
 async function openUserModal(user=null){
-  await loadSectors();
+  await Promise.all([loadSectors(),loadUserCargos()]);
   document.getElementById('userForm').reset();
   document.getElementById('userId').value=user?.id||'';
   document.getElementById('userName').value=user?.name||'';
   document.getElementById('userEmail').value=user?.email||'';
   document.getElementById('userEmail').disabled=!!user;
-  document.getElementById('userRole').value=user?.role||'usuario';
+  document.getElementById('userCargo').value=user?.cargo_id?String(user.cargo_id):'';
+  document.getElementById('userRole').value=(user?.cargo_nome==='Administrador'||user?.role==='admin')?'admin':'usuario';
   const userSectors=user?.role==='admin'?sectorCache.slice():(user?.sectors?.length?user.sectors:(user?.sector?[user.sector]:[]));
   const sectorsBox=document.getElementById('userSectorsBox');
   userSectors.filter(x=>!sectorCache.includes(x)).forEach(x=>sectorsBox.insertAdjacentHTML('beforeend',`<label><input type="checkbox" class="userSectorCheck" value="${safe(x)}"> ${safe(x)} <small style="color:#8d8c80">(inativo)</small></label>`));
@@ -2910,6 +2963,8 @@ document.getElementById('errorsNav').onclick=async(e)=>{
   try{await showErrors()}catch(err){console.error('Falha ao abrir Erros da Equipe:',err);const v=document.getElementById('errorsView');if(v){hideViews();v.style.display='block';setActiveNav('errorsNav')}showToast('A tela abriu, mas ocorreu um erro ao carregar os dados. Confira o console ou tente atualizar a página.')}
 };
 document.getElementById('newErrorBtn').onclick=()=>openErrorModal();
+document.getElementById('errorCategory').onchange=()=>loadErrorTypes(document.getElementById('errorCategory').value,'');
+document.getElementById('addErrorTypeBtn').onclick=addErrorType;
 document.getElementById('closeErrorModal').onclick=closeErrorModal;
 document.getElementById('closeErrorFix').onclick=closeErrorFixModal;
 document.getElementById('cancelErrorFix').onclick=closeErrorFixModal;
@@ -3101,6 +3156,11 @@ document.getElementById('newUserBtn').onclick=()=>openUserModal();
 document.getElementById('closeUserModal').onclick=closeUserModal;
 document.getElementById('cancelUserModal').onclick=closeUserModal;
 document.getElementById('userRole').onchange=updatePermissionUI;
+document.getElementById('userCargo').onchange=e=>{
+  const cargo=userCargoCache.find(c=>String(c.id)===String(e.target.value));
+  document.getElementById('userRole').value=cargo?.nome==='Administrador'?'admin':'usuario';
+  updatePermissionUI();
+};
 document.getElementById('userPreset').onchange=e=>{
   if(document.getElementById('userRole').value==='admin'||!e.target.value)return;
   const list=PERMISSION_PRESETS[e.target.value]||[];
@@ -3115,18 +3175,20 @@ document.getElementById('userForm').onsubmit=async e=>{
   try{
     const id=document.getElementById('userId').value;
     const role=document.getElementById('userRole').value;
+    const cargo_id=Number(document.getElementById('userCargo').value);
+    if(!cargo_id)throw new Error('Selecione o cargo do usuário.');
     const permissions=role==='admin'?ALL_PERMISSIONS.concat(ACTION_PERMISSIONS):selectedUserPermissions();
     const sectors=role==='admin'?[]:selectedUserSectors();
     if(role!=='admin'&&!permissions.length)throw new Error('Selecione pelo menos uma permissão para o usuário.');
     if(role!=='admin'&&!sectors.length)throw new Error('Selecione pelo menos um setor de acesso do usuário.');
     if(id){
-      const payload={action:'update',id,name:document.getElementById('userName').value.trim(),role,permissions,sectors};
+      const payload={action:'update',id,name:document.getElementById('userName').value.trim(),role,cargo_id,permissions,sectors};
       const pwd=document.getElementById('userPassword').value;
       if(pwd)payload.password=pwd;
       await userAdminApi(payload);
       showToast('Usuário atualizado com sucesso!');
     }else{
-      await userAdminApi({action:'create',name:document.getElementById('userName').value.trim(),email:document.getElementById('userEmail').value.trim(),password:document.getElementById('userPassword').value,role,permissions,sectors});
+      await userAdminApi({action:'create',name:document.getElementById('userName').value.trim(),email:document.getElementById('userEmail').value.trim(),password:document.getElementById('userPassword').value,role,cargo_id,permissions,sectors});
       showToast('Usuário cadastrado com sucesso!');
     }
     closeUserModal();await loadUsers();
