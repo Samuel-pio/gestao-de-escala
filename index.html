@@ -413,7 +413,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
   <div id="errorSetupNotice" class="setup-notice" style="display:none"></div><div id="errorKpis" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0 0"></div>
   <div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;min-width:760px">
-      <thead><tr><th>DATA</th><th>SETOR</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>GRAVIDADE</th><th>STATUS</th><th>CLIENTE</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
+      <thead><tr><th>DATA</th><th>SETOR</th><th>DUPLA</th><th>TIPO DO ERRO</th><th>STATUS</th><th>CLIENTE</th><th>OBSERVAÇÃO</th><th>REGISTRADO POR</th><th>AÇÕES</th></tr></thead>
       <tbody id="errorsTableBody"><tr><td colspan="10">Carregando...</td></tr></tbody>
     </table>
   </div>
@@ -554,7 +554,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
     <input type="hidden" id="errorId">
     <div class="form-grid">
       <div class="field"><label>Data</label><input type="date" id="errorDate" required></div>
-      <div class="field"><label>Tipo do erro</label><input type="text" id="errorType" list="errorTypeList" autocomplete="off" placeholder="Ex.: Instalação, acabamento..." required maxlength="120"><datalist id="errorTypeList"></datalist></div><div class="field"><label>Gravidade</label><select id="errorSeverity" required></select></div>
+      <div class="field"><label>Tipo do erro</label><select id="errorType" required><option value="">Selecione...</option><option value="Atendimento">Atendimento</option><option value="Comercial">Comercial</option><option value="OS">OS</option></select></div>
       <div class="field"><label>Setor</label><select id="errorSector"><option value="">Todos os setores</option></select></div>
       <div class="field"><label>Técnico 1</label><select id="errorEmployee1" required></select></div>
       <div class="field">
@@ -1935,14 +1935,11 @@ function openErrorModal(row=null){
   useSecond.checked=!!row?.funcionario2_id;
   secondSelect.disabled=!useSecond.checked;
   useSecond.onchange=()=>{secondSelect.disabled=!useSecond.checked;if(!useSecond.checked)secondSelect.value='';};
-  const sev=document.getElementById('errorSeverity');
-  sev.innerHTML=(errorWeightConfig.length?errorWeightConfig:[{gravidade:'Leve',peso:1},{gravidade:'Moderado',peso:2},{gravidade:'Grave',peso:3},{gravidade:'Crítico',peso:5}]).map(x=>`<option value="${safe(x.gravidade)}">${safe(x.gravidade)} — peso ${x.peso}</option>`).join('');
   if(row){
     document.getElementById('errorDate').value=row.data;
-    document.getElementById('errorType').value=row.tipo||'';
+    document.getElementById('errorType').value=['Atendimento','Comercial','OS'].includes(row.tipo)?row.tipo:'';
     document.getElementById('errorObservation').value=row.observacao||'';
     document.getElementById('errorClientName').value=row.cliente_nome||'';
-    document.getElementById('errorSeverity').value=row.gravidade||'Leve';
     document.getElementById('errorEmployee1').value=row.funcionario1_id;
     document.getElementById('errorEmployee2').value=row.funcionario2_id||'';
   }else {document.getElementById('errorDate').value=todayIsoLocal();document.getElementById('errorClientName').value='';}
@@ -2144,8 +2141,6 @@ function renderErrors(){
       return `<div class="card"><p><span style="display:inline-block;padding:3px 7px;border-radius:999px;background:#efede2;color:#55544c;font-size:11px;margin-bottom:5px">${safe(v.sector)}</span><br>${safe(v.label)}</p><b>${note.toFixed(1)}</b><small>${scoreClass(note)} · ${v.errors} ${v.errors===1?'erro':'erros'} · ${fmtPts(v.points)} pts</small></div>`;
     }).join('')||'<div style="color:#77766b">Nenhum erro registrado neste período.</div>';
   }
-  errorRows.forEach(r=>{if(r.tipo)knownErrorTypes.add(r.tipo.trim())});
-  const dl=document.getElementById('errorTypeList');if(dl)dl.innerHTML=[...knownErrorTypes].sort((a,b)=>a.localeCompare(b,'pt-BR')).map(t=>`<option value="${safe(t)}"></option>`).join('');
   const statusCell=r=>{
     if(!errorsExtended)return '—';
     const fix=canFixError(r);
@@ -2160,7 +2155,7 @@ function renderErrors(){
   const pageRows=paginateList('errors',rows,document.getElementById('errorsTableBody'),renderErrors);
   document.getElementById('errorsTableBody').innerHTML=pageRows.map(r=>`<tr>
     <td>${fmtDate(r.data)}</td><td>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')}</td><td><b>${safe(r.equipe1?.nome||'—')}${r.funcionario2_id?' + '+safe(r.equipe2?.nome||'—'):' (sozinho)'}</b></td>
-    <td>${safe(r.tipo||'—')}${errIsRecurrent(r)?'<span class="err-badge rec" title="Mesmo tipo de erro com a mesma dupla/técnico nos últimos 30 dias">↻ Reincidente</span>':''}</td><td><b>${safe(r.gravidade||'Leve')}</b></td><td>${statusCell(r)}</td><td>${safe(r.cliente_nome||'—')}</td><td>${safe(r.observacao||'—')}</td>
+    <td>${safe(r.tipo||'—')}${errIsRecurrent(r)?'<span class="err-badge rec" title="Mesmo tipo de erro com a mesma dupla/técnico nos últimos 30 dias">↻ Reincidente</span>':''}</td><td>${statusCell(r)}</td><td>${safe(r.cliente_nome||'—')}</td><td>${safe(r.observacao||'—')}</td>
     <td>${safe(errorAuthorName(r.criado_por))}</td>
     <td>${(canEditError(r)||(canDo('erros_excluir')&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||''))||canAccess('erros_historico'))?`<div class="action-menu"><button type="button" class="action-trigger" onclick="toggleEmployeeActions(event,'e-${r.id}')">⋮ Ações</button><div class="action-dropdown" data-action-menu="e-${r.id}">${canEditError(r)?`<button type="button" data-error-edit="${r.id}">✏ Editar</button>`:''}${canAccess('erros_historico')?`<button type="button" data-error-history="${r.id}">◷ Histórico</button>`:''}${canDo('erros_excluir')&&(currentRole()==='admin'||canAccess('erros_equipe')||String(r.criado_por||'')===String(authSession?.user?.id||''))?`<button type="button" class="danger" data-error-delete="${r.id}">🗑 Excluir</button>`:''}</div></div>`:'—'}</td>
   </tr>`).join('')||'<tr><td colspan="10">Nenhum erro registrado neste mês.</td></tr>';
@@ -2176,10 +2171,10 @@ function patchErrorMsg(e){return e&&e.message==='NAO_ATUALIZADO'?'O banco não p
 function exportErrorsCSV(){
   const rows=window.errorFilteredRows||[];
   if(!rows.length){showToast('Nada para exportar neste filtro.');return}
-  const header=['Data','Setor','Dupla','Tipo','Gravidade','Cliente','Peso','Pontos que contam','Status','Corrigido em','O que foi feito','Observação'];
+  const header=['Data','Setor','Dupla','Tipo','Cliente','Peso','Pontos que contam','Status','Corrigido em','O que foi feito','Observação'];
   const stLabel={aberto:'Em aberto',atrasado:'Atrasado',corrigido:'Corrigido'};
   const lines=[header.map(csvCell).join(';')];
-  rows.forEach(r=>lines.push([fmtDate(r.data),r.equipe1?.setor||r.equipe2?.setor||'',(r.equipe1?.nome||'')+(r.funcionario2_id?' + '+(r.equipe2?.nome||''):' (sozinho)'),r.tipo||'',r.gravidade||'',r.cliente_nome||'',r.peso||1,fmtPts(errRowPoints(r)),errorsExtended?stLabel[errStatus(r)]:'',r.corrigido_em?new Date(r.corrigido_em).toLocaleDateString('pt-BR'):'',r.corrigido_obs||'',r.observacao||''].map(csvCell).join(';')));
+  rows.forEach(r=>lines.push([fmtDate(r.data),r.equipe1?.setor||r.equipe2?.setor||'',(r.equipe1?.nome||'')+(r.funcionario2_id?' + '+(r.equipe2?.nome||''):' (sozinho)'),r.tipo||'',r.cliente_nome||'',r.peso||1,fmtPts(errRowPoints(r)),errorsExtended?stLabel[errStatus(r)]:'',r.corrigido_em?new Date(r.corrigido_em).toLocaleDateString('pt-BR'):'',r.corrigido_obs||'',r.observacao||''].map(csvCell).join(';')));
   const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`erros-equipe-${document.getElementById('errorMonthFilter').value||'periodo'}.csv`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
@@ -2361,7 +2356,7 @@ async function loadErrorsDashboardAlert(){
     box.style.display=list.length?'block':'none';
     const late=list.filter(r=>errLateDays(r)>0).length;
     document.getElementById('errorsDashboardBadge').textContent=late?`${list.length} (${late} atrasados)`:list.length;
-    document.getElementById('errorsDashboardList').innerHTML=list.slice(0,8).map(r=>{const d=errLateDays(r);return `<div class="req"><span><b>${safe(r.tipo||'Erro')} • ${safe(r.equipe1?.nome||'—')}${r.equipe2?' + '+safe(r.equipe2.nome):''}</b><small>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')} • ${safe(r.gravidade||'Leve')} • ${fmtDate(r.data)}</small></span><em>${d>0?'🔴 Atrasado '+d+'d':'🟡 Em aberto'}</em></div>`}).join('')+(list.length>8?`<div class="req"><span><small>+ ${list.length-8} outros — veja em Erros da Equipe.</small></span></div>`:'');
+    document.getElementById('errorsDashboardList').innerHTML=list.slice(0,8).map(r=>{const d=errLateDays(r);return `<div class="req"><span><b>${safe(r.tipo||'Erro')} • ${safe(r.equipe1?.nome||'—')}${r.equipe2?' + '+safe(r.equipe2.nome):''}</b><small>${safe(r.equipe1?.setor||r.equipe2?.setor||'Sem setor')} • ${fmtDate(r.data)}</small></span><em>${d>0?'🔴 Atrasado '+d+'d':'🟡 Em aberto'}</em></div>`}).join('')+(list.length>8?`<div class="req"><span><small>+ ${list.length-8} outros — veja em Erros da Equipe.</small></span></div>`:'');
   }catch(e){console.warn('Alerta de erros indisponível',e);box.style.display='none'}
 }
 
@@ -2569,10 +2564,10 @@ async function loadReports(){
 function exportReportsCSV(){
   const period=window.currentReportPeriod;if(!period){showToast('Atualize o relatório antes de exportar.');return}
   const rows=[
-    ['Categoria','Data inicial','Data final','Funcionário(s)','Setor','Cidade','Tipo / Motivo','Status / Gravidade','Observação'],
+    ['Categoria','Data inicial','Data final','Funcionário(s)','Setor','Cidade','Tipo do erro','Observação'],
     ...(window.currentReportRows||[]).map(r=>['Solicitação',r.data_inicial,r.data_final,r.equipe?.nome||'Funcionário',r.equipe?.setor||'',r.equipe?.cidade||'',r.motivo||'',r.status||'',r.observacao||'']),
     ...(window.currentReportShifts||[]).map(r=>['Plantão',r.data_inicial,r.data_final,[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean).join(' + '),[r.equipe1?.setor,r.equipe2?.setor].filter(Boolean).join(' / '),[r.equipe1?.cidade,r.equipe2?.cidade].filter(Boolean).join(' / '),'Plantão',r.folga_gerada?'Folga gerada':'Escalado',r.observacao||'']),
-    ...(window.currentReportErrors||[]).map(r=>['Erro',r.data,r.data,[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean).join(' + '),[r.equipe1?.setor,r.equipe2?.setor].filter(Boolean).join(' / '),[r.equipe1?.cidade,r.equipe2?.cidade].filter(Boolean).join(' / '),r.tipo||'',r.gravidade||'',r.observacao||'']),
+    ...(window.currentReportErrors||[]).map(r=>['Erro',r.data,r.data,[r.equipe1?.nome,r.equipe2?.nome].filter(Boolean).join(' + '),[r.equipe1?.setor,r.equipe2?.setor].filter(Boolean).join(' / '),[r.equipe1?.cidade,r.equipe2?.cidade].filter(Boolean).join(' / '),r.tipo||'',r.observacao||'']),
     ...(window.currentReportMaintenance||[]).map(r=>['Manutenção',r.data_manutencao,r.proxima_manutencao,'','','',`${r.tipo||''} • ${r.local_instalacao||''} • ${r.identificacao||''}`,r.ativo?'Ativa':'Inativa',r.observacao||''])
   ];
   const html=`<html><head><meta charset="utf-8"></head><body><h2>Relatório geral do Gestão de Escala</h2><p>Período: ${period.from} a ${period.to}</p><table border="1"><tr>${rows[0].map(x=>`<th>${safe(x)}</th>`).join('')}</tr>${rows.slice(1).map(row=>`<tr>${row.map(x=>`<td>${safe(x)}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
@@ -2956,9 +2951,11 @@ document.getElementById('errorForm').onsubmit=async e=>{
   if(!f1)return showToast('Selecione o técnico.');
   if(useSecond&&!f2)return showToast('Selecione o segundo técnico ou desmarque a opção.');
   if(f2&&f1===f2)return showToast('Selecione dois técnicos diferentes.');
-  const severity=document.getElementById('errorSeverity').value;
-  const weight=Number((errorWeightConfig.find(x=>x.gravidade===severity)||{}).peso||1);
-  const payload={data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:document.getElementById('errorType').value.trim(),gravidade:severity,peso:weight,cliente_nome:document.getElementById('errorClientName').value.trim()||null,observacao:document.getElementById('errorObservation').value.trim()||null};
+  const severity='Leve';
+  const weight=1;
+  const errorCategory=document.getElementById('errorType').value;
+  if(!['Atendimento','Comercial','OS'].includes(errorCategory))return showToast('Selecione uma das categorias disponíveis.');
+  const payload={data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:errorCategory,gravidade:severity,peso:weight,cliente_nome:document.getElementById('errorClientName').value.trim()||null,observacao:document.getElementById('errorObservation').value.trim()||null};
   const curErr=id?errorRows.find(x=>String(x.id)===String(id)):null;
   if(curErr&&errorsExtended&&curErr.corrigido)payload.peso_final=Math.round(weight*errCfg(severity).pct)/100;
   const btn=document.getElementById('saveError');btn.disabled=true;
