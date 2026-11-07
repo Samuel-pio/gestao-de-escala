@@ -672,32 +672,8 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
         </div>
       </div>
       <div id="permissionsBox" style="margin-top:18px;border-top:1px solid #e6e4d6;padding-top:16px">
-        <div style="margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div><b>Permissões de acesso</b><div id="permissionsHint" style="font-size:13px;color:#6f6e63;margin-top:3px">Para lançamento restrito, marque apenas “Lançar erros”: o usuário registra erros e vê somente os próprios. “Erros da Equipe” permite consultar os registros do setor.</div></div>
-          <div style="display:flex;gap:6px">
-            <button type="button" class="mini" id="selectAllPermissions">Marcar todas</button>
-            <button type="button" class="mini" id="clearAllPermissions">Limpar</button>
-          </div>
-        </div>
-        <div style="margin:0 0 12px"><label style="font-size:13px;color:#6f6e63">Nível rápido <select id="userPreset" style="margin-left:6px;border:1px solid #dcdacb;border-radius:8px;padding:7px 10px;background:white;color:#111111"><option value="">Personalizado</option><option value="visualizador">Visualizador — só consulta</option><option value="operador">Operador — lança e edita, sem excluir</option><option value="supervisor">Supervisor — operador + pode excluir lançamentos</option></select></label></div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
-          <label><input type="checkbox" class="userPerm" value="dashboard"> Dashboard</label>
-          <label><input type="checkbox" class="userPerm" value="dashboard_plantoes_todos"> Dashboard — visualizar plantões de todos os setores</label>
-          <label><input type="checkbox" class="userPerm" value="agenda"> Agenda</label>
-          <label><input type="checkbox" class="userPerm" value="nova_solicitacao"> Nova Solicitação</label>
-          <label><input type="checkbox" class="userPerm" value="solicitacoes"> Solicitações</label>
-          <label><input type="checkbox" class="userPerm" value="historico"> Histórico</label>
-          <label><input type="checkbox" class="userPerm" value="equipe"> Equipe</label>
-          <label><input type="checkbox" class="userPerm" value="plantoes"> Plantões</label>
-          <label><input type="checkbox" class="userPerm" value="erros_equipe"> Erros da Equipe — visualizar registros do setor</label>
-          <label><input type="checkbox" class="userPerm" value="erros_lancar"> Lançar erros — visualizar somente os próprios lançamentos</label>
-          <label><input type="checkbox" class="userPerm" value="erros_editar"> Editar erros permitidos do setor</label>
-          <label><input type="checkbox" class="userPerm" value="erros_historico"> Consultar histórico de alterações dos erros</label>
-          <label><input type="checkbox" class="userPerm" value="pendencias_responsavel"> Ver pendências por responsável no Dashboard</label>
-          <label><input type="checkbox" class="userPerm" value="manutencoes"> Manutenções Preventivas</label>
-          <label><input type="checkbox" class="userPerm" value="relatorios"> Relatórios</label>
-        </div>
-        <div class="perm-group"><h4>Ações sensíveis</h4><small>Permitem apagar lançamentos feitos por engano, sem dar acesso de administrador. Só valem para quem também tem acesso à área correspondente.</small><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"><label><input type="checkbox" class="userPerm" value="plantoes_excluir"> Excluir plantões</label><label><input type="checkbox" class="userPerm" value="solicitacoes_excluir"> Excluir solicitações</label><label><input type="checkbox" class="userPerm" value="erros_excluir"> Excluir erros da equipe</label><label><input type="checkbox" class="userPerm" value="manutencoes_excluir"> Excluir manutenções</label><label><input type="checkbox" class="userPerm" value="erros_corrigir"> Marcar erros como corrigidos</label></div></div>
+        <div style="margin-bottom:10px"><b>Permissões do cargo</b><div id="permissionsHint" style="font-size:13px;color:#6f6e63;margin-top:3px">Marque o que este cargo pode acessar. As alterações serão aplicadas a todos os usuários com esse cargo.</div></div>
+        <div id="cargoPermissionsList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"><span style="color:#777">Selecione um cargo para carregar as permissões.</span></div>
       </div>
       <div class="modal-actions">
         <button type="button" class="secondary" id="cancelUserModal">Cancelar</button>
@@ -2673,28 +2649,39 @@ async function showUsers(){
   if(currentRole()!=='admin'){showToast('Acesso restrito a administradores.');return}
   hideViews();document.getElementById('usersView').style.display='block';setActiveNav('usersNav');await loadUsers()
 }
-function selectedUserPermissions(){return [...document.querySelectorAll('.userPerm:checked')].map(x=>x.value)}
+let permissionCatalogCache=[];
+let cargoPermissionCache=[];
+const permissionNames={dashboard:'Dashboard',dashboard_plantoes_todos:'Visualizar plantões de todos os setores',agenda:'Agenda',nova_solicitacao:'Nova solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Visualizar erros da equipe',erros_lancar:'Lançar erros',erros_editar:'Editar erros permitidos',erros_historico:'Consultar histórico de alterações',pendencias_responsavel:'Pendências por responsável',manutencoes:'Manutenções preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos',erros_ver_atendimento:'Visualizar erros — Atendimento',erros_ver_comercial:'Visualizar erros — Comercial',erros_ver_os:'Visualizar erros — OS',erros_corrigir_atendimento:'Corrigir erros — Atendimento',erros_corrigir_comercial:'Corrigir erros — Comercial',erros_corrigir_os:'Corrigir erros — OS',cargos_gerenciar:'Gerenciar cargos e permissões'};
+async function loadPermissionCatalog(){
+  if(!permissionCatalogCache.length)permissionCatalogCache=await sb('permissoes_catalogo?select=codigo,modulo,descricao,ativo&ativo=eq.true&order=modulo.asc,codigo.asc');
+  return permissionCatalogCache;
+}
+async function loadCargoPermissionMatrix(cargoId){
+  const catalog=await loadPermissionCatalog();
+  cargoPermissionCache=await sb(`cargo_permissoes?select=permissao_codigo,permitido&cargo_id=eq.${cargoId}`);
+  const allowed=new Set(cargoPermissionCache.filter(x=>x.permitido).map(x=>x.permissao_codigo));
+  const box=document.getElementById('cargoPermissionsList');
+  box.innerHTML=catalog.map(p=>`<label style="display:flex;align-items:flex-start;gap:7px"><input type="checkbox" class="cargoPerm" value="${safe(p.codigo)}" ${allowed.has(p.codigo)?'checked':''}> <span>${safe(permissionNames[p.codigo]||p.descricao||p.codigo)}</span></label>`).join('');
+  document.getElementById('permissionsHint').textContent='Alterar estas opções modifica as permissões do cargo para todos os usuários vinculados a ele.';
+}
+function selectedUserPermissions(){return [...document.querySelectorAll('.cargoPerm:checked')].map(x=>x.value)}
 function selectedUserSectors(){return [...document.querySelectorAll('.userSectorCheck:checked')].map(x=>x.value)}
-document.getElementById('selectAllPermissions').onclick=()=>{if(document.getElementById('userRole').value!=='admin')document.querySelectorAll('.userPerm').forEach(cb=>cb.checked=true)};
-document.getElementById('clearAllPermissions').onclick=()=>{if(document.getElementById('userRole').value!=='admin')document.querySelectorAll('.userPerm').forEach(cb=>cb.checked=false)};
+async function saveCargoPermissionMatrix(cargoId){
+  const catalog=await loadPermissionCatalog();
+  const selected=new Set(selectedUserPermissions());
+  const rows=catalog.map(p=>({cargo_id:Number(cargoId),permissao_codigo:p.codigo,permitido:selected.has(p.codigo)}));
+  await sb('cargo_permissoes?on_conflict=cargo_id,permissao_codigo',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows)});
+}
 document.getElementById('selectAllSectors').onclick=()=>{if(document.getElementById('userRole').value!=='admin')document.querySelectorAll('.userSectorCheck').forEach(cb=>cb.checked=true)};
 document.getElementById('clearAllSectors').onclick=()=>{if(document.getElementById('userRole').value!=='admin')document.querySelectorAll('.userSectorCheck').forEach(cb=>cb.checked=false)};
-
-function detectPreset(){
-  const sel=document.getElementById('userPreset');if(!sel)return;
-  const cur=new Set(selectedUserPermissions());let found='';
-  Object.entries(PERMISSION_PRESETS).forEach(([k,list])=>{if(list.length===cur.size&&list.every(x=>cur.has(x)))found=k});
-  sel.value=found;
-}
 function updatePermissionUI(){
   const isAdmin=document.getElementById('userRole').value==='admin';
-  const presetSel=document.getElementById('userPreset');if(presetSel){presetSel.disabled=isAdmin;if(!isAdmin)detectPreset()}
-  document.querySelectorAll('.userPerm').forEach(cb=>{cb.disabled=isAdmin;if(isAdmin)cb.checked=true});
+  document.querySelectorAll('.cargoPerm').forEach(cb=>{cb.disabled=isAdmin||document.getElementById('userCargo').disabled;if(isAdmin)cb.checked=true});
   document.querySelectorAll('.userSectorCheck').forEach(cb=>{cb.disabled=isAdmin;if(isAdmin)cb.checked=true});
   document.getElementById('selectAllSectors').disabled=isAdmin;
   document.getElementById('clearAllSectors').disabled=isAdmin;
   document.getElementById('userSectorLabel').style.opacity=isAdmin?'.65':'1';
-  document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema e a todos os setores.':'Para lançamento restrito, marque apenas “Lançar erros”: o usuário registra erros e vê somente os próprios. “Erros da Equipe” permite consultar os registros do setor.';
+  document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema e a todos os setores.':'As permissões marcadas serão aplicadas a todos os usuários deste cargo.';
 }
 async function openUserModal(user=null){
   await Promise.all([loadSectors(),loadUserCargos()]);
@@ -2714,7 +2701,7 @@ async function openUserModal(user=null){
   document.getElementById('userModalTitle').textContent=user?'Editar usuário':'Novo usuário';
   document.getElementById('userModalSubtitle').textContent=user?'Altere o perfil e as permissões de acesso.':'Crie um acesso ao Gestão de Escala';
   document.getElementById('saveUserBtn').textContent=user?'Salvar alterações':'Cadastrar usuário';
-  document.querySelectorAll('.userPerm').forEach(cb=>cb.checked=user?.role==='admin'||(user?.permissions||[]).includes(cb.value));
+  if(user?.cargo_id)await loadCargoPermissionMatrix(user.cargo_id);else document.getElementById('cargoPermissionsList').innerHTML='<span style="color:#777">Selecione um cargo para carregar as permissões.</span>';
   updatePermissionUI();
   document.getElementById('userModal').style.display='flex';
   document.getElementById('userModal').setAttribute('aria-hidden','false')
@@ -3160,14 +3147,11 @@ document.getElementById('userCargo').onchange=e=>{
   const cargo=userCargoCache.find(c=>String(c.id)===String(e.target.value));
   document.getElementById('userRole').value=cargo?.nome==='Administrador'?'admin':'usuario';
   updatePermissionUI();
+  const cargoId=e.target.value;
+  if(cargoId)loadCargoPermissionMatrix(cargoId).then(updatePermissionUI).catch(err=>showToast('Erro ao carregar permissões: '+err.message));
+  else document.getElementById('cargoPermissionsList').innerHTML='<span style="color:#777">Selecione um cargo.</span>';
 };
-document.getElementById('userPreset').onchange=e=>{
-  if(document.getElementById('userRole').value==='admin'||!e.target.value)return;
-  const list=PERMISSION_PRESETS[e.target.value]||[];
-  document.querySelectorAll('.userPerm').forEach(cb=>cb.checked=list.includes(cb.value));
-};
-document.getElementById('permissionsBox').addEventListener('change',e=>{if(e.target.classList.contains('userPerm'))detectPreset()});
-document.getElementById('permissionsBox').addEventListener('click',e=>{if(e.target.closest('#selectAllPermissions,#clearAllPermissions'))detectPreset()});
+document.getElementById('permissionsBox').addEventListener('change',e=>{if(e.target.classList.contains('cargoPerm')){/* alteração local até salvar */}});
 document.getElementById('userModal').onclick=e=>{if(e.target.id==='userModal')closeUserModal()};
 document.getElementById('userForm').onsubmit=async e=>{
   e.preventDefault();
@@ -3177,27 +3161,23 @@ document.getElementById('userForm').onsubmit=async e=>{
     const role=document.getElementById('userRole').value;
     const cargo_id=Number(document.getElementById('userCargo').value);
     if(!cargo_id)throw new Error('Selecione o cargo do usuário.');
-    const permissions=role==='admin'?ALL_PERMISSIONS.concat(ACTION_PERMISSIONS):selectedUserPermissions();
+    const permissions=role==='admin'?ALL_PERMISSIONS.concat(ACTION_PERMISSIONS):selectedUserPermissions().filter(p=>['dashboard','dashboard_plantoes_todos','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','erros_lancar','erros_editar','erros_historico','pendencias_responsavel','manutencoes','relatorios','plantoes_excluir','solicitacoes_excluir','erros_excluir','manutencoes_excluir','erros_corrigir'].includes(p));
     const sectors=role==='admin'?[]:selectedUserSectors();
-    if(role!=='admin'&&!permissions.length)throw new Error('Selecione pelo menos uma permissão para o usuário.');
+    if(role!=='admin'&&!selectedUserPermissions().length)throw new Error('Selecione pelo menos uma permissão para o cargo.');
     if(role!=='admin'&&!sectors.length)throw new Error('Selecione pelo menos um setor de acesso do usuário.');
     if(id){
       const payload={action:'update',id,name:document.getElementById('userName').value.trim(),role,cargo_id,permissions,sectors};
       const pwd=document.getElementById('userPassword').value;
       if(pwd)payload.password=pwd;
       await userAdminApi(payload);
-      showToast('Usuário atualizado com sucesso!');
+      await saveCargoPermissionMatrix(cargo_id);
+      showToast('Usuário atualizado e permissões do cargo salvas!');
     }else{
       await userAdminApi({action:'create',name:document.getElementById('userName').value.trim(),email:document.getElementById('userEmail').value.trim(),password:document.getElementById('userPassword').value,role,cargo_id,permissions,sectors});
-      showToast('Usuário cadastrado com sucesso!');
+      await saveCargoPermissionMatrix(cargo_id);
+      showToast('Usuário cadastrado e permissões do cargo salvas!');
     }
     closeUserModal();await loadUsers();
-    if(role!=='admin'){
-      const email=document.getElementById('userEmail').value.trim().toLowerCase();
-      const saved=(window.userRows||[]).find(u=>(id&&u.id===id)||(!id&&(u.email||'').toLowerCase()===email));
-      const missing=saved?permissions.filter(p=>!(saved.permissions||[]).includes(p)):[];
-      if(missing.length)setTimeout(()=>showToast('Atenção: o servidor não gravou estas permissões: '+missing.map(permissionLabel).join(', ')+'. É preciso liberar essas permissões na função manage-users do Supabase.'),300);
-    }
   }catch(err){console.error(err);showToast(err.message||'Não foi possível salvar o usuário.')}
   finally{btn.disabled=false}
 };
