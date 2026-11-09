@@ -1954,13 +1954,17 @@ async function addErrorType(){
   if(!clean)return showToast('Informe o nome do tipo de erro.');
   if(clean.length>160)return showToast('Use no máximo 160 caracteres.');
   try{
-    await sb('erros_equipes_tipos',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({categoria:category,nome:clean,ativo:true})});
+    await sb('rpc/cadastrar_tipo_erro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_categoria:category,p_nome:clean})});
+    errorTypeCache[category]=null;
     await loadErrorTypes(category,clean);
     showToast('Tipo de erro cadastrado!');
   }catch(e){
-    console.error(e);
-    if(String(e.message||'').includes('23505'))showToast('Esse tipo já existe nesta categoria.');
-    else showToast('Não foi possível cadastrar. Confira as regras do Supabase.');
+    console.error('Falha ao cadastrar tipo de erro:',e);
+    let detail=String(e.message||e);
+    try{const parsed=JSON.parse(detail);detail=parsed.message||parsed.error||detail}catch(_){}
+    if(detail.includes('23505')||detail.toLowerCase().includes('já existe'))showToast('Esse tipo já existe nesta categoria.');
+    else if(detail.includes('42501')||detail.toLowerCase().includes('administrador'))showToast('O Supabase não reconheceu seu usuário como Administrador. Saia e entre novamente para atualizar a sessão.');
+    else showToast('Erro ao cadastrar: '+detail.slice(0,180));
   }
 }
 async function openErrorModal(row=null){
