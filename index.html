@@ -554,7 +554,7 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
     <input type="hidden" id="errorId">
     <div class="form-grid">
       <div class="field"><label>Data</label><input type="date" id="errorDate" required></div>
-      <div class="field"><label>Categoria</label><select id="errorCategory" required><option value="">Selecione...</option><option value="Atendimento">Atendimento</option><option value="Comercial">Comercial</option><option value="OS">OS</option></select></div>
+      <div class="field"><label>Categoria</label><div style="display:flex;gap:8px;align-items:center"><select id="errorCategory" required style="flex:1;min-width:0"><option value="">Carregando categorias...</option></select><button type="button" class="secondary" id="addErrorCategoryBtn" style="white-space:nowrap;display:none">+ Categoria</button></div></div>
       <div class="field"><label for="errorType">Tipo do erro</label><div style="display:flex;gap:8px;align-items:center"><select id="errorType" required disabled style="flex:1;min-width:0"><option value="">Selecione primeiro a categoria...</option></select><button type="button" class="secondary" id="addErrorTypeBtn" style="white-space:nowrap;display:none">+ Adicionar</button></div><small id="errorTypeHint" style="color:#777">Escolha uma categoria para carregar os tipos cadastrados.</small></div>
       <div class="field"><label>Setor</label><select id="errorSector"><option value="">Todos os setores</option></select></div>
       <div class="field"><label>Técnico 1</label><select id="errorEmployee1" required></select></div>
@@ -1892,6 +1892,35 @@ function fillErrorEmployees(){
   });
 }
 let errorTypeCache={};
+let errorCategoryCache=[];
+async function loadErrorCategories(selected=''){
+  const select=document.getElementById('errorCategory');
+  const addBtn=document.getElementById('addErrorCategoryBtn');
+  addBtn.style.display=currentRole()==='admin'?'':'none';
+  const rows=await sb('erros_equipes_categorias?select=id,nome,ativo&ativo=eq.true&order=nome.asc');
+  errorCategoryCache=rows||[];
+  select.innerHTML='<option value="">Selecione...</option>'+errorCategoryCache.map(x=>`<option value="${safe(x.nome)}">${safe(x.nome)}</option>`).join('');
+  if(selected&&!Array.from(select.options).some(o=>o.value===selected))select.insertAdjacentHTML('beforeend',`<option value="${safe(selected)}">${safe(selected)} (já utilizada)</option>`);
+  select.value=selected||'';
+}
+async function addErrorCategory(){
+  if(currentRole()!=='admin'){showToast('Somente o administrador pode cadastrar categorias.');return}
+  const name=prompt('Nome da nova categoria de erro:');
+  if(name===null)return;
+  const clean=name.trim().replace(/\s+/g,' ');
+  if(!clean)return showToast('Informe o nome da categoria.');
+  if(clean.length>80)return showToast('Use no máximo 80 caracteres.');
+  try{
+    await sb('erros_equipes_categorias',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({nome:clean,ativo:true,criado_por:authSession?.user?.id||null})});
+    await loadErrorCategories(clean);
+    await loadErrorTypes(clean,'');
+    showToast('Categoria cadastrada!');
+  }catch(e){
+    console.error(e);
+    if(String(e.message||'').includes('23505'))showToast('Essa categoria já existe.');
+    else showToast('Não foi possível cadastrar a categoria. Confira as permissões do Supabase.');
+  }
+}
 async function loadErrorTypes(category,selected=''){
   const select=document.getElementById('errorType');
   const addBtn=document.getElementById('addErrorTypeBtn');
@@ -1938,6 +1967,7 @@ async function openErrorModal(row=null){
   if(!row&&!canLaunchError()){showToast('Você não tem permissão para lançar erros.');return}
   if(row&&!canEditError(row)){showToast('Você só pode editar erros que lançou, ou erros do seu setor com permissão completa.');return}
   const modal=document.getElementById('errorModal');
+  await loadErrorCategories(row?.categoria||'');
   document.getElementById('errorForm').reset();
   document.getElementById('errorId').value=row?.id||'';
   document.getElementById('errorModalTitle').textContent=row?'Editar erro':'Registrar erro';
@@ -2951,6 +2981,7 @@ document.getElementById('errorsNav').onclick=async(e)=>{
 };
 document.getElementById('newErrorBtn').onclick=()=>openErrorModal();
 document.getElementById('errorCategory').onchange=()=>loadErrorTypes(document.getElementById('errorCategory').value,'');
+document.getElementById('addErrorCategoryBtn').onclick=addErrorCategory;
 document.getElementById('addErrorTypeBtn').onclick=addErrorType;
 document.getElementById('closeErrorModal').onclick=closeErrorModal;
 document.getElementById('closeErrorFix').onclick=closeErrorFixModal;
@@ -2999,7 +3030,7 @@ document.getElementById('errorForm').onsubmit=async e=>{
   const weight=1;
   const errorCategory=document.getElementById('errorCategory').value;
   const errorType=document.getElementById('errorType').value.trim();
-  if(!['Atendimento','Comercial','OS'].includes(errorCategory))return showToast('Selecione uma das categorias disponíveis.');
+  if(!errorCategoryCache.some(c=>c.nome===errorCategory) && !Array.from(document.getElementById('errorCategory').options).some(o=>o.value===errorCategory))return showToast('Selecione uma categoria válida.');
   if(!errorType)return showToast('Informe o tipo específico do erro.');
   const payload={categoria:errorCategory,data:document.getElementById('errorDate').value,funcionario1_id:f1,funcionario2_id:f2,tipo:errorType,gravidade:severity,peso:weight,cliente_nome:document.getElementById('errorClientName').value.trim()||null,observacao:document.getElementById('errorObservation').value.trim()||null};
   const curErr=id?errorRows.find(x=>String(x.id)===String(id)):null;
