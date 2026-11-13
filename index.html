@@ -671,6 +671,22 @@ body.sidebar-collapsed .brand .logo-mark{display:block}
           <small style="display:block;color:#6f6e63;margin-top:5px">Um usuário comum pode acessar um ou vários setores, inclusive todos.</small>
         </div>
       </div>
+      <div id="specialErrorRulesBox" style="margin-top:18px;border-top:1px solid #e6e4d6;padding-top:16px">
+        <b>Regras especiais de visualização de erros</b>
+        <p style="font-size:13px;color:#6f6e63;margin:4px 0 10px">Opcional. Quando ativada, esta regra substitui a visualização comum por categoria para este usuário.</p>
+        <label style="display:flex;gap:8px;align-items:center;margin-bottom:9px"><input type="checkbox" id="specialErrorRulesEnabled"> Aplicar regra especial a este usuário</label>
+        <div id="specialErrorRulesOptions" style="padding:10px;border:1px solid #dcdacb;border-radius:8px;background:#faf9f4;opacity:.55">
+          <div style="font-weight:600;margin-bottom:7px">Categorias que poderá visualizar</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+            <label><input type="checkbox" class="specialErrorCategory" value="Atendimento"> Atendimento</label>
+            <label><input type="checkbox" class="specialErrorCategory" value="Comercial"> Comercial</label>
+            <label><input type="checkbox" class="specialErrorCategory" value="OS"> OS</label>
+            <label><input type="checkbox" class="specialErrorCategory" value="Agenda"> Agenda</label>
+          </div>
+          <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px"><input type="checkbox" id="specialHideWhenInvolved"> Ocultar registros em que o próprio usuário esteja como Técnico 1 ou Técnico 2</label>
+        </div>
+        <small style="display:block;color:#6f6e63;margin-top:6px">Exemplo: Hemilly pode visualizar somente Comercial, exceto registros em que ela própria esteja envolvida. Você pode aplicar a mesma regra a outros usuários.</small>
+      </div>
       <div id="permissionsBox" style="margin-top:18px;border-top:1px solid #e6e4d6;padding-top:16px">
         <div style="margin-bottom:10px"><b>Permissões do cargo</b><div id="permissionsHint" style="font-size:13px;color:#6f6e63;margin-top:3px">Marque o que este cargo pode acessar. As alterações serão aplicadas a todos os usuários com esse cargo.</div></div>
         <div id="cargoPermissionsList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"><span style="color:#777">Selecione um cargo para carregar as permissões.</span></div>
@@ -2727,6 +2743,38 @@ function updatePermissionUI(){
   document.getElementById('userSectorLabel').style.opacity=isAdmin?'.65':'1';
   document.getElementById('permissionsHint').textContent=isAdmin?'Administrador possui acesso total ao sistema e a todos os setores.':'As permissões marcadas serão aplicadas a todos os usuários deste cargo.';
 }
+function updateSpecialErrorRulesUI(){
+  const enabled=document.getElementById('specialErrorRulesEnabled').checked;
+  const options=document.getElementById('specialErrorRulesOptions');
+  options.style.opacity=enabled?'1':'.55';
+  options.querySelectorAll('input').forEach(x=>x.disabled=!enabled);
+}
+async function loadSpecialErrorRules(userId){
+  document.getElementById('specialErrorRulesEnabled').checked=false;
+  document.querySelectorAll('.specialErrorCategory').forEach(x=>x.checked=false);
+  document.getElementById('specialHideWhenInvolved').checked=false;
+  if(!userId){updateSpecialErrorRulesUI();return}
+  try{
+    const rows=await sb(`usuario_regras_erros_especiais?select=categoria,ocultar_se_envolvido,ativo&auth_user_id=eq.${encodeURIComponent(userId)}&ativo=eq.true`);
+    if(rows?.length){
+      document.getElementById('specialErrorRulesEnabled').checked=true;
+      const cats=new Set(rows.map(x=>x.categoria));
+      document.querySelectorAll('.specialErrorCategory').forEach(x=>x.checked=cats.has(x.value));
+      document.getElementById('specialHideWhenInvolved').checked=rows.some(x=>x.ocultar_se_envolvido);
+    }
+  }catch(e){console.error('Falha ao carregar regras especiais',e);showToast('Não foi possível carregar as regras especiais: '+e.message)}
+  updateSpecialErrorRulesUI();
+}
+async function saveSpecialErrorRules(userId){
+  if(!userId)return;
+  await sb(`usuario_regras_erros_especiais?auth_user_id=eq.${encodeURIComponent(userId)}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+  if(!document.getElementById('specialErrorRulesEnabled').checked)return;
+  const categories=[...document.querySelectorAll('.specialErrorCategory:checked')].map(x=>x.value);
+  if(!categories.length)throw new Error('Selecione ao menos uma categoria para a regra especial.');
+  const hide=document.getElementById('specialHideWhenInvolved').checked;
+  const rows=categories.map(categoria=>({auth_user_id:userId,categoria,ocultar_se_envolvido:hide,ativo:true}));
+  await sb('usuario_regras_erros_especiais',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(rows)});
+}
 async function openUserModal(user=null){
   await Promise.all([loadSectors(),loadUserCargos()]);
   document.getElementById('userForm').reset();
@@ -2746,6 +2794,8 @@ async function openUserModal(user=null){
   document.getElementById('userModalSubtitle').textContent=user?'Altere o perfil e as permissões de acesso.':'Crie um acesso ao Gestão de Escala';
   document.getElementById('saveUserBtn').textContent=user?'Salvar alterações':'Cadastrar usuário';
   if(user?.cargo_id)await loadCargoPermissionMatrix(user.cargo_id);else document.getElementById('cargoPermissionsList').innerHTML='<span style="color:#777">Selecione um cargo para carregar as permissões.</span>';
+  await loadSpecialErrorRules(user?.id||'');
+  document.getElementById('specialErrorRulesBox').style.display=currentRole()==='admin'?'block':'none';
   updatePermissionUI();
   document.getElementById('userModal').style.display='flex';
   document.getElementById('userModal').setAttribute('aria-hidden','false')
@@ -3187,6 +3237,7 @@ document.getElementById('usersNav').onclick=showUsers;
 document.getElementById('newUserBtn').onclick=()=>openUserModal();
 document.getElementById('closeUserModal').onclick=closeUserModal;
 document.getElementById('cancelUserModal').onclick=closeUserModal;
+document.getElementById('specialErrorRulesEnabled').onchange=updateSpecialErrorRulesUI;
 document.getElementById('userRole').onchange=updatePermissionUI;
 document.getElementById('userCargo').onchange=e=>{
   const cargo=userCargoCache.find(c=>String(c.id)===String(e.target.value));
@@ -3216,10 +3267,12 @@ document.getElementById('userForm').onsubmit=async e=>{
       if(pwd)payload.password=pwd;
       await userAdminApi(payload);
       await saveCargoPermissionMatrix(cargo_id);
-      showToast('Usuário atualizado e permissões do cargo salvas!');
+      await saveSpecialErrorRules(id);
+      showToast('Usuário atualizado, permissões e regras especiais salvas!');
     }else{
-      await userAdminApi({action:'create',name:document.getElementById('userName').value.trim(),email:document.getElementById('userEmail').value.trim(),password:document.getElementById('userPassword').value,role,cargo_id,permissions,sectors});
+      const created=await userAdminApi({action:'create',name:document.getElementById('userName').value.trim(),email:document.getElementById('userEmail').value.trim(),password:document.getElementById('userPassword').value,role,cargo_id,permissions,sectors});
       await saveCargoPermissionMatrix(cargo_id);
+      if(created?.user?.id)await saveSpecialErrorRules(created.user.id);
       showToast('Usuário cadastrado e permissões do cargo salvas!');
     }
     closeUserModal();await loadUsers();
