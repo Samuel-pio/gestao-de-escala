@@ -865,6 +865,16 @@ function showLogin(){
 }
 
 const ALL_PERMISSIONS=['dashboard','dashboard_plantoes_todos','agenda','nova_solicitacao','solicitacoes','historico','equipe','plantoes','erros_equipe','erros_lancar','erros_editar','erros_historico','pendencias_responsavel','manutencoes','relatorios'];
+let currentCargoName='';
+let currentCargoPermissionCodes=null;
+async function loadCurrentCargoPermissions(){
+  currentCargoName='';currentCargoPermissionCodes=null;
+  if(!authSession?.user?.id)return;
+  try{
+    const result=await sb('rpc/minhas_permissoes_cargo',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    if(result){currentCargoName=result.cargo_nome||'';currentCargoPermissionCodes=Array.isArray(result.permissoes)?result.permissoes:[]}
+  }catch(e){console.warn('Não foi possível carregar permissões do cargo',e)}
+}
 const ACTION_PERMISSIONS=['plantoes_excluir','solicitacoes_excluir','erros_excluir','manutencoes_excluir','erros_corrigir'];
 const PERMISSION_PRESETS={
   visualizador:['dashboard','agenda','historico','relatorios'],
@@ -916,7 +926,7 @@ const NAV_PERMISSION={
   dashboardNav:'dashboard',agendaNav:'agenda',openRequestNav:'nova_solicitacao',
   requestsNav:'solicitacoes',historyNav:'historico',teamNav:'equipe',plantaoNav:'plantoes',errorsNav:'erros_equipe',airNav:'manutencoes',reportsNav:'relatorios'
 };
-function currentRole(){return authSession?.user?.app_metadata?.role||'usuario'}
+function currentRole(){return currentCargoName==='Administrador'?'admin':(authSession?.user?.app_metadata?.role||'usuario')}
 let sectorCache=['Infraestrutura','Call Center','Operacional','Financeiro'];
 function currentSectors(){
   if(currentRole()==='admin')return sectorCache.slice();
@@ -928,13 +938,14 @@ function currentSectors(){
 function currentSector(){return currentSectors()[0]||null}
 function hasSectorAccess(sector){return currentRole()==='admin'||currentSectors().includes(sector)}
 function currentPermissions(){
-  if(currentRole()==='admin')return ALL_PERMISSIONS;
+  if(currentRole()==='admin')return ALL_PERMISSIONS.concat(ACTION_PERMISSIONS,['erros_ver_atendimento','erros_ver_comercial','erros_ver_os','erros_ver_agenda','erros_corrigir_atendimento','erros_corrigir_comercial','erros_corrigir_os','erros_corrigir_agenda','erros_ver_proprios','cargos_gerenciar']);
+  if(Array.isArray(currentCargoPermissionCodes))return currentCargoPermissionCodes;
   const p=authSession?.user?.app_metadata?.permissions;
   return Array.isArray(p)?p:[];
 }
 function canAccess(permission){return currentRole()==='admin'||currentPermissions().includes(permission)}
-function canAccessErrors(){return currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_lancar')||canAccess('erros_editar')}
-function canLaunchError(){return currentRole()==='admin'||canAccess('erros_lancar')||canAccess('erros_equipe')}
+function canAccessErrors(){return currentRole()==='admin'||['erros_equipe','erros_lancar','erros_editar','erros_ver_proprios','erros_ver_atendimento','erros_ver_comercial','erros_ver_os','erros_ver_agenda'].some(canAccess)}
+function canLaunchError(){return currentRole()==='admin'||canAccess('erros_lancar')}
 function canEditError(r){
   if(!r)return false;
   if(currentRole()==='admin'||canAccess('erros_equipe')||canAccess('erros_editar'))return hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'');
@@ -968,7 +979,8 @@ function showFirstAllowedView(){
   if(canAccess('relatorios'))return showReports();
   hideViews();
 }
-function showApp(){
+async function showApp(){
+  await loadCurrentCargoPermissions();
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appShell').style.display='flex';
   const email=authSession?.user?.email||'Usuário autenticado';
@@ -998,7 +1010,7 @@ async function initAuth(){
         await refreshSession(saved.refresh_token);
       }
       if(authSession){
-        showApp();
+        await showApp();
         await loadSectors();
         await load();
         showFirstAllowedView();
@@ -2134,7 +2146,7 @@ function errLateDays(r){
   return Math.max(0,Math.floor((today-due)/86400000));
 }
 function errStatus(r){return r.corrigido?'corrigido':(errLateDays(r)>0?'atrasado':'aberto')}
-function canFixError(r){return errorsExtended&&canDo('erros_corrigir')&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'')}
+function canFixError(r){const key={Atendimento:'erros_corrigir_atendimento',Comercial:'erros_corrigir_comercial',OS:'erros_corrigir_os',Agenda:'erros_corrigir_agenda'}[r?.categoria];return errorsExtended&&(currentRole()==='admin'||canAccess('erros_corrigir')||canAccess(key||'__none__'))&&hasSectorAccess(r.equipe1?.setor||r.equipe2?.setor||'')}
 function errIsRecurrent(r){
   const t=(r.tipo||'').trim().toLowerCase();if(!t)return false;
   const ids=[r.funcionario1_id,r.funcionario2_id].filter(Boolean).map(String);
@@ -2151,9 +2163,7 @@ function renderErrors(){
   const st=document.getElementById('errorStatusFilter')?.value||'';
   const normalizeSearch=v=>String(v??'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   const search=normalizeSearch(document.getElementById('errorSearchFilter')?.value||'');
-  const ownOnly=currentRole()!=='admin'&&!canAccess('erros_equipe')&&!canAccess('erros_editar')&&canAccess('erros_lancar');
   const base=errorRows.filter(r=>{
-    if(ownOnly&&String(r.criado_por||'')!==String(authSession?.user?.id||''))return false;
     const searchHaystack=normalizeSearch([
       r.categoria,r.tipo,r.cliente_nome,errorAuthorName(r.criado_por),r.observacao,
       r.equipe1?.nome,r.equipe2?.nome,r.equipe1?.setor,r.equipe2?.setor,
@@ -2685,7 +2695,7 @@ async function showUsers(){
 }
 let permissionCatalogCache=[];
 let cargoPermissionCache=[];
-const permissionNames={dashboard:'Dashboard',dashboard_plantoes_todos:'Visualizar plantões de todos os setores',agenda:'Agenda',nova_solicitacao:'Nova solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Visualizar erros da equipe',erros_lancar:'Lançar erros',erros_editar:'Editar erros permitidos',erros_historico:'Consultar histórico de alterações',pendencias_responsavel:'Pendências por responsável',manutencoes:'Manutenções preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos',erros_ver_atendimento:'Visualizar erros — Atendimento',erros_ver_comercial:'Visualizar erros — Comercial',erros_ver_os:'Visualizar erros — OS',erros_corrigir_atendimento:'Corrigir erros — Atendimento',erros_corrigir_comercial:'Corrigir erros — Comercial',erros_corrigir_os:'Corrigir erros — OS',cargos_gerenciar:'Gerenciar cargos e permissões'};
+const permissionNames={dashboard:'Dashboard',dashboard_plantoes_todos:'Visualizar plantões de todos os setores',agenda:'Agenda',nova_solicitacao:'Nova solicitação',solicitacoes:'Solicitações',historico:'Histórico',equipe:'Equipe',plantoes:'Plantões',erros_equipe:'Visualizar erros da equipe',erros_lancar:'Lançar erros',erros_editar:'Editar erros permitidos',erros_historico:'Consultar histórico de alterações',pendencias_responsavel:'Pendências por responsável',manutencoes:'Manutenções preventivas',relatorios:'Relatórios',plantoes_excluir:'Excluir plantões',solicitacoes_excluir:'Excluir solicitações',erros_excluir:'Excluir erros',manutencoes_excluir:'Excluir manutenções',erros_corrigir:'Marcar erros como corrigidos',erros_ver_atendimento:'Visualizar erros — Atendimento',erros_ver_comercial:'Visualizar erros — Comercial',erros_ver_os:'Visualizar erros — OS',erros_ver_agenda:'Visualizar erros — Agenda',erros_ver_proprios:'Visualizar somente os próprios lançamentos',erros_corrigir_atendimento:'Corrigir erros — Atendimento',erros_corrigir_comercial:'Corrigir erros — Comercial',erros_corrigir_os:'Corrigir erros — OS',erros_corrigir_agenda:'Corrigir erros — Agenda',cargos_gerenciar:'Gerenciar cargos e permissões'};
 async function loadPermissionCatalog(){
   if(!permissionCatalogCache.length)permissionCatalogCache=await sb('permissoes_catalogo?select=codigo,modulo,descricao,ativo&ativo=eq.true&order=modulo.asc,codigo.asc');
   return permissionCatalogCache;
@@ -3160,7 +3170,7 @@ document.getElementById('loginForm').onsubmit=async e=>{
   btn.textContent='Entrando...';
   try{
     await signIn(email,password);
-    showApp();
+    await showApp();
     await loadSectors();
     await load();
     showFirstAllowedView();
