@@ -1901,10 +1901,11 @@ async function deletePlantao(id){
   const r=plantaoRows.find(x=>x.id===id);if(!r)return;
   if(!window.confirm(`Excluir o plantão de ${[r.equipe?.nome,r.equipe2?.nome].filter(Boolean).join(' + ')||'funcionário'} (${fmtDate(r.data_inicial)} a ${fmtDate(r.data_final)})?${r.folga_solicitacao_id?'\n\nA folga gerada automaticamente também será excluída.':''}`))return;
   try{
-    if(r.folga_solicitacao_id)await sbDelete(`solicitacoes?id=eq.${r.folga_solicitacao_id}`); if(r.folga2_solicitacao_id)await sbDelete(`solicitacoes?id=eq.${r.folga2_solicitacao_id}`);
-    await sbDelete(`plantoes?id=eq.${id}`);
+    // Exclusão centralizada no banco: valida a permissão do sistema e remove,
+    // na mesma transação, as folgas vinculadas e o plantão.
+    await sb('rpc/excluir_plantao_autorizado',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_plantao_id:Number(id)})});
     showToast('Plantão excluído!');await loadPlantoes();await load();
-  }catch(e){console.error(e);showToast(deleteErrorMsg(e,'o plantão'));await loadPlantoes()}
+  }catch(e){console.error('Falha ao excluir plantão:',e);showToast(e?.message||'Não foi possível excluir o plantão. Confira sua permissão no sistema.');await loadPlantoes()}
 }
 
 let errorRows=[];
